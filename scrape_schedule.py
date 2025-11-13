@@ -54,12 +54,12 @@ def scrape_schedule():
         # Wait for iframe content to load
         time.sleep(5)
 
-        # Calculate date range
-        today = datetime.now()
-        three_months_later = today + timedelta(days=90)
+        # Calculate date range - start from yesterday to catch any recent games
+        yesterday = datetime.now() - timedelta(days=1)
+        three_months_later = yesterday + timedelta(days=90)
 
         # Format dates as DD-MMM-YYYY (e.g., 13-Nov-2025)
-        from_date = today.strftime("%d-%b-%Y")
+        from_date = yesterday.strftime("%d-%b-%Y")
         to_date = three_months_later.strftime("%d-%b-%Y")
 
         print(f"Date range: {from_date} to {to_date}")
