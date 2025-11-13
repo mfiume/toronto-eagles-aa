@@ -1,38 +1,27 @@
 #!/usr/bin/env python3
 """
-Generate HTML page from standings JSON data
+Generate HTML page from scraped schedule data
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
+
 
 def generate_html():
-    """Generate HTML page from standings.json"""
+    """Generate HTML page from schedule.json"""
 
-    # Load standings data
+    # Load schedule data
+    with open('schedule.json', 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    schedule = data.get('schedule', [])
+    timestamp = data.get('timestamp', '')
+    filters = data.get('filters', {})
+    error = data.get('error')
+
+    # Format timestamp (same as standings)
     try:
-        with open("standings.json", "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except FileNotFoundError:
-        print("Error: standings.json not found")
-        return
-
-    # Extract data
-    standings = data.get("standings", [])
-    timestamp = data.get("timestamp", "")
-    filters = data.get("filters", {})
-    error = data.get("error")
-
-    # Format timestamp
-    # The timestamp is stored as UTC when run on GitHub Actions
-    # We need to convert to Toronto time and show relative time
-    try:
-        from datetime import timedelta
         dt_scraped = datetime.fromisoformat(timestamp)
-
-        # Assume the timestamp is UTC (from GitHub Actions server)
-        # Convert to Toronto time (UTC-5 for EST, UTC-4 for EDT)
-        # November is EST (UTC-5)
         dt_toronto = dt_scraped - timedelta(hours=5)  # EST offset
 
         # Get current Toronto time for comparison
@@ -58,13 +47,13 @@ def generate_html():
     except Exception as e:
         formatted_time = timestamp
 
-    # Start building HTML
+    # Start building HTML (EXACT copy of standings structure)
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Toronto Eagles U10 AA - Standings</title>
+    <title>Toronto Eagles U10 AA - Schedule</title>
     <style>
         * {{
             margin: 0;
@@ -211,8 +200,7 @@ def generate_html():
         }}
 
         th:first-child {{
-            text-align: right;
-            width: 60px;
+            text-align: left;
         }}
 
         th:nth-child(2) {{
@@ -220,7 +208,11 @@ def generate_html():
         }}
 
         th:nth-child(3) {{
-            text-align: right;
+            text-align: left;
+        }}
+
+        th:nth-child(5) {{
+            text-align: left;
         }}
 
         tbody tr {{
@@ -262,44 +254,17 @@ def generate_html():
             font-size: clamp(0.8rem, 2vw, 0.9rem);
         }}
 
-        td:first-child {{
-            font-weight: 700;
-            color: #000000;
-            font-size: clamp(0.95rem, 2.2vw, 1.05rem);
-            text-align: right;
-        }}
-
         .team-name {{
             font-weight: 400;
             color: #000000;
             white-space: nowrap;
             text-align: left;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }}
-
-        .team-logo {{
-            width: 24px;
-            height: 24px;
-            object-fit: contain;
-            flex-shrink: 0;
         }}
 
         .stat {{
             text-align: right;
             font-variant-numeric: tabular-nums;
             white-space: nowrap;
-        }}
-
-        .positive {{
-            color: #00aa00;
-            font-weight: 600;
-        }}
-
-        .negative {{
-            color: #cc0000;
-            font-weight: 600;
         }}
 
         footer {{
@@ -399,15 +364,15 @@ def generate_html():
         <header>
             <h1>TORONTO EAGLES U10 AA</h1>
             <div class="filters">
-                <div class="filter-badge">STANDINGS</div>
-                <div class="filter-badge">{filters.get('region', 'N/A')} REGION</div>
-                <div class="filter-badge">{filters.get('season', 'N/A')}</div>
+                <div class="filter-badge">SCHEDULE</div>
+                <div class="filter-badge">{filters.get('division', 'N/A')}</div>
+                <div class="filter-badge">{filters.get('category', 'N/A')}</div>
             </div>
         </header>
 
         <nav>
-            <a href="index.html" class="active">Standings</a>
-            <a href="schedule.html">Schedule</a>
+            <a href="index.html">Standings</a>
+            <a href="schedule.html" class="active">Schedule</a>
         </nav>
 
         <div class="content">
@@ -416,16 +381,16 @@ def generate_html():
     if error:
         html += f"""
             <div class="error">
-                <h2>Error Loading Standings</h2>
+                <h2>Error Loading Schedule</h2>
                 <p>{error}</p>
                 <p>The scraper will try again during the next scheduled run.</p>
             </div>
 """
-    elif not standings:
+    elif not schedule:
         html += """
             <div class="error">
-                <h2>No Standings Data Available</h2>
-                <p>No teams found with the current filters.</p>
+                <h2>No Schedule Data Available</h2>
+                <p>No games found.</p>
             </div>
 """
     else:
@@ -435,56 +400,40 @@ def generate_html():
                 <table>
                     <thead>
                         <tr>
-"""
-
-        # Get headers from first row
-        if standings:
-            headers = list(standings[0].keys())
-            for header in headers:
-                # Skip empty header names, Logo column, and Position header
-                if header and header != '' and header != 'Logo':
-                    if header == 'Position':
-                        html += f"                            <th></th>\n"  # Empty header for Position column
-                    else:
-                        html += f"                            <th>{header}</th>\n"
-
-        html += """                        </tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Away</th>
+                            <th>Score</th>
+                            <th>Home</th>
+                            <th>Arena</th>
+                            <th>Type</th>
+                        </tr>
                     </thead>
                     <tbody>
 """
 
         # Add rows
-        for row in standings:
-            # Check if this is Toronto Eagles
-            is_eagles = row.get('Team', '').lower() == 'toronto eagles'
-            row_class = ' class="highlight"' if is_eagles else ''
-            html += f"                        <tr{row_class}>\n"
-            for i, (key, value) in enumerate(row.items()):
-                # Skip empty column names
-                if key == '':
-                    continue
+        for game in schedule:
+            date = game.get('Date', '')
+            time = game.get('Time', '')
+            away = game.get('Away', '')
+            home = game.get('Home', '')
+            score = game.get('Score', ':')
+            arena = game.get('Arena', '')
+            game_type = game.get('Type', '')
 
-                # Handle Position column specially
-                if key == 'Position':
-                    html += f"                            <td>{value}</td>\n"
-                elif key == 'Logo':
-                    continue  # Skip Logo column, it will be included with Team
-                elif key == 'Team':  # Team name
-                    logo_url = row.get('Logo')
-                    if logo_url:
-                        html += f'                            <td class="team-name"><img src="{logo_url}" alt="" class="team-logo" onerror="this.style.display=\'none\'"><span>{value}</span></td>\n'
-                    else:
-                        html += f'                            <td class="team-name"><span>{value}</span></td>\n'
-                elif key in ['DIFF', 'GD', '+/-']:  # Goal differential
-                    try:
-                        diff_val = int(value) if value else 0
-                        css_class = "positive" if diff_val > 0 else ("negative" if diff_val < 0 else "")
-                        display_val = f"+{diff_val}" if diff_val > 0 else str(diff_val)
-                        html += f'                            <td class="stat {css_class}">{display_val}</td>\n'
-                    except:
-                        html += f'                            <td class="stat">{value}</td>\n'
-                else:  # Other stats
-                    html += f'                            <td class="stat">{value}</td>\n'
+            # Check if Toronto Eagles are playing
+            is_eagles = 'toronto eagles' in away.lower() or 'toronto eagles' in home.lower()
+            row_class = ' class="highlight"' if is_eagles else ''
+
+            html += f"                        <tr{row_class}>\n"
+            html += f"                            <td>{date}</td>\n"
+            html += f"                            <td>{time}</td>\n"
+            html += f'                            <td class="team-name">{away}</td>\n'
+            html += f'                            <td class="stat">{score}</td>\n'
+            html += f'                            <td class="team-name">{home}</td>\n'
+            html += f"                            <td>{arena}</td>\n"
+            html += f"                            <td>{game_type}</td>\n"
             html += "                        </tr>\n"
 
         html += """                    </tbody>
@@ -496,18 +445,19 @@ def generate_html():
 
         <footer>
             <p>Last updated: {formatted_time}</p>
-            <p>Updates nightly at 2:00 AM ET</p>
+            <p>Updates hourly</p>
         </footer>
     </div>
 </body>
 </html>
 """
 
-    # Write HTML file
-    with open("index.html", "w", encoding="utf-8") as f:
+    # Write to file
+    with open('schedule.html', 'w', encoding='utf-8') as f:
         f.write(html)
 
-    print("HTML page generated: index.html")
+    print("Generated schedule.html")
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     generate_html()

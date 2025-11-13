@@ -39,13 +39,18 @@ jobs:
           # ChromeDriver is handled by selenium-manager in Selenium 4.15+
           echo "Chrome and ChromeDriver setup complete"
 
-      - name: Run scraper
+      - name: Run standings scraper
         run: |
           python scrape_standings.py
 
-      - name: Generate HTML page
+      - name: Run schedule scraper
+        run: |
+          python scrape_schedule.py
+
+      - name: Generate HTML pages
         run: |
           python generate_html.py
+          python generate_schedule_html.py
 
       - name: Commit and push if changes
         run: |
@@ -53,12 +58,12 @@ jobs:
           git config --local user.name "github-actions[bot]"
 
           # Add generated files
-          git add standings.json index.html
+          git add standings.json schedule.json index.html schedule.html
 
           # Check if there are changes
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Update standings - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            git commit -m "Update team data - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
             git push
           fi

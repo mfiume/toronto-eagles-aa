@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toronto Eagles U10 AA - Schedule</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 0;
+            color: #000000;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: #ffffff;
+        }
+
+        header {
+            background: #000000;
+            color: #ffffff;
+            padding: clamp(12px, 2.5vw, 20px);
+            text-align: center;
+            border-bottom: 3px solid #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(15px, 3vw, 30px);
+            flex-wrap: wrap;
+        }
+
+        header h1 {
+            font-size: clamp(1.25rem, 3.5vw, 1.75rem);
+            margin: 0;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .filters {
+            display: flex;
+            justify-content: center;
+            gap: clamp(6px, 1.5vw, 12px);
+            flex-wrap: wrap;
+        }
+
+        .filter-badge {
+            background: #ffffff;
+            color: #000000;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: clamp(0.65rem, 1.8vw, 0.8rem);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            border: 2px solid #ffffff;
+        }
+
+        nav {
+            background: #ffffff;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            justify-content: center;
+            gap: 0;
+        }
+
+        nav a {
+            padding: clamp(10px, 2vw, 14px) clamp(20px, 4vw, 30px);
+            text-decoration: none;
+            color: #666666;
+            font-weight: 600;
+            font-size: clamp(0.85rem, 2vw, 0.95rem);
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        nav a:hover {
+            color: #000000;
+            background: #f5f5f5;
+        }
+
+        nav a.active {
+            color: #000000;
+            border-bottom-color: #000000;
+        }
+
+        .last-updated {
+            text-align: center;
+            padding: 12px;
+            background: #f9f9f9;
+            color: #666666;
+            font-size: clamp(0.75rem, 2vw, 0.85rem);
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .content {
+            padding: clamp(10px, 3vw, 20px);
+        }
+
+        .error {
+            background: #fff5f5;
+            border: 2px solid #ff0000;
+            color: #cc0000;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            background: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #ffffff;
+            min-width: 800px;
+        }
+
+        thead {
+            background: #000000;
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            padding: 8px 12px;
+            text-align: right;
+            font-weight: 700;
+            font-size: clamp(0.7rem, 1.8vw, 0.8rem);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            border-bottom: 2px solid #000000;
+        }
+
+        th:first-child {
+            text-align: left;
+        }
+
+        th:nth-child(2) {
+            text-align: left;
+        }
+
+        th:nth-child(3) {
+            text-align: left;
+        }
+
+        th:nth-child(5) {
+            text-align: left;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #e0e0e0;
+            transition: all 0.15s ease;
+            background: #ffffff;
+        }
+
+        tbody tr:hover {
+            background: #f9f9f9;
+        }
+
+        tbody tr.highlight {
+            background: #f0f0f0;
+            border-left: 4px solid #000000;
+            border-right: 4px solid #000000;
+        }
+
+        tbody tr.highlight:hover {
+            background: #e8e8e8;
+        }
+
+        tbody tr.highlight td {
+            font-weight: 600;
+        }
+
+        tbody tr.highlight .team-name {
+            color: #000000;
+            font-weight: 700;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        td {
+            padding: 6px 12px;
+            color: #333333;
+            font-size: clamp(0.8rem, 2vw, 0.9rem);
+        }
+
+        .team-name {
+            font-weight: 400;
+            color: #000000;
+            white-space: nowrap;
+            text-align: left;
+        }
+
+        .stat {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        footer {
+            text-align: center;
+            padding: clamp(15px, 3vw, 25px);
+            background: #f5f5f5;
+            color: #666666;
+            font-size: clamp(0.75rem, 2vw, 0.85rem);
+            border-top: 1px solid #e0e0e0;
+        }
+
+        footer a {
+            color: #000000;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+
+            header {
+                padding: 12px 15px;
+                gap: 12px;
+            }
+
+            header h1 {
+                font-size: 1.1rem;
+            }
+
+            .filter-badge {
+                font-size: 0.65rem;
+                padding: 5px 10px;
+            }
+
+            .content {
+                padding: 10px;
+            }
+
+            .table-wrapper {
+                margin: 0 -10px;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+            }
+
+            table {
+                min-width: 700px;
+            }
+
+            th, td {
+                padding: 6px 8px;
+            }
+
+            th {
+                font-size: 0.7rem;
+            }
+
+            td {
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header {
+                gap: 8px;
+                padding: 10px 12px;
+            }
+
+            header h1 {
+                font-size: 1rem;
+            }
+
+            .filter-badge {
+                font-size: 0.6rem;
+                padding: 4px 8px;
+            }
+
+            table {
+                min-width: 650px;
+            }
+
+            th, td {
+                padding: 5px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>TORONTO EAGLES U10 AA</h1>
+            <div class="filters">
+                <div class="filter-badge">SCHEDULE</div>
+                <div class="filter-badge">U10</div>
+                <div class="filter-badge">AA</div>
+            </div>
+        </header>
+
+        <nav>
+            <a href="index.html">Standings</a>
+            <a href="schedule.html" class="active">Schedule</a>
+        </nav>
+
+        <div class="content">
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Away</th>
+                            <th>Score</th>
+                            <th>Home</th>
+                            <th>Arena</th>
+                            <th>Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>13-Nov-2025 Thu</td>
+                            <td>6:40 PM</td>
+                            <td class="team-name">Greater Toronto Capitals</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Jets</td>
+                            <td>Iceland 4</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>14-Nov-2025 Fri</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">West Hill Golden Hawks</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Scarborough Ice Raiders</td>
+                            <td>Baycrest</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>14-Nov-2025 Fri</td>
+                            <td>6:45 PM</td>
+                            <td class="team-name">North York Knights</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Scarborough Young Bruins</td>
+                            <td>Thornhill Centre West</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>14-Nov-2025 Fri</td>
+                            <td>7:10 PM</td>
+                            <td class="team-name">Mississauga Rattlers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Greater Toronto Capitals</td>
+                            <td>Westwood 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>15-Nov-2025 Sat</td>
+                            <td>10:15 AM</td>
+                            <td class="team-name">North Toronto</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">East Enders Ticats</td>
+                            <td>Malvern 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>15-Nov-2025 Sat</td>
+                            <td>12:10 PM</td>
+                            <td class="team-name">Vaughan Rangers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga North Stars</td>
+                            <td>Westwood 5</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>15-Nov-2025 Sat</td>
+                            <td>12:15 PM</td>
+                            <td class="team-name">Markham Islanders</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">West Hill Golden Hawks</td>
+                            <td>Malvern 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr class="highlight">
+                            <td>16-Nov-2025 Sun</td>
+                            <td>11:10 AM</td>
+                            <td class="team-name">Mississauga Terriers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Toronto Eagles</td>
+                            <td>Lambton</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>16-Nov-2025 Sun</td>
+                            <td>1:10 PM</td>
+                            <td class="team-name">Scarborough Young Bruins</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">North York Knights</td>
+                            <td>St. Michaels</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>16-Nov-2025 Sun</td>
+                            <td>2:10 PM</td>
+                            <td class="team-name">Scarborough Ice Raiders</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Leaside Flames</td>
+                            <td>St. Michaels</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>16-Nov-2025 Sun</td>
+                            <td>4:45 PM</td>
+                            <td class="team-name">Markham Islanders</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">North Toronto</td>
+                            <td>North Toronto</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>17-Nov-2025 Mon</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Mississauga North Stars</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Vaughan Panthers</td>
+                            <td>Vaughan Sports Village B</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>17-Nov-2025 Mon</td>
+                            <td>6:55 PM</td>
+                            <td class="team-name">Vaughan Rangers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Terriers</td>
+                            <td>Erin Mills 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>17-Nov-2025 Mon</td>
+                            <td>6:55 PM</td>
+                            <td class="team-name">Greater Toronto Capitals</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Beast</td>
+                            <td>Scotiabank Pond 4</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>18-Nov-2025 Tue</td>
+                            <td>6:30 PM</td>
+                            <td class="team-name">Mississauga Beast</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga North Stars</td>
+                            <td>Tomken 1</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>18-Nov-2025 Tue</td>
+                            <td>6:55 PM</td>
+                            <td class="team-name">North Toronto</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Forest Hill</td>
+                            <td>Scotiabank Pond 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>19-Nov-2025 Wed</td>
+                            <td>7:15 PM</td>
+                            <td class="team-name">West Hill Golden Hawks</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Goulding Park Rangers</td>
+                            <td>Herbert Carnegie</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>20-Nov-2025 Thu</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">West Mall Lightning</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">The Attack</td>
+                            <td>Amesbury</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>20-Nov-2025 Thu</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">North York Knights</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Scarborough Ice Raiders</td>
+                            <td>Don Montgomery 1</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>20-Nov-2025 Thu</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Goulding Park Rangers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Ted Reeve Thunder</td>
+                            <td>Ted Reeve</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>20-Nov-2025 Thu</td>
+                            <td>6:40 PM</td>
+                            <td class="team-name">Streetsville Tigers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Jets</td>
+                            <td>Iceland 4</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr class="highlight">
+                            <td>21-Nov-2025 Fri</td>
+                            <td>6:00 PM</td>
+                            <td class="team-name">Mississauga Rattlers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Toronto Eagles</td>
+                            <td>CWENCH Centre Etobicoke 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>21-Nov-2025 Fri</td>
+                            <td>6:25 PM</td>
+                            <td class="team-name">Humber Valley Sharks</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">West Mall Lightning</td>
+                            <td>Al Palladini East</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>21-Nov-2025 Fri</td>
+                            <td>7:10 PM</td>
+                            <td class="team-name">Scarborough Young Bruins</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Leaside Flames</td>
+                            <td>Leaside Memorial A</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>21-Nov-2025 Fri</td>
+                            <td>7:10 PM</td>
+                            <td class="team-name">Vaughan Rangers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Duffield Devils</td>
+                            <td>Scotiabank Pond 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>22-Nov-2025 Sat</td>
+                            <td>10:15 AM</td>
+                            <td class="team-name">East Enders Ticats</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">West Hill Golden Hawks</td>
+                            <td>Malvern 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>22-Nov-2025 Sat</td>
+                            <td>10:55 AM</td>
+                            <td class="team-name">Ted Reeve Thunder</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Scarborough Ice Raiders</td>
+                            <td>Chesswood 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr class="highlight">
+                            <td>23-Nov-2025 Sun</td>
+                            <td>11:10 AM</td>
+                            <td class="team-name">Duffield Devils</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Toronto Eagles</td>
+                            <td>Lambton</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>23-Nov-2025 Sun</td>
+                            <td>11:10 AM</td>
+                            <td class="team-name">The Attack</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Vaughan Rangers</td>
+                            <td>Vaughan Sports Village C</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>23-Nov-2025 Sun</td>
+                            <td>11:15 AM</td>
+                            <td class="team-name">Mississauga Rattlers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Humber Valley Sharks</td>
+                            <td>CWENCH Centre Etobicoke 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>23-Nov-2025 Sun</td>
+                            <td>2:00 PM</td>
+                            <td class="team-name">Mississauga North Stars</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Streetsville Tigers</td>
+                            <td>Vic Johnston</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>23-Nov-2025 Sun</td>
+                            <td>4:30 PM</td>
+                            <td class="team-name">Leaside Flames</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Markham Islanders</td>
+                            <td>Thornhill Centre West</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>23-Nov-2025 Sun</td>
+                            <td>4:45 PM</td>
+                            <td class="team-name">Scarborough Young Bruins</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">North Toronto</td>
+                            <td>North Toronto</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>23-Nov-2025 Sun</td>
+                            <td>5:10 PM</td>
+                            <td class="team-name">East Enders Ticats</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">North York Knights</td>
+                            <td>Herbert Carnegie</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>24-Nov-2025 Mon</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Mississauga Beast</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Vaughan Panthers</td>
+                            <td>Vaughan Sports Village B</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>24-Nov-2025 Mon</td>
+                            <td>6:30 PM</td>
+                            <td class="team-name">North Toronto</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Scarborough Ice Raiders</td>
+                            <td>Don Montgomery 1</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>25-Nov-2025 Tue</td>
+                            <td>6:25 PM</td>
+                            <td class="team-name">Vaughan Panthers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Beast</td>
+                            <td>Paramount Fine Foods Centre 3</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>25-Nov-2025 Tue</td>
+                            <td>6:30 PM</td>
+                            <td class="team-name">Mississauga Terriers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga North Stars</td>
+                            <td>Tomken 1</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>25-Nov-2025 Tue</td>
+                            <td>7:10 PM</td>
+                            <td class="team-name">Vaughan Rangers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Rattlers</td>
+                            <td>Paramount Fine Foods Centre 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>26-Nov-2025 Wed</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Scarborough Ice Raiders</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">East Enders Ticats</td>
+                            <td>Scarborough Centennial Arena</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>27-Nov-2025 Thu</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">North Toronto</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Ted Reeve Thunder</td>
+                            <td>Ted Reeve</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>27-Nov-2025 Thu</td>
+                            <td>6:40 PM</td>
+                            <td class="team-name">The Attack</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Jets</td>
+                            <td>Iceland 4</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>27-Nov-2025 Thu</td>
+                            <td>7:15 PM</td>
+                            <td class="team-name">Leaside Flames</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">West Hill Golden Hawks</td>
+                            <td>Thornhill Centre West</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>28-Nov-2025 Fri</td>
+                            <td>6:00 PM</td>
+                            <td class="team-name">Mississauga North Stars</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Humber Valley Sharks</td>
+                            <td>CWENCH Centre Etobicoke 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>28-Nov-2025 Fri</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">North York Knights</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Goulding Park Rangers</td>
+                            <td>Herbert Carnegie</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr class="highlight">
+                            <td>28-Nov-2025 Fri</td>
+                            <td>6:30 PM</td>
+                            <td class="team-name">Toronto Eagles</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">The Attack</td>
+                            <td>CWENCH Centre Etobicoke 4</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>28-Nov-2025 Fri</td>
+                            <td>6:40 PM</td>
+                            <td class="team-name">Markham Islanders</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Forest Hill</td>
+                            <td>Oriole</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>28-Nov-2025 Fri</td>
+                            <td>7:10 PM</td>
+                            <td class="team-name">Mississauga Jets</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Duffield Devils</td>
+                            <td>Scotiabank Pond 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>28-Nov-2025 Fri</td>
+                            <td>7:10 PM</td>
+                            <td class="team-name">West Mall Lightning</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Greater Toronto Capitals</td>
+                            <td>Westwood 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>29-Nov-2025 Sat</td>
+                            <td>10:15 AM</td>
+                            <td class="team-name">Scarborough Young Bruins</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Ted Reeve Thunder</td>
+                            <td>Malvern 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>29-Nov-2025 Sat</td>
+                            <td>12:15 PM</td>
+                            <td class="team-name">Forest Hill</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">West Hill Golden Hawks</td>
+                            <td>Malvern 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>29-Nov-2025 Sat</td>
+                            <td>2:30 PM</td>
+                            <td class="team-name">Streetsville Tigers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Greater Toronto Capitals</td>
+                            <td>CWENCH Centre Etobicoke 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr class="highlight">
+                            <td>30-Nov-2025 Sun</td>
+                            <td>11:10 AM</td>
+                            <td class="team-name">Humber Valley Sharks</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Toronto Eagles</td>
+                            <td>Lambton</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>30-Nov-2025 Sun</td>
+                            <td>11:10 AM</td>
+                            <td class="team-name">West Mall Lightning</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Vaughan Rangers</td>
+                            <td>Vaughan Sports Village C</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>30-Nov-2025 Sun</td>
+                            <td>1:10 PM</td>
+                            <td class="team-name">Leaside Flames</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">North York Knights</td>
+                            <td>St. Michaels</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>30-Nov-2025 Sun</td>
+                            <td>1:40 PM</td>
+                            <td class="team-name">Vaughan Panthers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Duffield Devils</td>
+                            <td>Scotiabank Pond 4</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>30-Nov-2025 Sun</td>
+                            <td>2:00 PM</td>
+                            <td class="team-name">Mississauga Terriers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Streetsville Tigers</td>
+                            <td>Vic Johnston</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>30-Nov-2025 Sun</td>
+                            <td>4:30 PM</td>
+                            <td class="team-name">East Enders Ticats</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Markham Islanders</td>
+                            <td>Thornhill Centre West</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>30-Nov-2025 Sun</td>
+                            <td>4:45 PM</td>
+                            <td class="team-name">West Hill Golden Hawks</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">North Toronto</td>
+                            <td>North Toronto</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>30-Nov-2025 Sun</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Goulding Park Rangers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Scarborough Young Bruins</td>
+                            <td>Scarborough Centennial Arena</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>01-Dec-2025 Mon</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Markham Islanders</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Scarborough Ice Raiders</td>
+                            <td>Don Montgomery 1</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>01-Dec-2025 Mon</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Humber Valley Sharks</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Vaughan Panthers</td>
+                            <td>Vaughan Sports Village B</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr class="highlight">
+                            <td>01-Dec-2025 Mon</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Toronto Eagles</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Vaughan Rangers</td>
+                            <td>Vaughan Sports Village C</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>01-Dec-2025 Mon</td>
+                            <td>6:55 PM</td>
+                            <td class="team-name">Mississauga North Stars</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">West Mall Lightning</td>
+                            <td>Scotiabank Pond 4</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>01-Dec-2025 Mon</td>
+                            <td>7:10 PM</td>
+                            <td class="team-name">Greater Toronto Capitals</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Terriers</td>
+                            <td>Erin Mills 1</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>02-Dec-2025 Tue</td>
+                            <td>6:25 PM</td>
+                            <td class="team-name">Duffield Devils</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Beast</td>
+                            <td>Paramount Fine Foods Centre 3</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>02-Dec-2025 Tue</td>
+                            <td>6:30 PM</td>
+                            <td class="team-name">Mississauga Rattlers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga North Stars</td>
+                            <td>Tomken 1</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>02-Dec-2025 Tue</td>
+                            <td>6:55 PM</td>
+                            <td class="team-name">East Enders Ticats</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Forest Hill</td>
+                            <td>Scotiabank Pond 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>03-Dec-2025 Wed</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Scarborough Young Bruins</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">East Enders Ticats</td>
+                            <td>Scarborough Gardens</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>03-Dec-2025 Wed</td>
+                            <td>7:15 PM</td>
+                            <td class="team-name">Scarborough Ice Raiders</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Goulding Park Rangers</td>
+                            <td>Herbert Carnegie</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>04-Dec-2025 Thu</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Streetsville Tigers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">The Attack</td>
+                            <td>Amesbury</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>04-Dec-2025 Thu</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">North York Knights</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Ted Reeve Thunder</td>
+                            <td>Ted Reeve</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>04-Dec-2025 Thu</td>
+                            <td>6:25 PM</td>
+                            <td class="team-name">Scarborough Young Bruins</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">West Hill Golden Hawks</td>
+                            <td>Don Montgomery 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>04-Dec-2025 Thu</td>
+                            <td>6:40 PM</td>
+                            <td class="team-name">Mississauga Terriers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Jets</td>
+                            <td>Iceland 4</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>05-Dec-2025 Fri</td>
+                            <td>7:10 PM</td>
+                            <td class="team-name">East Enders Ticats</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Leaside Flames</td>
+                            <td>Leaside Memorial A</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>05-Dec-2025 Fri</td>
+                            <td>7:10 PM</td>
+                            <td class="team-name">Mississauga Jets</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Greater Toronto Capitals</td>
+                            <td>Westwood 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>07-Dec-2025 Sun</td>
+                            <td>9:00 AM</td>
+                            <td class="team-name">Humber Valley Sharks</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Streetsville Tigers</td>
+                            <td>Vic Johnston</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr class="highlight">
+                            <td>07-Dec-2025 Sun</td>
+                            <td>11:10 AM</td>
+                            <td class="team-name">Mississauga Beast</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Toronto Eagles</td>
+                            <td>Lambton</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>07-Dec-2025 Sun</td>
+                            <td>11:10 AM</td>
+                            <td class="team-name">Mississauga Terriers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Vaughan Panthers</td>
+                            <td>Vaughan Sports Village C</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>07-Dec-2025 Sun</td>
+                            <td>1:30 PM</td>
+                            <td class="team-name">Ted Reeve Thunder</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">North York Knights</td>
+                            <td>St. Michaels</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>07-Dec-2025 Sun</td>
+                            <td>1:40 PM</td>
+                            <td class="team-name">Greater Toronto Capitals</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">The Attack</td>
+                            <td>York 5</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>07-Dec-2025 Sun</td>
+                            <td>4:40 PM</td>
+                            <td class="team-name">Goulding Park Rangers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Markham Islanders</td>
+                            <td>Thornhill Centre West</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>07-Dec-2025 Sun</td>
+                            <td>4:45 PM</td>
+                            <td class="team-name">Leaside Flames</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">North Toronto</td>
+                            <td>North Toronto</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>08-Dec-2025 Mon</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Mississauga Rattlers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Humber Valley Sharks</td>
+                            <td>Pinepoint</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>08-Dec-2025 Mon</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Leaside Flames</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Scarborough Young Bruins</td>
+                            <td>Scarborough Gardens</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>08-Dec-2025 Mon</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Mississauga Jets</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Vaughan Panthers</td>
+                            <td>Vaughan Sports Village B</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>08-Dec-2025 Mon</td>
+                            <td>6:55 PM</td>
+                            <td class="team-name">The Attack</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Terriers</td>
+                            <td>Erin Mills 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>09-Dec-2025 Tue</td>
+                            <td>6:30 PM</td>
+                            <td class="team-name">Greater Toronto Capitals</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga North Stars</td>
+                            <td>Tomken 1</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>09-Dec-2025 Tue</td>
+                            <td>6:55 PM</td>
+                            <td class="team-name">Scarborough Ice Raiders</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Forest Hill</td>
+                            <td>Scotiabank Pond 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>09-Dec-2025 Tue</td>
+                            <td>7:10 PM</td>
+                            <td class="team-name">Streetsville Tigers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Beast</td>
+                            <td>Paramount Fine Foods Centre 4</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>10-Dec-2025 Wed</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">North Toronto</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Goulding Park Rangers</td>
+                            <td>Herbert Carnegie</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>10-Dec-2025 Wed</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Markham Islanders</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Scarborough Young Bruins</td>
+                            <td>Scarborough Centennial Arena</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>10-Dec-2025 Wed</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">West Hill Golden Hawks</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">East Enders Ticats</td>
+                            <td>Scarborough Gardens</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>11-Dec-2025 Thu</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Vaughan Rangers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">The Attack</td>
+                            <td>Amesbury</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>11-Dec-2025 Thu</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Leaside Flames</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Ted Reeve Thunder</td>
+                            <td>Ted Reeve</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>11-Dec-2025 Thu</td>
+                            <td>6:40 PM</td>
+                            <td class="team-name">Mississauga Terriers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">West Mall Lightning</td>
+                            <td>Etobicoke Centennial East</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>11-Dec-2025 Thu</td>
+                            <td>6:40 PM</td>
+                            <td class="team-name">Duffield Devils</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Jets</td>
+                            <td>Iceland 4</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr class="highlight">
+                            <td>12-Dec-2025 Fri</td>
+                            <td>7:10 PM</td>
+                            <td class="team-name">Toronto Eagles</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Greater Toronto Capitals</td>
+                            <td>Westwood 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>13-Dec-2025 Sat</td>
+                            <td>10:10 AM</td>
+                            <td class="team-name">Ted Reeve Thunder</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">East Enders Ticats</td>
+                            <td>Don Mills Arena</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>13-Dec-2025 Sat</td>
+                            <td>11:15 AM</td>
+                            <td class="team-name">Scarborough Ice Raiders</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">West Hill Golden Hawks</td>
+                            <td>Scarborough Gardens</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>13-Dec-2025 Sat</td>
+                            <td>12:10 PM</td>
+                            <td class="team-name">Mississauga Rattlers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Duffield Devils</td>
+                            <td>Westwood 5</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr class="highlight">
+                            <td>14-Dec-2025 Sun</td>
+                            <td>11:10 AM</td>
+                            <td class="team-name">West Mall Lightning</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Toronto Eagles</td>
+                            <td>Lambton</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>14-Dec-2025 Sun</td>
+                            <td>1:10 PM</td>
+                            <td class="team-name">Mississauga Jets</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">The Attack</td>
+                            <td>Lambton</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>14-Dec-2025 Sun</td>
+                            <td>1:10 PM</td>
+                            <td class="team-name">West Hill Golden Hawks</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">North York Knights</td>
+                            <td>St. Michaels</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>14-Dec-2025 Sun</td>
+                            <td>2:00 PM</td>
+                            <td class="team-name">Vaughan Rangers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Streetsville Tigers</td>
+                            <td>Vic Johnston</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>14-Dec-2025 Sun</td>
+                            <td>4:45 PM</td>
+                            <td class="team-name">Forest Hill</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">North Toronto</td>
+                            <td>North Toronto</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>14-Dec-2025 Sun</td>
+                            <td>5:55 PM</td>
+                            <td class="team-name">Mississauga Beast</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Rattlers</td>
+                            <td>Paramount Fine Foods Centre 3</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>15-Dec-2025 Mon</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Scarborough Ice Raiders</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Scarborough Young Bruins</td>
+                            <td>Scarborough Gardens</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr class="highlight">
+                            <td>15-Dec-2025 Mon</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Toronto Eagles</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Vaughan Panthers</td>
+                            <td>Vaughan Sports Village B</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>15-Dec-2025 Mon</td>
+                            <td>7:10 PM</td>
+                            <td class="team-name">Mississauga North Stars</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Terriers</td>
+                            <td>Erin Mills 1</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>16-Dec-2025 Tue</td>
+                            <td>6:25 PM</td>
+                            <td class="team-name">Humber Valley Sharks</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Beast</td>
+                            <td>Paramount Fine Foods Centre 3</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>16-Dec-2025 Tue</td>
+                            <td>6:30 PM</td>
+                            <td class="team-name">Vaughan Panthers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga North Stars</td>
+                            <td>Tomken 1</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>16-Dec-2025 Tue</td>
+                            <td>6:55 PM</td>
+                            <td class="team-name">Ted Reeve Thunder</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Forest Hill</td>
+                            <td>Scotiabank Pond 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>16-Dec-2025 Tue</td>
+                            <td>7:10 PM</td>
+                            <td class="team-name">North York Knights</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Leaside Flames</td>
+                            <td>St. Michaels</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>17-Dec-2025 Wed</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">West Hill Golden Hawks</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Scarborough Young Bruins</td>
+                            <td>Scarborough Centennial Arena</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>17-Dec-2025 Wed</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Goulding Park Rangers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">East Enders Ticats</td>
+                            <td>Scarborough Gardens</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>18-Dec-2025 Thu</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">North Toronto</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Ted Reeve Thunder</td>
+                            <td>Ted Reeve</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>18-Dec-2025 Thu</td>
+                            <td>6:40 PM</td>
+                            <td class="team-name">West Mall Lightning</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Jets</td>
+                            <td>Iceland 4</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>19-Dec-2025 Fri</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Scarborough Ice Raiders</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">East Enders Ticats</td>
+                            <td>Baycrest</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>19-Dec-2025 Fri</td>
+                            <td>6:40 PM</td>
+                            <td class="team-name">Streetsville Tigers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Rattlers</td>
+                            <td>Westwood 3</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>19-Dec-2025 Fri</td>
+                            <td>7:10 PM</td>
+                            <td class="team-name">Markham Islanders</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Leaside Flames</td>
+                            <td>Leaside Memorial A</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>19-Dec-2025 Fri</td>
+                            <td>7:10 PM</td>
+                            <td class="team-name">West Mall Lightning</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Duffield Devils</td>
+                            <td>Scotiabank Pond 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>19-Dec-2025 Fri</td>
+                            <td>7:10 PM</td>
+                            <td class="team-name">Vaughan Rangers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Greater Toronto Capitals</td>
+                            <td>Westwood 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>20-Dec-2025 Sat</td>
+                            <td>11:15 AM</td>
+                            <td class="team-name">Markham Islanders</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">West Hill Golden Hawks</td>
+                            <td>Scarborough Gardens</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>21-Dec-2025 Sun</td>
+                            <td>9:10 AM</td>
+                            <td class="team-name">Mississauga Beast</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">The Attack</td>
+                            <td>Chesswood 1</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>21-Dec-2025 Sun</td>
+                            <td>11:00 AM</td>
+                            <td class="team-name">West Mall Lightning</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Humber Valley Sharks</td>
+                            <td>CWENCH Centre Etobicoke 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr class="highlight">
+                            <td>21-Dec-2025 Sun</td>
+                            <td>11:10 AM</td>
+                            <td class="team-name">Mississauga Jets</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Toronto Eagles</td>
+                            <td>Lambton</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>21-Dec-2025 Sun</td>
+                            <td>11:10 AM</td>
+                            <td class="team-name">Duffield Devils</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Vaughan Rangers</td>
+                            <td>Vaughan Sports Village C</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>21-Dec-2025 Sun</td>
+                            <td>1:55 PM</td>
+                            <td class="team-name">Leaside Flames</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Goulding Park Rangers</td>
+                            <td>Scotiabank Pond 3</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>21-Dec-2025 Sun</td>
+                            <td>2:00 PM</td>
+                            <td class="team-name">Greater Toronto Capitals</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Streetsville Tigers</td>
+                            <td>Vic Johnston</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>21-Dec-2025 Sun</td>
+                            <td>5:45 PM</td>
+                            <td class="team-name">North York Knights</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">North Toronto</td>
+                            <td>North Toronto</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>21-Dec-2025 Sun</td>
+                            <td>5:55 PM</td>
+                            <td class="team-name">Mississauga Terriers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Rattlers</td>
+                            <td>Paramount Fine Foods Centre 3</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>22-Dec-2025 Mon</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Scarborough Young Bruins</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Scarborough Ice Raiders</td>
+                            <td>Don Montgomery 1</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>22-Dec-2025 Mon</td>
+                            <td>6:55 PM</td>
+                            <td class="team-name">Humber Valley Sharks</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Terriers</td>
+                            <td>Erin Mills 2</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>23-Dec-2025 Tue</td>
+                            <td>6:10 PM</td>
+                            <td class="team-name">Ted Reeve Thunder</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Goulding Park Rangers</td>
+                            <td>Goulding Park</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>23-Dec-2025 Tue</td>
+                            <td>6:25 PM</td>
+                            <td class="team-name">Mississauga Jets</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Beast</td>
+                            <td>Paramount Fine Foods Centre 3</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>23-Dec-2025 Tue</td>
+                            <td>6:30 PM</td>
+                            <td class="team-name">The Attack</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga North Stars</td>
+                            <td>Tomken 1</td>
+                            <td>LG</td>
+                        </tr>
+                        <tr>
+                            <td>23-Dec-2025 Tue</td>
+                            <td>7:10 PM</td>
+                            <td class="team-name">Vaughan Panthers</td>
+                            <td class="stat">:</td>
+                            <td class="team-name">Mississauga Rattlers</td>
+                            <td>Paramount Fine Foods Centre 2</td>
+                            <td>LG</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <footer>
+            <p>Last updated: 5 hours ago (Nov 13, 04:30 AM ET)</p>
+            <p>Updates hourly</p>
+        </footer>
+    </div>
+</body>
+</html>
