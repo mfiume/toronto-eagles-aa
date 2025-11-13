@@ -57,19 +57,21 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
-          # Add generated files first
+          # Add generated files
           git add standings.json schedule.json index.html schedule.html
 
           # Check if there are changes to commit
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            # Pull latest changes with rebase strategy
-            git pull --rebase --autostash origin main
-
-            # Commit changes
+            # Commit the scraped data first
             git commit -m "Update team data - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
 
-            # Push changes
-            git push
+            # Try to push, retry with pull if rejected
+            if ! git push; then
+              echo "Push rejected, pulling and retrying..."
+              # Pull with ours strategy to keep our scraped data
+              git pull --rebase -X ours origin main
+              git push
+            fi
           fi
