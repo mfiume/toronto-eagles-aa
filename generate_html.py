@@ -199,6 +199,11 @@ def generate_html():
             z-index: 10;
         }}
 
+        thead tr {{
+            border-left: 4px solid #000000;
+            border-right: 4px solid #000000;
+        }}
+
         th {{
             padding: 8px 12px;
             text-align: right;
