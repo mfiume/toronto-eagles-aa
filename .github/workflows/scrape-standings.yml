@@ -57,16 +57,19 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
-          # Pull latest changes first to avoid conflicts
-          git pull --rebase origin main
-
-          # Add generated files
+          # Add generated files first
           git add standings.json schedule.json index.html schedule.html
 
-          # Check if there are changes
+          # Check if there are changes to commit
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
+            # Pull latest changes with rebase strategy
+            git pull --rebase --autostash origin main
+
+            # Commit changes
             git commit -m "Update team data - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+
+            # Push changes
             git push
           fi
