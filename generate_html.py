@@ -59,7 +59,7 @@ def generate_html():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GTHL Standings - {filters.get('division')} {filters.get('category')} {filters.get('region')}</title>
+    <title>Toronto Eagles U10 AA - Standings</title>
     <style>
         * {{
             margin: 0;
@@ -364,11 +364,10 @@ def generate_html():
 <body>
     <div class="container">
         <header>
-            <h1>GTHL STANDINGS</h1>
+            <h1>TORONTO EAGLES U10 AA</h1>
             <div class="filters">
-                <div class="filter-badge">{filters.get('division', 'N/A')}</div>
-                <div class="filter-badge">{filters.get('category', 'N/A')}</div>
-                <div class="filter-badge">{filters.get('region', 'N/A')}</div>
+                <div class="filter-badge">STANDINGS</div>
+                <div class="filter-badge">{filters.get('region', 'N/A')} REGION</div>
                 <div class="filter-badge">{filters.get('season', 'N/A')}</div>
             </div>
         </header>

@@ -1,17 +1,19 @@
-# GTHL Standings Tracker
+# Toronto Eagles U10 AA - Team Hub
 
-Automated nightly scraper for GTHL (Greater Toronto Hockey League) standings.
+Automated team hub for the Toronto Eagles U10 AA hockey team, tracking standings and schedule from the GTHL (Greater Toronto Hockey League).
 
 ## Features
 
-- 🤖 **Automated Nightly Updates**: Runs automatically every night at 2 AM EST
-- 🎯 **Pre-configured Filters**: U10 AA West division, Season 25-26
-- 📊 **Beautiful Web Display**: Clean, responsive standings table
-- 🚀 **GitHub Pages**: Hosted automatically on GitHub Pages
+- 🦅 **Toronto Eagles Focused**: Team highlighted in standings view
+- 🤖 **Automated Nightly Updates**: Runs automatically every night at 2 AM ET
+- 📊 **West Region Standings**: U10 AA West division standings with team logos
+- 🎯 **Modern Design**: Clean, responsive black and white interface
+- 🚀 **GitHub Pages**: Hosted automatically, no server required
+- 📅 **Schedule Tracking**: (Coming soon) Team schedule and game times
 
-## View Standings
+## View Live Page
 
-Visit the live standings page: **[Your GitHub Pages URL will be here]**
+Visit: **https://mfiume.github.io/toronto-eagles-u10aa/**
 
 ## Configuration
 
