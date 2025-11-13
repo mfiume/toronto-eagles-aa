@@ -1,0 +1,64 @@
+name: Scrape GTHL Standings
+
+on:
+  # Run nightly at 2 AM EST (7 AM UTC)
+  schedule:
+    - cron: '0 7 * * *'
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Install Chrome and ChromeDriver
+        run: |
+          # Install Chrome
+          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+          # ChromeDriver is handled by selenium-manager in Selenium 4.15+
+          echo "Chrome and ChromeDriver setup complete"
+
+      - name: Run scraper
+        run: |
+          python scrape_standings.py
+
+      - name: Generate HTML page
+        run: |
+          python generate_html.py
+
+      - name: Commit and push if changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          # Add generated files
+          git add standings.json index.html
+
+          # Check if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update standings - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            git push
+          fi
