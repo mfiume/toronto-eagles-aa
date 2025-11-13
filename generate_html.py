@@ -23,19 +23,24 @@ def generate_html():
     filters = data.get("filters", {})
     error = data.get("error")
 
-    # Format timestamp - convert UTC to Toronto time (EST/EDT)
+    # Format timestamp
+    # The timestamp is stored as UTC when run on GitHub Actions
+    # We need to convert to Toronto time and show relative time
     try:
         from datetime import timedelta
-        dt_utc = datetime.fromisoformat(timestamp)
+        dt_scraped = datetime.fromisoformat(timestamp)
 
+        # Assume the timestamp is UTC (from GitHub Actions server)
         # Convert to Toronto time (UTC-5 for EST, UTC-4 for EDT)
-        # Simple approximation: EST is Nov-Mar, EDT is Mar-Nov
-        # For more accuracy, use pytz, but keeping it simple
-        dt_toronto = dt_utc - timedelta(hours=5)  # EST offset
+        # November is EST (UTC-5)
+        dt_toronto = dt_scraped - timedelta(hours=5)  # EST offset
+
+        # Get current Toronto time for comparison
+        now_utc = datetime.utcnow()
+        now_toronto = now_utc - timedelta(hours=5)
 
         # Calculate relative time
-        now = datetime.now()
-        time_diff = now - dt_toronto
+        time_diff = now_toronto - dt_toronto
 
         if time_diff.total_seconds() < 60:
             relative_time = "just now"
