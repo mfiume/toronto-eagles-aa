@@ -378,6 +378,7 @@ def generate_html():
         <nav>
             <a href="index.html">Standings</a>
             <a href="schedule.html" class="active">Schedule</a>
+            <a href="playoffs.html">Playoffs</a>
         </nav>
 
         <div class="content">
