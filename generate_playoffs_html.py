@@ -377,43 +377,191 @@ def generate_html():
         /* Mobile optimizations */
         @media (max-width: 768px) {{
             .content {{
-                padding: 10px;
+                padding: 8px;
             }}
 
             .section {{
-                margin-bottom: 20px;
+                margin-bottom: 15px;
             }}
 
             .table-wrapper {{
-                margin: 0 -10px;
+                margin: 0 -8px;
                 border-radius: 0;
                 border-left: none;
                 border-right: none;
             }}
 
             .section-header {{
-                margin: 0 -10px;
+                margin: 0 -8px;
                 border-radius: 0;
+                padding: 10px 12px;
+                font-size: 0.8rem;
+            }}
+
+            .section-subheader {{
+                margin: 0 -8px;
+                padding: 6px 12px;
+                font-size: 0.75rem;
+            }}
+
+            .pool-label {{
+                font-size: 0.6rem;
+                padding: 2px 6px;
+            }}
+
+            .info-box {{
+                padding: 10px;
+                margin-bottom: 15px;
+                font-size: 0.8rem;
+            }}
+
+            .info-box h3 {{
+                font-size: 0.8rem;
+            }}
+
+            .info-box p {{
+                font-size: 0.75rem;
             }}
 
             th, td {{
-                padding: 8px 10px;
+                padding: 6px 8px;
+            }}
+
+            th {{
+                font-size: 0.65rem;
+            }}
+
+            td {{
+                font-size: 0.8rem;
+            }}
+
+            td:first-child {{
+                font-size: 0.85rem;
+            }}
+
+            .team-logo {{
+                width: 22px;
+                height: 22px;
+            }}
+
+            .team-name {{
+                gap: 6px;
+            }}
+
+            /* Hide WIN% column on tablet */
+            th:nth-child(6),
+            td:nth-child(6) {{
+                display: none;
             }}
         }}
 
         @media (max-width: 480px) {{
             header {{
-                gap: 8px;
-                padding: 10px 12px;
+                gap: 6px;
+                padding: 8px 10px;
             }}
 
             header h1 {{
-                font-size: 1rem;
+                font-size: 0.95rem;
             }}
 
             .filter-badge {{
+                font-size: 0.55rem;
+                padding: 3px 6px;
+            }}
+
+            nav a {{
+                padding: 8px 12px;
+                font-size: 0.8rem;
+            }}
+
+            .content {{
+                padding: 6px;
+            }}
+
+            .section {{
+                margin-bottom: 12px;
+            }}
+
+            .table-wrapper {{
+                margin: 0 -6px;
+            }}
+
+            .section-header {{
+                margin: 0 -6px;
+                padding: 8px 10px;
+                font-size: 0.75rem;
+            }}
+
+            .section-header .badge {{
                 font-size: 0.6rem;
-                padding: 4px 8px;
+                padding: 3px 6px;
+            }}
+
+            .section-subheader {{
+                margin: 0 -6px;
+                padding: 5px 10px;
+                font-size: 0.7rem;
+            }}
+
+            .info-box {{
+                padding: 8px;
+                margin-bottom: 12px;
+            }}
+
+            .info-box h3 {{
+                font-size: 0.75rem;
+                margin-bottom: 4px;
+            }}
+
+            .info-box p {{
+                font-size: 0.7rem;
+                line-height: 1.4;
+            }}
+
+            th, td {{
+                padding: 5px 6px;
+            }}
+
+            th {{
+                font-size: 0.6rem;
+                letter-spacing: 0;
+            }}
+
+            td {{
+                font-size: 0.75rem;
+            }}
+
+            td:first-child {{
+                font-size: 0.8rem;
+                width: 28px;
+            }}
+
+            th:first-child {{
+                width: 28px;
+            }}
+
+            .team-logo {{
+                width: 18px;
+                height: 18px;
+            }}
+
+            .team-name {{
+                gap: 5px;
+                font-size: 0.75rem;
+            }}
+
+            /* Hide GP and WIN% columns on small mobile */
+            th:nth-child(3),
+            td:nth-child(3),
+            th:nth-child(6),
+            td:nth-child(6) {{
+                display: none;
+            }}
+
+            footer {{
+                padding: 12px;
+                font-size: 0.7rem;
             }}
         }}
     </style>
