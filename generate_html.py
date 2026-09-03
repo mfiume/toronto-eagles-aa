@@ -8,6 +8,31 @@ import json
 import config
 import page_common
 
+# Which standings columns survive a narrow screen. A phone shows the five that
+# answer "where are we and how did we get there"; the rest come back as the
+# screen widens, so nothing has to scroll sideways to be read.
+#   (no class) always visible
+#   col-md     from 620px
+#   col-lg     from 1000px
+COLUMN_TIER = {
+    "WIN%": "col-md",
+    "Streak": "col-md",
+    "GFA": "col-lg",
+    "GAA": "col-lg",
+    "Home": "col-lg",
+    "Away": "col-lg",
+    "P10": "col-lg",
+}
+
+
+def column_classes(header, *extra):
+    """The class attribute for a standings column, tier included."""
+    names = [c for c in extra if c]
+    tier = COLUMN_TIER.get(header)
+    if tier:
+        names.append(tier)
+    return f' class="{" ".join(names)}"' if names else ""
+
 
 def generate_html():
     """Generate HTML page from standings.json"""
@@ -41,7 +66,7 @@ def generate_html():
 </head>
 <body>
     <div class="container">
-{page_common.masthead("index.html", page_common.division_label(), page_common.season_label())}
+{page_common.masthead("index.html", page_common.division_label(filters), page_common.season_label())}
 
         <div class="content">
 """
@@ -78,7 +103,8 @@ def generate_html():
                     html += f"                            <th>{header}</th>\n"
                 else:
                     # Every other standings column is a number.
-                    html += f'                            <th class="stat">{header}</th>\n'
+                    attrs = column_classes(header, 'stat')
+                    html += f'                            <th{attrs}>{header}</th>\n'
 
         html += """                        </tr>
                     </thead>
@@ -87,9 +113,9 @@ def generate_html():
 
         # Add rows
         for row in standings:
-            # Check if this is Toronto Eagles
-            is_eagles = row.get('Team', '').lower() == 'toronto eagles'
-            row_class = ' class="highlight"' if is_eagles else ''
+            # Mark our own row. The team comes from config like everywhere else.
+            is_our_team = row.get('Team', '').lower() == config.TEAM_NAME.lower()
+            row_class = ' class="highlight"' if is_our_team else ''
             html += f"                        <tr{row_class}>\n"
             for i, (key, value) in enumerate(row.items()):
                 # Skip empty column names
@@ -103,20 +129,22 @@ def generate_html():
                     continue  # Skip Logo column, it will be included with Team
                 elif key == 'Team':  # Team name
                     logo_url = row.get('Logo')
-                    if logo_url:
-                        html += f'                            <td class="team-name"><img src="{logo_url}" alt="" class="team-logo" onerror="this.style.display=\'none\'"><span>{value}</span></td>\n'
-                    else:
-                        html += f'                            <td class="team-name"><span>{value}</span></td>\n'
+                    logo = (f'<img src="{logo_url}" alt="" class="team-logo" '
+                            'onerror="this.style.display=\'none\'">') if logo_url else ''
+                    html += (f'                            <td class="team-name">'
+                             f'<span class="team-cell">{logo}<span>{value}</span></span></td>\n')
                 elif key in ['DIFF', 'GD', '+/-']:  # Goal differential
                     try:
                         diff_val = int(value) if value else 0
-                        css_class = "positive" if diff_val > 0 else ("negative" if diff_val < 0 else "")
+                        sign = "positive" if diff_val > 0 else ("negative" if diff_val < 0 else "")
                         display_val = f"+{diff_val}" if diff_val > 0 else str(diff_val)
-                        html += f'                            <td class="stat {css_class}">{display_val}</td>\n'
-                    except:
-                        html += f'                            <td class="stat">{value}</td>\n'
+                        attrs = column_classes(key, 'stat', sign)
+                        html += f'                            <td{attrs}>{display_val}</td>\n'
+                    except ValueError:
+                        html += f'                            <td{column_classes(key, "stat")}>{value}</td>\n'
                 else:  # Other stats
-                    html += f'                            <td class="stat">{value}</td>\n'
+                    attrs = column_classes(key, 'stat')
+                    html += f'                            <td{attrs}>{value}</td>\n'
             html += "                        </tr>\n"
 
         html += """                    </tbody>

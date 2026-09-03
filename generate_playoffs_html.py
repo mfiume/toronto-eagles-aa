@@ -35,7 +35,7 @@ def render_team_table(teams, radius=None):
                                 <th class="stat">GP</th>
                                 <th class="stat">W-L-T</th>
                                 <th class="stat">PTS</th>
-                                <th class="stat">WIN%</th>
+                                <th class="stat col-md">WIN%</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -46,14 +46,13 @@ def render_team_table(teams, radius=None):
         row_class = ' class="highlight"' if is_our_team else ""
         html += f"""                            <tr{row_class}>
                                 <td class="rank">{team.get('Position', '')}</td>
-                                <td class="team-name">
-                                    <img src="{team.get('Logo', '')}" alt="" class="team-logo" onerror="this.style.display='none'">
-                                    <span>{team.get('Team', '')}</span>
-                                </td>
+                                <td class="team-name"><span class="team-cell"><img
+                                    src="{team.get('Logo', '')}" alt="" class="team-logo"
+                                    onerror="this.style.display='none'"><span>{team.get('Team', '')}</span></span></td>
                                 <td class="stat">{team.get('GP', '')}</td>
                                 <td class="stat">{team.get('W-L-T', '')}</td>
                                 <td class="stat">{team.get('PTS', '')}</td>
-                                <td class="stat">{team.get('WIN%', '')}</td>
+                                <td class="stat col-md">{team.get('WIN%', '')}</td>
                             </tr>
 """
 
@@ -116,7 +115,7 @@ def generate_html():
 </head>
 <body>
     <div class="container">
-{page_common.masthead("playoffs.html", page_common.division_label(), page_common.season_label())}
+{page_common.masthead("playoffs.html", page_common.division_label(filters), page_common.season_label())}
 
         <div class="content">
 """

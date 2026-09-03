@@ -4,9 +4,30 @@ Generate HTML page from scraped schedule data
 """
 
 import json
+from datetime import datetime
 
 import config
 import page_common
+
+
+def format_game_date(raw):
+    """'12-Oct-2026 Mon' -> 'Mon, Oct 12', for the date heading above a group."""
+    try:
+        parsed = datetime.strptime(raw.split()[0], "%d-%b-%Y")
+    except (ValueError, IndexError):
+        return raw
+    return f"{parsed.strftime('%a, %b')} {parsed.day}"
+
+
+def format_score(raw):
+    """
+    The score, or nothing at all if the game has not been played.
+
+    The GTHL writes an unplayed game's score as a bare ':' separator, which
+    reads as a broken cell rather than as "no result yet".
+    """
+    cleaned = (raw or "").strip()
+    return "" if cleaned in ("", ":") else cleaned
 
 
 def generate_html():
@@ -59,48 +80,52 @@ def generate_html():
             </div>
 """
     else:
-        # Build table
+        # One table, two shapes: columns on a laptop, one card per game on a
+        # phone. Games sit under a date heading either way, so the date is
+        # written once per day instead of on every row.
         html += """
             <div class="table-wrapper">
-                <table>
+                <table class="schedule-table">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Time</th>
-                            <th>Away</th>
-                            <th class="stat">Score</th>
-                            <th>Home</th>
-                            <th>Arena</th>
-                            <th>Type</th>
+                            <th class="cell-time">Time</th>
+                            <th class="cell-away">Away</th>
+                            <th class="cell-score stat">Score</th>
+                            <th class="cell-home">Home</th>
+                            <th class="cell-arena">Arena</th>
+                            <th class="cell-type">Type</th>
                         </tr>
                     </thead>
                     <tbody>
 """
 
-        # Add rows
+        our_team = config.TEAM_NAME.lower()
+        current_date = None
+
         for game in schedule:
             date = game.get('Date', '')
-            time = game.get('Time', '')
             away = game.get('Away', '')
             home = game.get('Home', '')
-            score = game.get('Score', ':')
-            arena = game.get('Arena', '')
-            game_type = game.get('Type', '')
+            score = format_score(game.get('Score'))
 
-            # Highlight our own games
-            our_team = config.TEAM_NAME.lower()
+            if date != current_date:
+                current_date = date
+                html += ('                        <tr class="date-row">'
+                         f'<th colspan="6" class="date-head">{format_game_date(date)}'
+                         '</th></tr>\n')
+
             is_our_game = our_team in away.lower() or our_team in home.lower()
-            row_class = ' class="highlight"' if is_our_game else ''
+            row_class = 'game highlight' if is_our_game else 'game'
 
-            html += f"                        <tr{row_class}>\n"
-            html += f"                            <td>{date}</td>\n"
-            html += f"                            <td>{time}</td>\n"
-            html += f'                            <td class="team-name">{away}</td>\n'
-            html += f'                            <td class="stat">{score}</td>\n'
-            html += f'                            <td class="team-name">{home}</td>\n'
-            html += f"                            <td>{arena}</td>\n"
-            html += f"                            <td>{game_type}</td>\n"
-            html += "                        </tr>\n"
+            html += f"""                        <tr class="{row_class}">
+                            <td class="cell-time">{game.get('Time', '')}</td>
+                            <td class="cell-away team-name">{away}</td>
+                            <td class="cell-score stat">{score}</td>
+                            <td class="cell-home team-name">{home}</td>
+                            <td class="cell-arena">{game.get('Arena', '')}</td>
+                            <td class="cell-type">{game.get('Type', '')}</td>
+                        </tr>
+"""
 
         html += """                    </tbody>
                 </table>

@@ -67,8 +67,12 @@ def season_not_started_notice(kind):
 
 # --- Masthead ---------------------------------------------------------------
 # The crest is the club's own vector artwork, recoloured white for the red bar.
-# Both SVGs are one path set with a single fill, so a second colourway is a
-# find-and-replace rather than a new export.
+# Every SVG here is one path set with a single fill, so another colourway is a
+# find-and-replace on that value rather than a new export.
+#
+# The masthead shows the bird alone. The full crest carries its own "EAGLES"
+# lettering, which turns to mush at 44px and repeats what the wordmark beside
+# it already says. assets/ keeps the complete crest either way.
 
 FONT_LINK = """    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -81,32 +85,31 @@ _MASTHEAD_CSS = """
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 16px;
-            padding: clamp(12px, 2.4vw, 20px) clamp(14px, 3vw, 28px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+            gap: clamp(10px, 2vw, 20px);
+            padding: clamp(11px, 2.2vw, 18px) clamp(12px, 3vw, 24px);
         }
 
         .masthead-brand {
             display: flex;
             align-items: center;
-            gap: clamp(10px, 1.8vw, 18px);
+            gap: clamp(9px, 1.6vw, 16px);
             text-decoration: none;
             color: inherit;
             min-width: 0;
         }
 
         .masthead-crest {
-            height: clamp(46px, 7.6vw, 70px);
+            height: clamp(40px, 10.5vw, 58px);
             width: auto;
             flex-shrink: 0;
             display: block;
         }
 
         .masthead-wordmark {
-            font-family: 'Oswald', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+            font-family: var(--display);
             font-weight: 700;
-            font-size: clamp(1.15rem, 4.2vw, 2.05rem);
-            letter-spacing: 0.015em;
+            font-size: clamp(1.05rem, 5.2vw, 1.95rem);
+            letter-spacing: 0.01em;
             text-transform: uppercase;
             line-height: 1;
             white-space: nowrap;
@@ -115,31 +118,29 @@ _MASTHEAD_CSS = """
         .masthead-meta {
             text-align: right;
             flex-shrink: 0;
-            line-height: 1.25;
+            line-height: 1.3;
         }
 
         .masthead-meta-main {
             display: block;
-            font-family: 'Oswald', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+            font-family: var(--display);
             font-weight: 600;
-            font-size: clamp(0.72rem, 1.9vw, 0.95rem);
-            letter-spacing: 0.09em;
+            font-size: clamp(0.66rem, 2.1vw, 0.92rem);
+            letter-spacing: 0.1em;
             text-transform: uppercase;
         }
 
         .masthead-meta-sub {
             display: block;
-            font-size: clamp(0.62rem, 1.6vw, 0.78rem);
-            letter-spacing: 0.06em;
-            color: rgba(255, 255, 255, 0.72);
+            font-size: clamp(0.58rem, 1.7vw, 0.76rem);
+            letter-spacing: 0.05em;
+            color: rgba(255, 255, 255, 0.74);
         }
 
         .mastnav {
             background: var(--brand-dark);
             display: flex;
-            align-items: stretch;
-            gap: clamp(2px, 1vw, 10px);
-            padding: 0 clamp(8px, 2.4vw, 22px);
+            padding: 0 clamp(6px, 2.2vw, 18px);
             overflow-x: auto;
             scrollbar-width: none;
         }
@@ -149,14 +150,14 @@ _MASTHEAD_CSS = """
         }
 
         .mastnav a {
-            font-family: 'Oswald', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+            font-family: var(--display);
             font-weight: 500;
-            font-size: clamp(0.78rem, 2vw, 0.92rem);
-            letter-spacing: 0.085em;
+            font-size: clamp(0.75rem, 2.1vw, 0.9rem);
+            letter-spacing: 0.09em;
             text-transform: uppercase;
             text-decoration: none;
-            color: rgba(255, 255, 255, 0.68);
-            padding: clamp(11px, 1.9vw, 15px) clamp(12px, 2.2vw, 20px);
+            color: rgba(255, 255, 255, 0.66);
+            padding: clamp(11px, 1.9vw, 15px) clamp(11px, 2.2vw, 20px);
             border-bottom: 3px solid transparent;
             white-space: nowrap;
             transition: color 0.15s ease, border-color 0.15s ease;
@@ -169,18 +170,6 @@ _MASTHEAD_CSS = """
         .mastnav a.active {
             color: #ffffff;
             border-bottom-color: #ffffff;
-        }
-
-        @media (max-width: 380px) {
-            .masthead {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-
-            .masthead-meta {
-                text-align: left;
-            }
         }
 """
 
@@ -201,8 +190,8 @@ def masthead(active_page, meta_main, meta_sub):
     """
     html = f"""        <header class="masthead">
             <a class="masthead-brand" href="index.html">
-                <img class="masthead-crest" src="assets/eagles-crest-white.svg"
-                     alt="{config.TEAM_NAME} crest" width="450" height="567">
+                <img class="masthead-crest" src="assets/eagles-bird-white.svg"
+                     alt="" width="369" height="383">
                 <span class="masthead-wordmark">{config.TEAM_NAME}</span>
             </a>
             <div class="masthead-meta">
@@ -220,9 +209,19 @@ def masthead(active_page, meta_main, meta_sub):
     return html
 
 
-def division_label():
-    """e.g. 'U11 AA West' - what division this hub covers."""
-    return f"{config.DIVISION} {config.CATEGORY} {config.REGION}"
+def division_label(filters=None):
+    """
+    What the page is actually showing, e.g. 'U11 AA West'.
+
+    The region is dropped when a standings scrape could not apply the region
+    filter, because the table is then the whole division and saying otherwise
+    would be wrong. Pass no filters for the schedule, which is always narrowed
+    to our own region by roster.
+    """
+    label = f"{config.DIVISION} {config.CATEGORY}"
+    if filters is None or filters.get("region_applied"):
+        return f"{label} {config.REGION}"
+    return label
 
 
 def season_label():
@@ -236,107 +235,172 @@ def season_label():
 # near-identical copy, which is how the schedule's column headers drifted out
 # of alignment with their own cells.
 #
-# Alignment is driven by the cell classes the generators already emit, not by
-# nth-child position: everything is left aligned, and `.stat` is right aligned
-# on both the header and the body cell, so a column cannot line up one way in
-# the head and another in the body.
+# Written mobile first. Nothing on any page scrolls sideways on a phone: the
+# standings table reveals columns as the screen earns them, and the schedule
+# table becomes one card per game below 720px.
+#
+# Alignment is driven by the cell classes the generators emit, not by nth-child
+# position, so a column cannot line up one way in the head and another in the
+# body.
+
+_TOKENS_CSS = """
+        :root {
+            --brand: #c41520;
+            --brand-dark: #a5111a;
+            --crest: #ed1c24;
+            --crest-wash: #fdf3f4;
+
+            --page: #f1f1f3;
+            --surface: #ffffff;
+            --line: #e6e6e9;
+            --line-soft: #f0f0f2;
+            --ink: #111214;
+            --ink-2: #55585e;
+            --ink-3: #86898f;
+
+            --display: 'Oswald', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+            --body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                    'Helvetica Neue', Arial, sans-serif;
+
+            --shell: 1180px;
+        }
+"""
 
 _BASE_CSS = """
-        * {
+        *, *::before, *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        html {
+            -webkit-text-size-adjust: 100%;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #f5f5f5;
+            font-family: var(--body);
+            background: var(--page);
+            color: var(--ink);
             min-height: 100vh;
-            color: #111111;
+            -webkit-font-smoothing: antialiased;
         }
 
         .container {
-            max-width: 100%;
-            margin: 0 auto;
-            background: #ffffff;
+            background: var(--surface);
         }
 
         .content {
-            padding: clamp(10px, 3vw, 20px);
+            padding: clamp(12px, 2.6vw, 24px) clamp(10px, 2.6vw, 24px)
+                     clamp(26px, 5vw, 44px);
+        }
+
+        /* The masthead, the tabs, the content and the footer share one measure,
+           so they line up on the same edges and stop growing on a wide
+           monitor. */
+        @media (min-width: 1228px) {
+            .masthead,
+            .mastnav,
+            .content,
+            footer {
+                padding-left: calc((100% - var(--shell)) / 2);
+                padding-right: calc((100% - var(--shell)) / 2);
+            }
         }
 """
 
 _TABLE_CSS = """
         .table-wrapper {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 10px;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
-            background: #ffffff;
-            border-radius: 8px;
-            border: 1px solid #e3e3e3;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            background: #ffffff;
-            min-width: 800px;
+            background: var(--surface);
         }
 
         thead {
-            background: #14161a;
+            background: #16181c;
             color: #ffffff;
-            position: sticky;
-            top: 0;
-            z-index: 10;
         }
 
         th {
-            font-family: 'Oswald', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+            font-family: var(--display);
             font-weight: 500;
-            font-size: clamp(0.72rem, 1.8vw, 0.82rem);
-            letter-spacing: 0.09em;
+            font-size: clamp(0.66rem, 1.7vw, 0.78rem);
+            letter-spacing: 0.1em;
             text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.82);
-            padding: 10px 12px;
+            color: rgba(255, 255, 255, 0.86);
+            padding: 11px 10px;
             text-align: left;
             white-space: nowrap;
             border-bottom: 3px solid var(--crest);
         }
 
         tbody tr {
-            border-bottom: 1px solid #ececec;
-            background: #ffffff;
-            transition: background 0.15s ease;
+            border-top: 1px solid var(--line-soft);
         }
 
-        tbody tr:last-child {
-            border-bottom: none;
+        tbody tr:first-child {
+            border-top: none;
         }
 
         tbody tr:hover {
-            background: #fafafa;
+            background: #fafafb;
         }
 
         td {
-            padding: 9px 12px;
+            padding: 11px 10px;
+            vertical-align: middle;
             text-align: left;
-            color: #333333;
-            font-size: clamp(0.8rem, 2vw, 0.9rem);
+            color: var(--ink-2);
+            font-size: clamp(0.82rem, 2vw, 0.9rem);
+        }
+
+        /* The team cell is a normal table cell so it shares the row's vertical
+           alignment; the crest and the name are laid out by an inner box. */
+        .team-name {
+            color: var(--ink);
+            font-weight: 500;
+        }
+
+        .team-cell {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            min-width: 0;
+        }
+
+        .team-cell > span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .team-logo {
+            width: 22px;
+            height: 22px;
+            object-fit: contain;
+            flex-shrink: 0;
         }
 
         /* Our own row, tied to the crest rather than to a grey box. */
         tbody tr.highlight {
-            background: #fdf4f5;
-            box-shadow: inset 4px 0 0 var(--crest);
+            background: var(--crest-wash);
+            box-shadow: inset 3px 0 0 var(--crest);
         }
 
         tbody tr.highlight:hover {
-            background: #fbebed;
+            background: #fbeced;
         }
 
         tbody tr.highlight td {
+            color: var(--ink);
             font-weight: 600;
-            color: #1a1a1a;
         }
 
         tbody tr.highlight .team-name {
@@ -344,19 +408,10 @@ _TABLE_CSS = """
             font-weight: 700;
         }
 
-        .team-name {
-            color: #111111;
-            white-space: nowrap;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .team-logo {
-            width: 24px;
-            height: 24px;
-            object-fit: contain;
-            flex-shrink: 0;
+        tbody tr.highlight .cell-arena,
+        tbody tr.highlight .cell-type {
+            color: var(--ink-2);
+            font-weight: 500;
         }
 
         /* Numbers line up on the right, in both the header and the body. */
@@ -368,11 +423,35 @@ _TABLE_CSS = """
         }
 
         .rank {
-            font-family: 'Oswald', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+            font-family: var(--display);
             font-weight: 600;
-            color: #111111;
-            font-size: clamp(0.9rem, 2.2vw, 1rem);
-            width: 56px;
+            font-size: clamp(0.85rem, 2.1vw, 0.98rem);
+            width: 1%;
+            white-space: nowrap;
+            padding-right: 2px;
+        }
+
+        td.rank {
+            color: var(--ink);
+        }
+
+        /* Secondary columns appear only once the screen is wide enough to earn
+           them, which is what keeps the standings inside a phone. */
+        .col-md,
+        .col-lg {
+            display: none;
+        }
+
+        @media (min-width: 620px) {
+            .col-md {
+                display: table-cell;
+            }
+        }
+
+        @media (min-width: 1000px) {
+            .col-lg {
+                display: table-cell;
+            }
         }
 
         .positive {
@@ -386,185 +465,331 @@ _TABLE_CSS = """
         }
 """
 
-_CHROME_CSS = """
-        .notice {
-            background: #fafafa;
-            border: 1px solid #e3e3e3;
-            border-top: 3px solid var(--crest);
-            padding: 26px 20px;
-            border-radius: 8px;
-            text-align: center;
-            margin: 20px auto;
-            max-width: 720px;
+# The schedule is a table on a laptop and one card per game on a phone, from
+# the same markup. Games are grouped under a date heading either way, so the
+# date is written once instead of on every row.
+_SCHEDULE_CSS = """
+        .date-row th {
+            background: #f6f6f8;
+            color: var(--ink-2);
+            border-top: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+            font-size: clamp(0.66rem, 1.8vw, 0.74rem);
+            letter-spacing: 0.12em;
+            padding: 8px 10px;
         }
 
-        .notice h2 {
-            font-family: 'Oswald', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+        .schedule-table tbody tr:first-child .date-head {
+            border-top: none;
+        }
+
+        .cell-arena {
+            color: var(--ink-3);
+            white-space: normal;
+        }
+
+        .cell-type {
+            color: var(--ink-3);
+            font-size: 0.74rem;
+            letter-spacing: 0.06em;
+        }
+
+        @media (min-width: 720px) {
+            .schedule-table .cell-time,
+            .schedule-table .cell-away,
+            .schedule-table .cell-score,
+            .schedule-table .cell-home,
+            .schedule-table .cell-type {
+                width: 1%;
+                white-space: nowrap;
+            }
+
+            .schedule-table .cell-score {
+                padding-right: 22px;
+            }
+
+            .schedule-table .cell-arena {
+                width: auto;
+            }
+        }
+
+        @media (max-width: 719px) {
+            .schedule-table,
+            .schedule-table tbody,
+            .schedule-table tr,
+            .schedule-table td,
+            .schedule-table th {
+                display: block;
+            }
+
+            .schedule-table thead {
+                display: none;
+            }
+
+            .schedule-table .date-row th {
+                padding: 9px 13px;
+            }
+
+            .schedule-table tr.game {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                grid-template-areas:
+                    "time  type"
+                    "away  score"
+                    "home  score"
+                    "arena arena";
+                align-items: center;
+                column-gap: 12px;
+                padding: 11px 13px 12px;
+            }
+
+            .schedule-table tr.game td {
+                padding: 0;
+            }
+
+            .schedule-table .cell-time {
+                grid-area: time;
+                font-family: var(--display);
+                font-weight: 500;
+                font-size: 0.76rem;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--ink-2);
+            }
+
+            .schedule-table .cell-type {
+                grid-area: type;
+                text-align: right;
+            }
+
+            .schedule-table .cell-away {
+                grid-area: away;
+                padding-top: 5px !important;
+            }
+
+            .schedule-table .cell-home {
+                grid-area: home;
+            }
+
+            /* The column headers are gone at this width, so the home side
+               has to say so itself. */
+            .schedule-table .cell-home::before {
+                content: "at ";
+                color: var(--ink-3);
+                font-weight: 400;
+            }
+
+            .schedule-table .cell-away,
+            .schedule-table .cell-home {
+                font-size: 0.95rem;
+                line-height: 1.4;
+            }
+
+            .schedule-table .cell-score {
+                grid-area: score;
+                font-family: var(--display);
+                font-weight: 600;
+                font-size: 1.15rem;
+                color: var(--ink);
+                text-align: right;
+            }
+
+            .schedule-table .cell-arena {
+                grid-area: arena;
+                font-size: 0.76rem;
+                padding-top: 5px !important;
+            }
+        }
+"""
+
+_CHROME_CSS = """
+        .notice,
+        .error {
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            text-align: center;
+            margin: clamp(14px, 4vw, 28px) auto;
+            max-width: 640px;
+            padding: clamp(22px, 5vw, 30px) clamp(18px, 5vw, 26px);
+        }
+
+        .notice {
+            background: #fafafa;
+            border: 1px solid var(--line);
+        }
+
+        .notice::before,
+        .error::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--crest);
+        }
+
+        .notice h2,
+        .error h2 {
+            font-family: var(--display);
             font-weight: 600;
-            font-size: clamp(0.95rem, 2.4vw, 1.1rem);
-            letter-spacing: 0.04em;
+            font-size: clamp(0.98rem, 3vw, 1.15rem);
+            letter-spacing: 0.045em;
             text-transform: uppercase;
             margin-bottom: 10px;
         }
 
-        .notice p {
-            font-size: 0.85rem;
-            color: #666666;
-            line-height: 1.55;
+        .notice p,
+        .error p {
+            font-size: 0.87rem;
+            color: var(--ink-2);
+            line-height: 1.6;
         }
 
         .error {
-            background: #fff5f5;
+            background: #fff6f6;
             border: 1px solid #f0c2c5;
-            border-top: 3px solid var(--brand);
             color: #8f1119;
-            padding: 24px 20px;
-            border-radius: 8px;
-            text-align: center;
-            margin: 20px auto;
-            max-width: 720px;
+        }
+
+        .error::before {
+            background: var(--brand);
+        }
+
+        .error p {
+            color: #8f1119;
         }
 
         footer {
             text-align: center;
-            padding: clamp(15px, 3vw, 25px);
-            background: #f5f5f5;
-            color: #767676;
-            font-size: clamp(0.75rem, 2vw, 0.82rem);
-            border-top: 1px solid #e3e3e3;
+            padding: clamp(18px, 4vw, 28px) clamp(12px, 3vw, 24px);
+            background: var(--page);
+            color: var(--ink-3);
+            font-size: clamp(0.72rem, 2vw, 0.8rem);
+            line-height: 1.7;
+            border-top: 1px solid var(--line);
         }
 """
 
 _RESPONSIVE_CSS = """
-        @media (max-width: 768px) {
-            .content {
-                padding: 10px;
-            }
-
-            .table-wrapper {
-                margin: 0 -10px;
-                border-radius: 0;
-                border-left: none;
-                border-right: none;
-            }
-
-            table {
-                min-width: 700px;
-            }
-
-            th, td {
-                padding: 7px 8px;
-            }
-
+        @media (max-width: 719px) {
+            th,
             td {
-                font-size: 0.8rem;
+                padding: 10px 8px;
+            }
+
+            .rank {
+                padding-left: 10px;
             }
         }
 
-        @media (max-width: 480px) {
-            table {
-                min-width: 650px;
+        @media (max-width: 389px) {
+            th,
+            td {
+                padding: 10px 4px;
+                font-size: 0.78rem;
             }
 
-            th, td {
-                padding: 6px 6px;
+            .rank {
+                padding-left: 7px;
+                padding-right: 0;
             }
-        }
-"""
 
-# Brand colours live on :root so the table, the notices and the masthead all
-# read from the same two values.
-_TOKENS_CSS = """
-        :root {
-            --brand: #c41520;
-            --brand-dark: #a5111a;
-            --crest: #ed1c24;
+            .team-logo {
+                display: none;
+            }
         }
 """
 
 PAGE_CSS = (_TOKENS_CSS + _BASE_CSS + _MASTHEAD_CSS + _TABLE_CSS
-            + _CHROME_CSS + _RESPONSIVE_CSS)
+            + _SCHEDULE_CSS + _CHROME_CSS + _RESPONSIVE_CSS)
 
 # Playoff-page extras: the round headers and the format box.
 PLAYOFF_CSS = """
         .section {
-            margin-bottom: 28px;
+            margin-bottom: clamp(20px, 4vw, 30px);
         }
 
         .section-header {
             background: var(--brand);
             color: #ffffff;
-            padding: 12px 16px;
-            font-family: 'Oswald', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+            padding: 12px 14px;
+            font-family: var(--display);
             font-weight: 600;
-            font-size: clamp(0.85rem, 2vw, 0.98rem);
+            font-size: clamp(0.8rem, 2.2vw, 0.96rem);
             text-transform: uppercase;
             letter-spacing: 0.07em;
-            border-radius: 8px 8px 0 0;
+            line-height: 1.3;
+            border-radius: 10px 10px 0 0;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 10px;
         }
 
         .section-header.playins {
-            background: #3f454d;
+            background: #3a4048;
         }
 
         .badge {
             background: #ffffff;
             color: var(--brand);
-            padding: 3px 10px;
+            padding: 3px 9px;
             border-radius: 3px;
-            font-size: 0.72rem;
+            font-size: 0.68rem;
             font-weight: 600;
             letter-spacing: 0.05em;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .section-header.playins .badge {
-            color: #3f454d;
+            color: #3a4048;
         }
 
         .section-subheader {
             background: #22262b;
             color: #ffffff;
-            padding: 9px 16px;
-            font-family: 'Oswald', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+            padding: 9px 14px;
+            font-family: var(--display);
             font-weight: 500;
-            font-size: clamp(0.78rem, 1.8vw, 0.88rem);
+            font-size: clamp(0.74rem, 2vw, 0.86rem);
             letter-spacing: 0.06em;
             text-transform: uppercase;
             display: flex;
-            align-items: center;
-            gap: 10px;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 4px 9px;
         }
 
         .pool-label {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: var(--body);
             font-weight: 400;
             letter-spacing: 0;
             text-transform: none;
-            color: rgba(255, 255, 255, 0.62);
-            font-size: 0.76rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.74rem;
         }
 
         .section .table-wrapper {
-            border-radius: 0 0 8px 8px;
+            border-radius: 0 0 10px 10px;
             border-top: none;
         }
 
         .info-box {
             background: #fafafa;
-            border: 1px solid #e3e3e3;
-            border-left: 4px solid var(--crest);
-            border-radius: 6px;
-            padding: 16px 18px;
-            margin-bottom: 26px;
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--crest);
+            border-radius: 8px;
+            padding: clamp(14px, 3vw, 18px);
+            margin-bottom: clamp(18px, 4vw, 26px);
         }
 
         .info-box h3 {
-            font-family: 'Oswald', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+            font-family: var(--display);
             font-weight: 600;
-            font-size: 0.95rem;
+            font-size: clamp(0.85rem, 2.4vw, 0.95rem);
             letter-spacing: 0.05em;
             text-transform: uppercase;
             margin-bottom: 8px;
@@ -572,8 +797,8 @@ PLAYOFF_CSS = """
 
         .info-box p {
             font-size: 0.85rem;
-            color: #555555;
-            line-height: 1.55;
+            color: var(--ink-2);
+            line-height: 1.6;
             margin-top: 6px;
         }
 """
