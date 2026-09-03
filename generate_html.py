@@ -35,6 +35,7 @@ def generate_html():
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{config.SITE_TITLE} - Standings</title>
+{page_common.FONT_LINK}
     <style>
         * {{
             margin: 0;
@@ -56,72 +57,13 @@ def generate_html():
             background: #ffffff;
         }}
 
-        header {{
-            background: #000000;
-            color: #ffffff;
-            padding: clamp(12px, 2.5vw, 20px);
-            text-align: center;
-            border-bottom: 3px solid #000000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: clamp(15px, 3vw, 30px);
-            flex-wrap: wrap;
-        }}
 
-        header h1 {{
-            font-size: clamp(1.25rem, 3.5vw, 1.75rem);
-            margin: 0;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-        }}
 
-        .filters {{
-            display: flex;
-            justify-content: center;
-            gap: clamp(6px, 1.5vw, 12px);
-            flex-wrap: wrap;
-        }}
 
-        .filter-badge {{
-            background: #ffffff;
-            color: #000000;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: clamp(0.65rem, 1.8vw, 0.8rem);
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            border: 2px solid #ffffff;
-        }}
 
-        nav {{
-            background: #ffffff;
-            border-bottom: 2px solid #e0e0e0;
-            display: flex;
-            justify-content: center;
-            gap: 0;
-        }}
 
-        nav a {{
-            padding: clamp(10px, 2vw, 14px) clamp(20px, 4vw, 30px);
-            text-decoration: none;
-            color: #666666;
-            font-weight: 600;
-            font-size: clamp(0.85rem, 2vw, 0.95rem);
-            border-bottom: 3px solid transparent;
-            transition: all 0.2s;
-        }}
 
-        nav a:hover {{
-            color: #000000;
-            background: #f5f5f5;
-        }}
 
-        nav a.active {{
-            color: #000000;
-            border-bottom-color: #000000;
-        }}
 
         .last-updated {{
             text-align: center;
@@ -303,19 +245,8 @@ def generate_html():
                 padding: 0;
             }}
 
-            header {{
-                padding: 12px 15px;
-                gap: 12px;
-            }}
 
-            header h1 {{
-                font-size: 1.1rem;
-            }}
 
-            .filter-badge {{
-                font-size: 0.65rem;
-                padding: 5px 10px;
-            }}
 
             .content {{
                 padding: 10px;
@@ -346,19 +277,8 @@ def generate_html():
         }}
 
         @media (max-width: 480px) {{
-            header {{
-                gap: 8px;
-                padding: 10px 12px;
-            }}
 
-            header h1 {{
-                font-size: 1rem;
-            }}
 
-            .filter-badge {{
-                font-size: 0.6rem;
-                padding: 4px 8px;
-            }}
 
             table {{
                 min-width: 650px;
@@ -368,24 +288,11 @@ def generate_html():
                 padding: 5px 6px;
             }}
         }}
-    </style>
+{page_common.BRAND_CSS}    </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>{config.SITE_TITLE.upper()}</h1>
-            <div class="filters">
-                <div class="filter-badge">STANDINGS</div>
-                <div class="filter-badge">{page_common.region_badge(filters)}</div>
-                <div class="filter-badge">{page_common.season_badge(filters)}</div>
-            </div>
-        </header>
-
-        <nav>
-            <a href="index.html" class="active">Standings</a>
-            <a href="schedule.html">Schedule</a>
-            <a href="playoffs.html">Playoffs</a>
-        </nav>
+{page_common.masthead("index.html", page_common.division_label(), page_common.season_label())}
 
         <div class="content">
 """

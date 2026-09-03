@@ -114,6 +114,20 @@ def caption_matches(caption):
     )
 
 
+def roster_mismatch(standings):
+    """
+    How the scraped region roster differs from config.WEST_TEAMS.
+
+    The schedule is filtered by that list, because the GTHL does not tag
+    schedule rows with a region until a season is under way. The standings are
+    the authority on who is actually in the region, so as soon as they exist
+    they are checked against the list. Returns (missing, unexpected).
+    """
+    scraped = {t.get("Team", "") for t in standings if t.get("Team")}
+    declared = set(config.WEST_TEAMS)
+    return sorted(declared - scraped), sorted(scraped - declared)
+
+
 def find_standings_table(driver):
     """Locate the standings table, trying the most specific selectors first."""
     for selector in [
@@ -255,6 +269,23 @@ def scrape_standings():
 
         standings = parse_rows(table, headers)
         print(f"Extracted {len(standings)} teams")
+
+        # Once the region standings exist they settle who is in the region, so
+        # the roster the schedule filters on has to agree with them.
+        if filters["region_applied"] and standings:
+            missing, unexpected = roster_mismatch(standings)
+            if missing or unexpected:
+                return {
+                    "error": (
+                        f"config.WEST_TEAMS no longer matches the {config.REGION} "
+                        f"standings. Not in the standings: {missing or 'none'}. "
+                        f"Not in WEST_TEAMS: {unexpected or 'none'}. The schedule "
+                        "filters on that list, so update it to: "
+                        f"{sorted(t['Team'] for t in standings)}"
+                    ),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "filters": filters,
+                }
 
         return {
             "standings": standings,

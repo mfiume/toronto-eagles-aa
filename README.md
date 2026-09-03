@@ -8,7 +8,7 @@ and schedule from the GTHL (Greater Toronto Hockey League).
 ## Features
 
 - Standings for the division, with the Eagles highlighted and club logos
-- Schedule with scores, Eagles games highlighted
+- Schedule for our region only, with scores, Eagles games highlighted
 - Playoff seeding picture, once the GTHL publishes the format for the season
 - Rebuilt hourly by GitHub Actions, published by GitHub Pages, no server to run
 
@@ -52,7 +52,16 @@ and therefore no postback, so the season filter silently does nothing.
 `scrape_standings.select_season()` forces the postback by selecting another
 season first and then the one we want.
 
-**The region dropdown is not always there.** It only exists once a division has
+**The schedule's region filter is unusable early in a season.** Checked
+2026-09-03: every one of the 18 posted 26-27 U11 AA games had an empty Region
+cell, and asking the site for West or East returned zero games while All
+returned all 18. The same query against 25-26 mid-season returns every row
+tagged and the filter works correctly, so the GTHL only tags rows once a season
+is under way. Until then the only reliable signal is who is playing, so the
+schedule is filtered against `config.WEST_TEAMS`. Every team appearing in the
+26-27 U11 AA schedule resolves cleanly to that list or to the East one.
+
+**The standings region dropdown is not always there.** It only exists once a division has
 standings groups, so it is absent for a season that has not started. That is not
 an error. The scrape records `region_applied` and the pages say whether they are
 showing one region or the whole division.
@@ -107,22 +116,29 @@ the shape.
    filters from `config.py`, verifies what the site served, and writes
    `standings.json`.
 2. `scrape_schedule.py` does the same for the schedule iframe over a date window
-   (`SCHEDULE_DAYS_BACK` to `SCHEDULE_DAYS_AHEAD` from today) and writes
-   `schedule.json`. Both regions are pulled, because interlocking games are
-   scheduled across East and West.
-3. `generate_html.py`, `generate_schedule_html.py` and
+   (`SCHEDULE_DAYS_BACK` to `SCHEDULE_DAYS_AHEAD` from today), keeps the games
+   with a `config.WEST_TEAMS` side, and writes `schedule.json`. A game is kept
+   if *either* team is ours, so an interlocking game against the other region
+   is never dropped.
+3. `scrape_standings.py` also checks `config.WEST_TEAMS` against the region
+   standings as soon as the GTHL posts them, and fails the run naming the teams
+   to add or remove. The roster the schedule filters on cannot drift silently.
+4. `generate_html.py`, `generate_schedule_html.py` and
    `generate_playoffs_html.py` turn that JSON into `index.html`,
    `schedule.html` and `playoffs.html`. Shared bits (the "last updated" line,
    header badges, notice styling) live in `page_common.py`.
-4. `.github/workflows/scrape-standings.yml` runs the whole chain hourly and on
+5. `.github/workflows/scrape-standings.yml` runs the whole chain hourly and on
    demand, then commits and pushes any changes.
-5. GitHub Pages publishes the committed HTML.
+6. GitHub Pages publishes the committed HTML.
 
 ## Files
 
 ```
-├── config.py                    # Team, division, season, playoff format
-├── page_common.py               # Timestamp, header badges, notice styling
+├── config.py                    # Team, division, season, region roster, playoff format
+├── page_common.py               # Masthead, timestamp, notice styling
+├── assets/
+│   ├── eagles-crest-white.svg   # Club crest, white, for the red masthead
+│   └── eagles-crest-red.svg     # Club crest, original red
 ├── scrape_standings.py          # Standings scraper
 ├── scrape_schedule.py           # Schedule scraper
 ├── generate_html.py             # Standings page
@@ -146,6 +162,10 @@ season."** The guard did its job: the site served something other than what
 values the site actually offers, then run `python test_scraper.py` to see the
 caption it returned.
 
+**The run failed with "config.WEST_TEAMS no longer matches the West
+standings."** The division was reshuffled. The error names the teams to add and
+remove and prints the full corrected list; paste it into `config.py`.
+
 **Standings are empty.** Expected before the season's first games. The caption in
 `standings.json` (`filters.source_label`) confirms which season the site served.
 
@@ -163,3 +183,9 @@ permissions → "Read and write permissions".
 ## Credits
 
 Data sourced from [GTHL Canada](https://gthlcanada.com/).
+
+## Crest
+
+`assets/` holds the club's own vector crest in two colourways, converted from
+the Illustrator original. Each is a single set of paths with one fill colour, so
+another colourway is a find-and-replace on that value rather than a new export.

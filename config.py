@@ -27,6 +27,39 @@ REGION = "West"              # ddlRegion value
 # Headline used across the three pages.
 SITE_TITLE = f"{TEAM_NAME} {DIVISION} {CATEGORY}"
 
+# --- Region roster ----------------------------------------------------------
+# The schedule is filtered to our own region using this list rather than the
+# site's region filter, because the GTHL does not tag schedule rows with a
+# region until a season is under way. Checked on 2026-09-03: every one of the
+# 18 posted 26-27 U11 AA games had an empty Region cell, and asking the site
+# for West or East returned zero games while All returned all 18. The same
+# query against 25-26 mid-season returns every row tagged and the filter works,
+# so the tagging arrives later in the season.
+#
+# These are the 14 teams of 25-26 U10 AA West, the cohort that moved up
+# together. All 24 teams appearing in the 26-27 U11 AA schedule resolve cleanly
+# to this list or to the East one, with nothing unaccounted for.
+#
+# scrape_standings.py compares this against the real West standings the moment
+# the GTHL posts them and fails the run if they disagree, so a division
+# reshuffle cannot quietly start hiding or showing the wrong games.
+WEST_TEAMS = [
+    "Duffield Devils",
+    "Greater Toronto Capitals",
+    "Humber Valley Sharks",
+    "Mississauga Beast",
+    "Mississauga Jets",
+    "Mississauga North Stars",
+    "Mississauga Rattlers",
+    "Mississauga Terriers",
+    "Streetsville Tigers",
+    "The Attack",
+    "Toronto Eagles",
+    "Vaughan Panthers",
+    "Vaughan Rangers",
+    "West Mall Lightning",
+]
+
 # --- Schedule window --------------------------------------------------------
 # Games from DAYS_BACK ago through DAYS_AHEAD from now. Looking back a week
 # keeps the previous weekend's results on the page instead of dropping a game

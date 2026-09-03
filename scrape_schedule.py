@@ -8,8 +8,13 @@ app and filters by date range rather than by season, so there is no season
 dropdown to fight with here: the dates in the results say which season they
 belong to.
 
-Both regions are pulled. Interlocking games are scheduled across East and West,
-so filtering by region would drop games our team actually plays.
+The site has a region dropdown, but it cannot be used. Checked 2026-09-03:
+every 26-27 U11 AA row comes back with an empty Region cell, and asking for
+West or East returns zero games while All returns all 18. The same query
+against 25-26 mid-season returns every row tagged and the filter works, so the
+GTHL only tags rows once a season is under way. Until then the only reliable
+way to tell the regions apart is who is playing, so the games are filtered
+against config.WEST_TEAMS.
 """
 
 import json
@@ -138,6 +143,12 @@ def parse_rows(table, headers):
     return games
 
 
+def in_our_region(game):
+    """Is either side of this game one of our region's teams?"""
+    teams = {game.get("Away", ""), game.get("Home", "")}
+    return bool(teams & set(config.WEST_TEAMS))
+
+
 def wrong_division(games):
     """
     Games the site returned that are not the division we asked for.
@@ -216,8 +227,15 @@ def scrape_schedule():
                 "filters": filters,
             }
 
+        ours = [g for g in games if in_our_region(g)]
+        print(f"Kept {len(ours)} {config.REGION} games, dropped "
+              f"{len(games) - len(ours)} from the other region")
+
+        filters["region"] = config.REGION
+        filters["division_games"] = len(games)
+
         return {
-            "schedule": games,
+            "schedule": ours,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "filters": filters,
         }
@@ -237,7 +255,8 @@ def scrape_schedule():
 def main():
     print("=" * 60)
     print("GTHL Schedule Scraper")
-    print(f"Division: {config.DIVISION}, Category: {config.CATEGORY}")
+    print(f"Division: {config.DIVISION}, Category: {config.CATEGORY}, "
+          f"Region: {config.REGION}")
     print("=" * 60)
 
     data = scrape_schedule()
@@ -252,7 +271,8 @@ def main():
 
     count = len(data["schedule"])
     if count:
-        print(f"Successfully scraped {count} games")
+        print(f"Successfully scraped {count} {config.REGION} games "
+              f"of {data['filters']['division_games']} in the division")
     else:
         # No games in the window is normal in the off-season.
         print(f"No games posted between {data['filters']['from_date']} "

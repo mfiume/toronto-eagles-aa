@@ -40,6 +40,26 @@ def check_caption_guard():
     return ok
 
 
+def check_roster_guard():
+    """The roster guard must notice a region roster that has drifted."""
+    from scrape_standings import roster_mismatch
+
+    ok = True
+    if roster_mismatch([{"Team": t} for t in config.WEST_TEAMS]) != ([], []):
+        print("  FAIL: guard flagged an identical roster")
+        ok = False
+
+    dropped, added = config.WEST_TEAMS[0], "Somewhere Else Team"
+    drifted = [{"Team": t} for t in config.WEST_TEAMS[1:]] + [{"Team": added}]
+    if roster_mismatch(drifted) != ([dropped], [added]):
+        print("  FAIL: guard missed a drifted roster")
+        ok = False
+
+    print(f"  Region roster guard: {'ok' if ok else 'BROKEN'} "
+          f"({len(config.WEST_TEAMS)} teams declared in config.WEST_TEAMS)")
+    return ok
+
+
 def check_standings():
     """Scrape standings and report what the site actually served."""
     from scrape_standings import scrape_standings
@@ -87,7 +107,15 @@ def check_schedule():
     games = data["schedule"]
     filters = data["filters"]
     print(f"  Window: {filters['from_date']} to {filters['to_date']}")
-    print(f"  Games in the division: {len(games)}")
+    print(f"  Games in the division: {filters['division_games']}")
+    print(f"  Games in {config.REGION} after filtering: {len(games)}")
+
+    stray = [f"{g['Away']} at {g['Home']}" for g in games
+             if not ({g["Away"], g["Home"]} & set(config.WEST_TEAMS))]
+    if stray:
+        print(f"  FAIL: {len(stray)} games survived the region filter with no "
+              f"{config.REGION} team, e.g. {stray[0]}")
+        return False
 
     ours = [g for g in games
             if config.TEAM_NAME in (g.get("Away", ""), g.get("Home", ""))]
@@ -106,6 +134,7 @@ def main():
     results = []
     for name, check in [
         ("Guard logic", check_caption_guard),
+        ("Roster guard", check_roster_guard),
         ("Standings", check_standings),
         ("Schedule", check_schedule),
     ]:
