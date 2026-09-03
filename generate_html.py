@@ -37,258 +37,7 @@ def generate_html():
     <title>{config.SITE_TITLE} - Standings</title>
 {page_common.FONT_LINK}
     <style>
-        * {{
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }}
-
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #f5f5f5;
-            min-height: 100vh;
-            padding: 0;
-            color: #000000;
-        }}
-
-        .container {{
-            max-width: 100%;
-            margin: 0 auto;
-            background: #ffffff;
-        }}
-
-
-
-
-
-
-
-
-
-        .last-updated {{
-            text-align: center;
-            padding: 12px;
-            background: #f9f9f9;
-            color: #666666;
-            font-size: clamp(0.75rem, 2vw, 0.85rem);
-            border-bottom: 1px solid #e0e0e0;
-        }}
-
-        .content {{
-            padding: clamp(10px, 3vw, 20px);
-        }}
-
-        .error {{
-            background: #fff5f5;
-            border: 2px solid #ff0000;
-            color: #cc0000;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            margin: 20px;
-        }}
-
-{page_common.NOTICE_CSS}
-        .table-wrapper {{
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            background: #ffffff;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-        }}
-
-        table {{
-            width: 100%;
-            border-collapse: collapse;
-            background: #ffffff;
-            min-width: 800px;
-        }}
-
-        thead {{
-            background: #000000;
-            color: #ffffff;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }}
-
-        thead tr {{
-            border-left: 4px solid #000000;
-            border-right: 4px solid #000000;
-        }}
-
-        th {{
-            padding: 8px 12px;
-            text-align: right;
-            font-weight: 700;
-            font-size: clamp(0.7rem, 1.8vw, 0.8rem);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-            border-bottom: 2px solid #000000;
-        }}
-
-        th:first-child {{
-            text-align: right;
-            width: 60px;
-        }}
-
-        th:nth-child(2) {{
-            text-align: left;
-        }}
-
-        th:nth-child(3) {{
-            text-align: right;
-        }}
-
-        tbody tr {{
-            border-bottom: 1px solid #e0e0e0;
-            transition: all 0.15s ease;
-            background: #ffffff;
-        }}
-
-        tbody tr:hover {{
-            background: #f9f9f9;
-        }}
-
-        tbody tr.highlight {{
-            background: #f0f0f0;
-            border-left: 4px solid #000000;
-            border-right: 4px solid #000000;
-        }}
-
-        tbody tr.highlight:hover {{
-            background: #e8e8e8;
-        }}
-
-        tbody tr.highlight td {{
-            font-weight: 600;
-        }}
-
-        tbody tr.highlight .team-name {{
-            color: #000000;
-            font-weight: 700;
-        }}
-
-        tbody tr:last-child {{
-            border-bottom: none;
-        }}
-
-        td {{
-            padding: 6px 12px;
-            color: #333333;
-            font-size: clamp(0.8rem, 2vw, 0.9rem);
-        }}
-
-        td:first-child {{
-            font-weight: 700;
-            color: #000000;
-            font-size: clamp(0.95rem, 2.2vw, 1.05rem);
-            text-align: right;
-        }}
-
-        .team-name {{
-            font-weight: 400;
-            color: #000000;
-            white-space: nowrap;
-            text-align: left;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }}
-
-        .team-logo {{
-            width: 24px;
-            height: 24px;
-            object-fit: contain;
-            flex-shrink: 0;
-        }}
-
-        .stat {{
-            text-align: right;
-            font-variant-numeric: tabular-nums;
-            white-space: nowrap;
-        }}
-
-        .positive {{
-            color: #00aa00;
-            font-weight: 600;
-        }}
-
-        .negative {{
-            color: #cc0000;
-            font-weight: 600;
-        }}
-
-        footer {{
-            text-align: center;
-            padding: clamp(15px, 3vw, 25px);
-            background: #f5f5f5;
-            color: #666666;
-            font-size: clamp(0.75rem, 2vw, 0.85rem);
-            border-top: 1px solid #e0e0e0;
-        }}
-
-        footer a {{
-            color: #000000;
-            text-decoration: none;
-            font-weight: 600;
-        }}
-
-        footer a:hover {{
-            text-decoration: underline;
-        }}
-
-        /* Mobile optimizations */
-        @media (max-width: 768px) {{
-            body {{
-                padding: 0;
-            }}
-
-
-
-
-            .content {{
-                padding: 10px;
-            }}
-
-            .table-wrapper {{
-                margin: 0 -10px;
-                border-radius: 0;
-                border-left: none;
-                border-right: none;
-            }}
-
-            table {{
-                min-width: 700px;
-            }}
-
-            th, td {{
-                padding: 6px 8px;
-            }}
-
-            th {{
-                font-size: 0.7rem;
-            }}
-
-            td {{
-                font-size: 0.8rem;
-            }}
-        }}
-
-        @media (max-width: 480px) {{
-
-
-
-            table {{
-                min-width: 650px;
-            }}
-
-            th, td {{
-                padding: 5px 6px;
-            }}
-        }}
-{page_common.BRAND_CSS}    </style>
+{page_common.PAGE_CSS}    </style>
 </head>
 <body>
     <div class="container">
@@ -320,12 +69,16 @@ def generate_html():
         if standings:
             headers = list(standings[0].keys())
             for header in headers:
-                # Skip empty header names, Logo column, and Position header
-                if header and header != '' and header != 'Logo':
-                    if header == 'Position':
-                        html += f"                            <th></th>\n"  # Empty header for Position column
-                    else:
-                        html += f"                            <th>{header}</th>\n"
+                if not header or header == 'Logo':
+                    continue
+                if header == 'Position':
+                    # Unlabelled rank column.
+                    html += '                            <th class="stat rank"></th>\n'
+                elif header == 'Team':
+                    html += f"                            <th>{header}</th>\n"
+                else:
+                    # Every other standings column is a number.
+                    html += f'                            <th class="stat">{header}</th>\n'
 
         html += """                        </tr>
                     </thead>
@@ -345,7 +98,7 @@ def generate_html():
 
                 # Handle Position column specially
                 if key == 'Position':
-                    html += f"                            <td>{value}</td>\n"
+                    html += f'                            <td class="stat rank">{value}</td>\n'
                 elif key == 'Logo':
                     continue  # Skip Logo column, it will be included with Team
                 elif key == 'Team':  # Team name
