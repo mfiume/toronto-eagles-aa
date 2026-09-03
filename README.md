@@ -3,7 +3,7 @@
 Automated team hub for the Toronto Eagles U11 AA hockey team, tracking standings
 and schedule from the GTHL (Greater Toronto Hockey League).
 
-**Live page: https://mfiume.github.io/toronto-eagles-u10aa/**
+**Live page: https://mfiume.github.io/toronto-eagles-aa/**
 
 ## Features
 
