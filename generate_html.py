@@ -4,7 +4,10 @@ Generate HTML page from standings JSON data
 """
 
 import json
-from datetime import datetime
+
+import config
+import page_common
+
 
 def generate_html():
     """Generate HTML page from standings.json"""
@@ -23,40 +26,7 @@ def generate_html():
     filters = data.get("filters", {})
     error = data.get("error")
 
-    # Format timestamp
-    # The timestamp is stored as UTC when run on GitHub Actions
-    # We need to convert to Toronto time and show relative time
-    try:
-        from datetime import timedelta
-        dt_scraped = datetime.fromisoformat(timestamp)
-
-        # Assume the timestamp is UTC (from GitHub Actions server)
-        # Convert to Toronto time (UTC-5 for EST, UTC-4 for EDT)
-        # November is EST (UTC-5)
-        dt_toronto = dt_scraped - timedelta(hours=5)  # EST offset
-
-        # Get current Toronto time for comparison
-        now_utc = datetime.utcnow()
-        now_toronto = now_utc - timedelta(hours=5)
-
-        # Calculate relative time
-        time_diff = now_toronto - dt_toronto
-
-        if time_diff.total_seconds() < 60:
-            relative_time = "just now"
-        elif time_diff.total_seconds() < 3600:
-            minutes = int(time_diff.total_seconds() / 60)
-            relative_time = f"{minutes} minute{'s' if minutes != 1 else ''} ago"
-        elif time_diff.total_seconds() < 86400:
-            hours = int(time_diff.total_seconds() / 3600)
-            relative_time = f"{hours} hour{'s' if hours != 1 else ''} ago"
-        else:
-            days = int(time_diff.total_seconds() / 86400)
-            relative_time = f"{days} day{'s' if days != 1 else ''} ago"
-
-        formatted_time = f"{relative_time} ({dt_toronto.strftime('%b %d, %I:%M %p')} ET)"
-    except Exception as e:
-        formatted_time = timestamp
+    formatted_time = page_common.format_timestamp(timestamp)
 
     # Start building HTML
     html = f"""<!DOCTYPE html>
@@ -64,7 +34,7 @@ def generate_html():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Toronto Eagles U10 AA - Standings</title>
+    <title>{config.SITE_TITLE} - Standings</title>
     <style>
         * {{
             margin: 0;
@@ -176,6 +146,7 @@ def generate_html():
             margin: 20px;
         }}
 
+{page_common.NOTICE_CSS}
         .table-wrapper {{
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
@@ -402,11 +373,11 @@ def generate_html():
 <body>
     <div class="container">
         <header>
-            <h1>TORONTO EAGLES U10 AA</h1>
+            <h1>{config.SITE_TITLE.upper()}</h1>
             <div class="filters">
                 <div class="filter-badge">STANDINGS</div>
-                <div class="filter-badge">{filters.get('region', 'N/A')} REGION</div>
-                <div class="filter-badge">{filters.get('season', 'N/A')}</div>
+                <div class="filter-badge">{page_common.region_badge(filters)}</div>
+                <div class="filter-badge">{page_common.season_badge(filters)}</div>
             </div>
         </header>
 
@@ -428,12 +399,7 @@ def generate_html():
             </div>
 """
     elif not standings:
-        html += """
-            <div class="error">
-                <h2>No Standings Data Available</h2>
-                <p>No teams found with the current filters.</p>
-            </div>
-"""
+        html += page_common.season_not_started_notice("standings")
     else:
         # Build table
         html += """
@@ -502,7 +468,7 @@ def generate_html():
 
         <footer>
             <p>Last updated: {formatted_time}</p>
-            <p>Updates nightly at 2:00 AM ET</p>
+            <p>Updates hourly</p>
         </footer>
     </div>
 </body>

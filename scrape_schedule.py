@@ -1,256 +1,264 @@
 #!/usr/bin/env python3
 """
 GTHL Schedule Scraper
-Scrapes schedule for U10 AA from gthlcanada.com
+
+Scrapes the schedule for the division configured in config.py from
+gthlcanada.com. The schedule app lives in a different iframe from the standings
+app and filters by date range rather than by season, so there is no season
+dropdown to fight with here: the dates in the results say which season they
+belong to.
+
+Both regions are pulled. Interlocking games are scheduled across East and West,
+so filtering by region would drop games our team actually plays.
 """
 
 import json
 import time
-from datetime import datetime, timedelta
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import Select
+from datetime import datetime, timedelta, timezone
 
-# Configuration
-DIVISION = "U10"
-CATEGORY = "AA"
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import Select, WebDriverWait
+
+import config
+
+SCHEDULE_URL = "https://gthlcanada.com/schedule/"
+IFRAME_SELECTOR = "iframe[src*='schedules.aspx']"
+
+# Seconds to wait after each dropdown change for the ASP.NET postback to land.
+POSTBACK_WAIT = 4
+
 
 def setup_driver():
     """Set up Chrome driver with headless options for GitHub Actions"""
     chrome_options = Options()
-    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--window-size=1920,1080")
 
-    driver = webdriver.Chrome(options=chrome_options)
-    return driver
+    return webdriver.Chrome(options=chrome_options)
+
+
+def select_option(driver, dropdown_id, value):
+    """Select a dropdown value and wait for the postback. True if it was set."""
+    try:
+        Select(driver.find_element(By.ID, dropdown_id)).select_by_value(value)
+    except Exception as e:
+        print(f"Could not set {dropdown_id}={value}: {e}")
+        return False
+    print(f"Selected {dropdown_id}={value}")
+    time.sleep(POSTBACK_WAIT)
+    return True
+
+
+def set_date(driver, field_id, value):
+    """Type a DD-MMM-YYYY date into one of the date fields."""
+    try:
+        field = driver.find_element(By.ID, field_id)
+        field.clear()
+        field.send_keys(value)
+        print(f"Set {field_id}: {value}")
+        time.sleep(1)
+        return True
+    except Exception as e:
+        print(f"Could not set {field_id}: {e}")
+        return False
+
+
+def date_window():
+    """The DD-MMM-YYYY range to ask for, from config."""
+    now = datetime.now()
+    start = now - timedelta(days=config.SCHEDULE_DAYS_BACK)
+    end = now + timedelta(days=config.SCHEDULE_DAYS_AHEAD)
+    return start.strftime("%d-%b-%Y"), end.strftime("%d-%b-%Y")
+
+
+def find_schedule_table(driver):
+    """Locate the schedule table, trying the most specific selectors first."""
+    for selector in [
+        "table.schedule",
+        "table.wp-block-table",
+        "div.schedule-table table",
+        "div[class*='schedule'] table",
+        "table",
+    ]:
+        tables = driver.find_elements(By.CSS_SELECTOR, selector)
+        if tables:
+            print(f"Found table using selector: {selector}")
+            return tables[0]
+    return None
+
+
+def read_headers(table):
+    """Column headers, falling back to the layout the site has used."""
+    for finder in (
+        lambda: table.find_element(By.TAG_NAME, "thead").find_element(By.TAG_NAME, "tr"),
+        lambda: table.find_element(By.TAG_NAME, "tr"),
+    ):
+        try:
+            row = finder()
+            headers = [th.text.strip() for th in row.find_elements(By.TAG_NAME, "th")]
+            if headers:
+                return headers
+        except Exception:
+            continue
+    return ["Date", "Time", "Away", "Score", "Home", "Arena", "Region",
+            "Div/Cat", "Type"]
+
+
+def parse_rows(table, headers):
+    """Extract one dict per game, in the order the site lists them."""
+    games = []
+
+    for row in table.find_elements(By.TAG_NAME, "tr")[1:]:  # skip header row
+        try:
+            cells = row.find_elements(By.TAG_NAME, "td")
+            if len(cells) < 3:  # spacer row
+                continue
+
+            # Blank template rows show up when a date range has no games.
+            if not any(cell.text.strip() for cell in cells):
+                continue
+
+            game = {}
+            for i, cell in enumerate(cells):
+                if i < len(headers) and headers[i]:
+                    game[headers[i]] = cell.text.strip()
+
+            if game:
+                games.append(game)
+        except Exception as e:
+            print(f"Error parsing row: {e}")
+            continue
+
+    return games
+
+
+def wrong_division(games):
+    """
+    Games the site returned that are not the division we asked for.
+
+    The Div/Cat column spells out what each game actually is ("Under 11 / AA"),
+    which is the only confirmation available that the filters took effect.
+    """
+    expected = f"{config.DIVISION_LABEL} / {config.CATEGORY}"
+    return [g.get("Div/Cat", "") for g in games if g.get("Div/Cat", "") != expected]
+
 
 def scrape_schedule():
-    """Scrape GTHL schedule with the configured filters"""
+    """Scrape the schedule for the configured division."""
     driver = setup_driver()
+    from_date, to_date = date_window()
+
+    filters = {
+        "division": config.DIVISION,
+        "category": config.CATEGORY,
+        "from_date": from_date,
+        "to_date": to_date,
+    }
 
     try:
-        # Navigate to main GTHL schedule page
-        print(f"Navigating to GTHL schedule page...")
-        driver.get("https://gthlcanada.com/schedule/")
-
-        # Wait for page to load
-        wait = WebDriverWait(driver, 20)
-
-        print(f"Waiting for page and iframe to load...")
+        print("Navigating to GTHL schedule page...")
+        driver.get(SCHEDULE_URL)
+        wait = WebDriverWait(driver, 30)
         time.sleep(5)
 
-        # Find and switch to the iframe (uses different source than standings)
         print("Switching to schedule iframe...")
-        iframe = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "iframe[src*='schedules.aspx']")))
-        driver.switch_to.frame(iframe)
-        print("Switched to iframe successfully")
-
-        # Wait for iframe content to load
+        driver.switch_to.frame(
+            wait.until(EC.presence_of_element_located(
+                (By.CSS_SELECTOR, IFRAME_SELECTOR)))
+        )
         time.sleep(5)
-
-        # Calculate date range - start from yesterday to catch any recent games
-        yesterday = datetime.now() - timedelta(days=1)
-        three_months_later = yesterday + timedelta(days=90)
-
-        # Format dates as DD-MMM-YYYY (e.g., 13-Nov-2025)
-        from_date = yesterday.strftime("%d-%b-%Y")
-        to_date = three_months_later.strftime("%d-%b-%Y")
 
         print(f"Date range: {from_date} to {to_date}")
+        select_option(driver, "ddlDiv", config.DIVISION)
+        select_option(driver, "ddlCat", config.CATEGORY_VALUE)
+        set_date(driver, "dpFrom", from_date)
+        set_date(driver, "dpTo", to_date)
 
-        # Try to interact with filters inside the iframe
         try:
-            print(f"Looking for filter controls...")
-
-            # Division dropdown - select U10
-            try:
-                div_select = driver.find_element(By.ID, "ddlDiv")
-                div_dropdown = Select(div_select)
-                div_dropdown.select_by_value("U10")
-                print(f"Selected division: U10")
-                time.sleep(3)
-            except Exception as e:
-                print(f"Could not find/select division dropdown: {e}")
-
-            # Category dropdown - select AA (A2)
-            try:
-                cat_select = driver.find_element(By.ID, "ddlCat")
-                cat_dropdown = Select(cat_select)
-                cat_dropdown.select_by_value("A2")
-                print(f"Selected category: AA")
-                time.sleep(3)
-            except Exception as e:
-                print(f"Could not find/select category dropdown: {e}")
-
-            # From date field
-            try:
-                from_date_field = driver.find_element(By.ID, "dpFrom")
-                from_date_field.clear()
-                from_date_field.send_keys(from_date)
-                print(f"Set from date: {from_date}")
-                time.sleep(2)
-            except Exception as e:
-                print(f"Could not find/set from date: {e}")
-
-            # To date field
-            try:
-                to_date_field = driver.find_element(By.ID, "dpTo")
-                to_date_field.clear()
-                to_date_field.send_keys(to_date)
-                print(f"Set to date: {to_date}")
-                time.sleep(2)
-            except Exception as e:
-                print(f"Could not find/set to date: {e}")
-
-            # Click search/submit button
-            try:
-                search_btn = driver.find_element(By.ID, "sche_btnSearch")
-                search_btn.click()
-                print("Clicked search button")
-                time.sleep(5)
-            except Exception as e:
-                print(f"Could not find/click search button: {e}")
-
+            driver.find_element(By.ID, "sche_btnSearch").click()
+            print("Clicked search button")
+            time.sleep(6)
         except Exception as e:
-            print(f"Note: Could not interact with filters: {e}")
-            print("Attempting to scrape default schedule...")
+            print(f"Could not click search button: {e}")
 
-        # Wait for schedule table to load
-        print("Waiting for schedule table...")
-        time.sleep(3)
-
-        # Try to find schedule table
-        schedule_data = []
-        table = None
-
-        possible_selectors = [
-            "table.schedule",
-            "table.wp-block-table",
-            "div.schedule-table table",
-            "table",
-            "div[class*='schedule'] table"
-        ]
-
-        for selector in possible_selectors:
-            try:
-                tables = driver.find_elements(By.CSS_SELECTOR, selector)
-                if tables:
-                    table = tables[0]
-                    print(f"Found table using selector: {selector}")
-                    break
-            except:
-                continue
-
+        table = find_schedule_table(driver)
         if not table:
-            print("No table found. Saving page source...")
             with open("schedule_page_source.html", "w", encoding="utf-8") as f:
                 f.write(driver.page_source)
-
             return {
                 "error": "No schedule table found",
-                "timestamp": datetime.now().isoformat(),
-                "filters": {
-                    "division": DIVISION,
-                    "category": CATEGORY,
-                    "from_date": from_date,
-                    "to_date": to_date
-                }
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "filters": filters,
             }
 
-        # Extract table headers
-        headers = []
-        try:
-            header_row = table.find_element(By.TAG_NAME, "thead").find_element(By.TAG_NAME, "tr")
-            headers = [th.text.strip() for th in header_row.find_elements(By.TAG_NAME, "th")]
-        except:
-            try:
-                first_row = table.find_element(By.TAG_NAME, "tr")
-                headers = [th.text.strip() for th in first_row.find_elements(By.TAG_NAME, "th")]
-            except:
-                headers = ["Date", "Time", "Home Team", "Away Team", "Location", "Status"]
-
+        headers = read_headers(table)
         print(f"Headers: {headers}")
 
-        # Extract table rows
-        rows = table.find_elements(By.TAG_NAME, "tr")[1:]  # Skip header row
+        games = parse_rows(table, headers)
+        print(f"Extracted {len(games)} games")
 
-        for row in rows:
-            try:
-                cells = row.find_elements(By.TAG_NAME, "td")
-                if len(cells) >= 3:
-                    row_data = {}
-                    for i, cell in enumerate(cells):
-                        if i < len(headers):
-                            key = headers[i]
-                            if key and key != '':
-                                row_data[key] = cell.text.strip()
-
-                    # Only add if we have data
-                    if row_data:
-                        schedule_data.append(row_data)
-            except Exception as e:
-                print(f"Error parsing row: {e}")
-                continue
-
-        print(f"Extracted {len(schedule_data)} games")
-
-        result = {
-            "schedule": schedule_data,
-            "timestamp": datetime.now().isoformat(),
-            "filters": {
-                "division": DIVISION,
-                "category": CATEGORY,
-                "from_date": from_date,
-                "to_date": to_date
+        mismatched = wrong_division(games)
+        if mismatched:
+            return {
+                "error": (
+                    f"GTHL returned {len(mismatched)} games outside "
+                    f"{config.DIVISION_LABEL} / {config.CATEGORY} "
+                    f"(e.g. {mismatched[0]!r}). The division filter did not take "
+                    "effect; refusing to publish another division's schedule."
+                ),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "filters": filters,
             }
-        }
 
-        return result
+        return {
+            "schedule": games,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "filters": filters,
+        }
 
     except Exception as e:
         print(f"Error during scraping: {e}")
         return {
             "error": str(e),
-            "timestamp": datetime.now().isoformat(),
-            "filters": {
-                "division": DIVISION,
-                "category": CATEGORY,
-                "from_date": "",
-                "to_date": ""
-            }
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "filters": filters,
         }
 
     finally:
         driver.quit()
 
+
 def main():
-    """Main function"""
     print("=" * 60)
-    print(f"GTHL Schedule Scraper")
-    print(f"Division: {DIVISION}, Category: {CATEGORY}")
+    print("GTHL Schedule Scraper")
+    print(f"Division: {config.DIVISION}, Category: {config.CATEGORY}")
     print("=" * 60)
 
     data = scrape_schedule()
 
-    # Save to JSON file
-    output_file = "schedule.json"
-    with open(output_file, "w", encoding="utf-8") as f:
+    with open("schedule.json", "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
-
-    print(f"\nData saved to {output_file}")
+    print("\nData saved to schedule.json")
 
     if "error" in data:
         print(f"Error: {data['error']}")
         exit(1)
+
+    count = len(data["schedule"])
+    if count:
+        print(f"Successfully scraped {count} games")
     else:
-        print(f"Successfully scraped {len(data['schedule'])} games")
-        exit(0)
+        # No games in the window is normal in the off-season.
+        print(f"No games posted between {data['filters']['from_date']} "
+              f"and {data['filters']['to_date']}")
+    exit(0)
+
 
 if __name__ == "__main__":
     main()

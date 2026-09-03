@@ -1,15 +1,67 @@
 #!/usr/bin/env python3
 """
-Generate HTML page showing playoff picture based on current standings.
-U10 AA West format:
-- Top 6 teams go directly to First Round (Playoffs)
-- 7th-14th place go to Preliminary Round (Play-ins)
-  - Pool A: 7th, 10th, 11th, 14th place
-  - Pool B: 8th, 9th, 12th, 13th place
+Generate HTML page showing the playoff picture based on current standings.
+
+The GTHL publishes the playoff structure per division per season and it is not
+derivable from the standings, so the structure comes from config.PLAYOFF_FORMAT.
+When that is unset, the page says the format has not been published rather than
+seeding teams into last season's brackets.
 """
 
 import json
-from datetime import datetime, timedelta
+
+import config
+import page_common
+
+
+def ordinal(n):
+    """1 -> 1st, 2 -> 2nd, 13 -> 13th."""
+    if 10 <= n % 100 <= 20:
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
+
+def render_team_table(teams, radius=None):
+    """One standings table for a playoff group, our own team highlighted."""
+    style = f' style="border-radius: {radius};"' if radius else ""
+    html = f"""                <div class="table-wrapper"{style}>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Team</th>
+                                <th class="stat">GP</th>
+                                <th class="stat">W-L-T</th>
+                                <th class="stat">PTS</th>
+                                <th class="stat">WIN%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+"""
+
+    for team in teams:
+        is_our_team = team.get("Team", "").lower() == config.TEAM_NAME.lower()
+        row_class = ' class="highlight"' if is_our_team else ""
+        html += f"""                            <tr{row_class}>
+                                <td>{team.get('Position', '')}</td>
+                                <td class="team-name">
+                                    <img src="{team.get('Logo', '')}" alt="" class="team-logo" onerror="this.style.display='none'">
+                                    <span>{team.get('Team', '')}</span>
+                                </td>
+                                <td class="stat">{team.get('GP', '')}</td>
+                                <td class="stat">{team.get('W-L-T', '')}</td>
+                                <td class="stat">{team.get('PTS', '')}</td>
+                                <td class="stat">{team.get('WIN%', '')}</td>
+                            </tr>
+"""
+
+    html += """                        </tbody>
+                    </table>
+                </div>
+"""
+    return html
 
 
 def generate_html():
@@ -28,53 +80,28 @@ def generate_html():
     timestamp = data.get("timestamp", "")
     filters = data.get("filters", {})
 
-    # Format timestamp
-    try:
-        dt_scraped = datetime.fromisoformat(timestamp)
-        dt_toronto = dt_scraped - timedelta(hours=5)  # EST offset
-        now_utc = datetime.utcnow()
-        now_toronto = now_utc - timedelta(hours=5)
-        time_diff = now_toronto - dt_toronto
+    formatted_time = page_common.format_timestamp(timestamp)
 
-        if time_diff.total_seconds() < 60:
-            relative_time = "just now"
-        elif time_diff.total_seconds() < 3600:
-            minutes = int(time_diff.total_seconds() / 60)
-            relative_time = f"{minutes} minute{'s' if minutes != 1 else ''} ago"
-        elif time_diff.total_seconds() < 86400:
-            hours = int(time_diff.total_seconds() / 3600)
-            relative_time = f"{hours} hour{'s' if hours != 1 else ''} ago"
-        else:
-            days = int(time_diff.total_seconds() / 86400)
-            relative_time = f"{days} day{'s' if days != 1 else ''} ago"
+    # Seed teams into the configured playoff structure. Without a format, or
+    # without standings, there is nothing to seed and the page says so.
+    playoff_format = config.PLAYOFF_FORMAT
+    can_seed = bool(playoff_format) and bool(standings)
 
-        formatted_time = f"{relative_time} ({dt_toronto.strftime('%b %d, %I:%M %p')} ET)"
-    except Exception:
-        formatted_time = timestamp
-
-    # Categorize teams based on current standings
-    # Direct to playoffs: 1st-6th
-    # Play-ins Pool A: 7th, 10th, 11th, 14th
-    # Play-ins Pool B: 8th, 9th, 12th, 13th
     playoffs_direct = []
-    playins_pool_a = []
-    playins_pool_b = []
+    pools = {}
 
-    pool_a_positions = {7, 10, 11, 14}
-    pool_b_positions = {8, 9, 12, 13}
+    if can_seed:
+        direct_cutoff = playoff_format["direct_cutoff"]
+        pool_positions = playoff_format["pools"]
 
-    for team in standings:
-        pos = team.get("Position", 0)
-        if pos <= 6:
-            playoffs_direct.append(team)
-        elif pos in pool_a_positions:
-            playins_pool_a.append(team)
-        elif pos in pool_b_positions:
-            playins_pool_b.append(team)
+        playoffs_direct = [t for t in standings
+                           if t.get("Position", 0) <= direct_cutoff]
 
-    # Sort play-in pools by position
-    playins_pool_a.sort(key=lambda x: x.get("Position", 0))
-    playins_pool_b.sort(key=lambda x: x.get("Position", 0))
+        for pool_name, positions in pool_positions.items():
+            pools[pool_name] = sorted(
+                (t for t in standings if t.get("Position", 0) in set(positions)),
+                key=lambda t: t.get("Position", 0),
+            )
 
     # Start building HTML
     html = f"""<!DOCTYPE html>
@@ -82,7 +109,7 @@ def generate_html():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Toronto Eagles U10 AA - Playoffs</title>
+    <title>{config.SITE_TITLE} - Playoffs</title>
     <style>
         * {{
             margin: 0;
@@ -226,6 +253,7 @@ def generate_html():
             color: #8B4513;
         }}
 
+{page_common.NOTICE_CSS}
         .table-wrapper {{
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
@@ -569,11 +597,11 @@ def generate_html():
 <body>
     <div class="container">
         <header>
-            <h1>TORONTO EAGLES U10 AA</h1>
+            <h1>{config.SITE_TITLE.upper()}</h1>
             <div class="filters">
                 <div class="filter-badge">PLAYOFFS</div>
-                <div class="filter-badge">{filters.get('region', 'N/A')} REGION</div>
-                <div class="filter-badge">{filters.get('season', 'N/A')}</div>
+                <div class="filter-badge">{page_common.region_badge(filters)}</div>
+                <div class="filter-badge">{page_common.season_badge(filters)}</div>
             </div>
         </header>
 
@@ -584,146 +612,62 @@ def generate_html():
         </nav>
 
         <div class="content">
-            <div class="info-box">
-                <h3>U10 AA West Playoff Format</h3>
-                <p><strong>First Round (Playoffs):</strong> Top 6 teams advance directly to the First Round where they play 7 games in a round robin. Top 6 + 2 play-in winners advance to the Second Round.</p>
-                <p style="margin-top: 8px;"><strong>Preliminary Round (Play-ins):</strong> Teams 7th-14th are split into two pools. Each pool plays 3 games, and the top team from each pool advances to join the First Round.</p>
-            </div>
 """
 
-    # Direct to Playoffs section
-    html += """
+    if not playoff_format:
+        html += f"""
+            <div class="notice">
+                <h2>Playoff format not published yet</h2>
+                <p>The GTHL has not published the {config.DIVISION} {config.CATEGORY}
+                {config.REGION} playoff structure for {config.SEASON}. This page fills
+                in with the seeding picture once the format is out and games have
+                been played.</p>
+            </div>
+"""
+    elif not standings:
+        html += page_common.season_not_started_notice("standings")
+    else:
+        html += """
+            <div class="info-box">
+"""
+        html += f"""                <h3>{config.DIVISION} {config.CATEGORY} {config.REGION} Playoff Format</h3>
+"""
+        for note in playoff_format.get("notes", []):
+            html += f"""                <p>{note}</p>
+"""
+        html += """            </div>
+"""
+
+        # Direct to the first round
+        html += f"""
             <div class="section">
                 <div class="section-header playoffs">
                     First Round (Direct to Playoffs)
-                    <span class="badge">TOP 6</span>
+                    <span class="badge">TOP {playoff_format["direct_cutoff"]}</span>
                 </div>
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Team</th>
-                                <th class="stat">GP</th>
-                                <th class="stat">W-L-T</th>
-                                <th class="stat">PTS</th>
-                                <th class="stat">WIN%</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+"""
+        html += render_team_table(playoffs_direct)
+        html += """            </div>
 """
 
-    for team in playoffs_direct:
-        is_eagles = team.get('Team', '').lower() == 'toronto eagles'
-        row_class = ' class="highlight"' if is_eagles else ''
-        logo_url = team.get('Logo', '')
-        html += f"""                            <tr{row_class}>
-                                <td>{team.get('Position', '')}</td>
-                                <td class="team-name">
-                                    <img src="{logo_url}" alt="" class="team-logo" onerror="this.style.display='none'">
-                                    <span>{team.get('Team', '')}</span>
-                                </td>
-                                <td class="stat">{team.get('GP', '')}</td>
-                                <td class="stat">{team.get('W-L-T', '')}</td>
-                                <td class="stat">{team.get('PTS', '')}</td>
-                                <td class="stat">{team.get('WIN%', '')}</td>
-                            </tr>
-"""
-
-    html += """                        </tbody>
-                    </table>
-                </div>
-            </div>
-"""
-
-    # Play-ins section
-    html += """
+        # Play-in pools
+        if pools:
+            pool_positions = playoff_format["pools"]
+            spread = sorted(p for positions in pool_positions.values() for p in positions)
+            html += f"""
             <div class="section">
                 <div class="section-header playins">
                     Preliminary Round (Play-ins)
-                    <span class="badge">7TH - 14TH</span>
+                    <span class="badge">{ordinal(spread[0])} &ndash; {ordinal(spread[-1])}</span>
                 </div>
 """
-
-    # Pool A
-    html += """
-                <div class="section-subheader">Pool A <span class="pool-label">7th, 10th, 11th, 14th</span></div>
-                <div class="table-wrapper" style="border-radius: 0;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Team</th>
-                                <th class="stat">GP</th>
-                                <th class="stat">W-L-T</th>
-                                <th class="stat">PTS</th>
-                                <th class="stat">WIN%</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+            for pool_name, teams in pools.items():
+                positions = ", ".join(ordinal(p) for p in pool_positions[pool_name])
+                html += f"""
+                <div class="section-subheader">Pool {pool_name} <span class="pool-label">{positions}</span></div>
 """
-
-    for team in playins_pool_a:
-        is_eagles = team.get('Team', '').lower() == 'toronto eagles'
-        row_class = ' class="highlight"' if is_eagles else ''
-        logo_url = team.get('Logo', '')
-        html += f"""                            <tr{row_class}>
-                                <td>{team.get('Position', '')}</td>
-                                <td class="team-name">
-                                    <img src="{logo_url}" alt="" class="team-logo" onerror="this.style.display='none'">
-                                    <span>{team.get('Team', '')}</span>
-                                </td>
-                                <td class="stat">{team.get('GP', '')}</td>
-                                <td class="stat">{team.get('W-L-T', '')}</td>
-                                <td class="stat">{team.get('PTS', '')}</td>
-                                <td class="stat">{team.get('WIN%', '')}</td>
-                            </tr>
-"""
-
-    html += """                        </tbody>
-                    </table>
-                </div>
-"""
-
-    # Pool B
-    html += """
-                <div class="section-subheader">Pool B <span class="pool-label">8th, 9th, 12th, 13th</span></div>
-                <div class="table-wrapper" style="border-radius: 0 0 8px 8px;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Team</th>
-                                <th class="stat">GP</th>
-                                <th class="stat">W-L-T</th>
-                                <th class="stat">PTS</th>
-                                <th class="stat">WIN%</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-"""
-
-    for team in playins_pool_b:
-        is_eagles = team.get('Team', '').lower() == 'toronto eagles'
-        row_class = ' class="highlight"' if is_eagles else ''
-        logo_url = team.get('Logo', '')
-        html += f"""                            <tr{row_class}>
-                                <td>{team.get('Position', '')}</td>
-                                <td class="team-name">
-                                    <img src="{logo_url}" alt="" class="team-logo" onerror="this.style.display='none'">
-                                    <span>{team.get('Team', '')}</span>
-                                </td>
-                                <td class="stat">{team.get('GP', '')}</td>
-                                <td class="stat">{team.get('W-L-T', '')}</td>
-                                <td class="stat">{team.get('PTS', '')}</td>
-                                <td class="stat">{team.get('WIN%', '')}</td>
-                            </tr>
-"""
-
-    html += """                        </tbody>
-                    </table>
-                </div>
-            </div>
+                html += render_team_table(teams, radius="0")
+            html += """            </div>
 """
 
     # Footer
@@ -731,7 +675,7 @@ def generate_html():
 
         <footer>
             <p>Based on current standings as of: {formatted_time}</p>
-            <p>Playoff seeding updates nightly at 2:00 AM ET</p>
+            <p>Playoff seeding updates hourly</p>
         </footer>
     </div>
 </body>

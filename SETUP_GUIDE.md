@@ -52,8 +52,8 @@ git push -u origin main
 
 You can either:
 
-### Option A: Wait for Nightly Run
-The action will automatically run at 2 AM EST every night.
+### Option A: Wait for the Next Hourly Run
+The action runs at the top of every hour.
 
 ### Option B: Trigger Manually Now
 1. Go to **Actions** tab in your repository
@@ -68,7 +68,7 @@ The action will automatically run at 2 AM EST every night.
 
 1. Visit your GitHub Pages URL
 2. You should see a beautiful standings table
-3. Check that the filters show: U10, AA, West, 25-26
+3. Check that the header badges show: U11 AA, 26-27
 
 ## Troubleshooting
 
@@ -91,8 +91,8 @@ The action will automatically run at 2 AM EST every night.
 
 ## What Happens Next?
 
-✅ Every night at 2 AM EST, the GitHub Action will:
-1. Scrape the latest standings
+✅ Every hour, the GitHub Action will:
+1. Scrape the latest standings and schedule
 2. Generate updated HTML
 3. Commit changes (if any)
 4. GitHub Pages automatically publishes updates
@@ -101,16 +101,21 @@ The action will automatically run at 2 AM EST every night.
 
 ## Customizing
 
-Want to track a different division? Edit `scrape_standings.py`:
+Want to track a different team, division or season? Edit `config.py`, which is
+the single source of truth for all of it:
 
 ```python
-DIVISION = "U10"     # Change this
-CATEGORY = "AA"      # Change this
-REGION = "West"      # Change this
-SEASON = "25-26"     # Change this
+TEAM_NAME = "Toronto Eagles"
+SEASON = "26-27"
+DIVISION = "U11"             # ddlDiv value
+DIVISION_LABEL = "Under 11"  # how the site spells it in the Div/Cat column
+CATEGORY = "AA"              # human label
+CATEGORY_VALUE = "A2"        # ddlCat value for AA
+REGION = "West"              # ddlRegion value
 ```
 
-Then commit and push the changes.
+Run `python test_scraper.py` to confirm the site serves what you asked for, then
+commit and push.
 
 ---
 

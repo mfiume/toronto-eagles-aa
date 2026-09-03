@@ -1,177 +1,165 @@
-# Toronto Eagles U10 AA - Team Hub
+# Toronto Eagles U11 AA - Team Hub
 
-Automated team hub for the Toronto Eagles U10 AA hockey team, tracking standings and schedule from the GTHL (Greater Toronto Hockey League).
+Automated team hub for the Toronto Eagles U11 AA hockey team, tracking standings
+and schedule from the GTHL (Greater Toronto Hockey League).
+
+**Live page: https://mfiume.github.io/toronto-eagles-u10aa/**
 
 ## Features
 
-- 🦅 **Toronto Eagles Focused**: Team highlighted in standings view
-- 🤖 **Automated Nightly Updates**: Runs automatically every night at 2 AM ET
-- 📊 **West Region Standings**: U10 AA West division standings with team logos
-- 🎯 **Modern Design**: Clean, responsive black and white interface
-- 🚀 **GitHub Pages**: Hosted automatically, no server required
-- 📅 **Schedule Tracking**: (Coming soon) Team schedule and game times
-
-## View Live Page
-
-Visit: **https://mfiume.github.io/toronto-eagles-u10aa/**
+- Standings for the division, with the Eagles highlighted and club logos
+- Schedule with scores, Eagles games highlighted
+- Playoff seeding picture, once the GTHL publishes the format for the season
+- Rebuilt hourly by GitHub Actions, published by GitHub Pages, no server to run
 
 ## Configuration
 
-The scraper is pre-configured with:
-- **Season**: 25-26
-- **Division**: U10 (Under 10)
-- **Category**: AA
-- **Region**: West
+Everything about which team, division and season is tracked lives in one place,
+`config.py`:
 
-These values are hardcoded in `scrape_standings.py` and can be modified if needed.
-
-**Note**: The GTHL website uses an iframe with dropdowns for filtering:
-- Season dropdown (`ddlSeason`): Options like "25-26", "24-25", etc.
-- Division dropdown (`ddlDiv`): Values like "U10" for Under 10
-- Category dropdown (`ddlCat`): Values like "A2" for AA, "A3" for AAA, "A1" for A
-- Region dropdown (`ddlRegion`): "East" or "West"
-
-## Setup Instructions
-
-### 1. Create GitHub Repository
-
-1. Create a new GitHub repository (e.g., `gthl-standings`)
-2. Clone this repository to your local machine
-3. Push all files to your GitHub repository
-
-```bash
-git init
-git add .
-git commit -m "Initial commit: GTHL standings tracker"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/gthl-standings.git
-git push -u origin main
+```python
+TEAM_NAME = "Toronto Eagles"
+SEASON = "26-27"
+DIVISION = "U11"             # ddlDiv value
+DIVISION_LABEL = "Under 11"  # how the site spells it in the Div/Cat column
+CATEGORY = "AA"              # human label
+CATEGORY_VALUE = "A2"        # ddlCat value for AA
+REGION = "West"              # ddlRegion value
 ```
 
-### 2. Enable GitHub Pages
+Moving up an age group each season is a change to this file only. Both scrapers,
+all three page generators and the test script read from it.
 
-1. Go to your repository on GitHub
-2. Click **Settings** → **Pages**
-3. Under "Build and deployment":
-   - Source: **Deploy from a branch**
-   - Branch: **main** / **root**
-4. Click **Save**
-5. Your site will be published at: `https://YOUR_USERNAME.github.io/gthl-standings/`
+GTHL dropdown values, for reference:
 
-### 3. Enable GitHub Actions
+| Dropdown | Values |
+| --- | --- |
+| Season (`ddlSeason`) | `26-27`, `25-26`, `24-25`, ... |
+| Division (`ddlDiv`) | `U10` .. `U21`, displayed as "Under 10" .. "Under 21" |
+| Category (`ddlCat`) | `A3` = AAA, `A2` = AA, `A1` = A |
+| Region (`ddlRegion`) | `East`, `West` (standings only) |
 
-1. Go to **Actions** tab in your repository
-2. If prompted, click **"I understand my workflows, go ahead and enable them"**
-3. The workflow will run automatically every night at 2 AM EST
+## Two traps in the GTHL stats app
 
-### 4. Manual Trigger (Optional)
+The site embeds the AGILEX stats app in an iframe and drives it with ASP.NET
+postbacks. Two behaviours will hand you the wrong data without any error:
 
-You can manually trigger the scraper anytime:
+**The season dropdown lies on page load.** It displays the newest season, but the
+server renders the newest season that actually has standings posted. In early
+September 2026 the dropdown read "26-27" while the table below it was the final
+25-26 table. Selecting the option the page already shows fires no change event
+and therefore no postback, so the season filter silently does nothing.
+`scrape_standings.select_season()` forces the postback by selecting another
+season first and then the one we want.
 
-1. Go to **Actions** tab
-2. Click **"Scrape GTHL Standings"** workflow
-3. Click **"Run workflow"** → **"Run workflow"**
+**The region dropdown is not always there.** It only exists once a division has
+standings groups, so it is absent for a season that has not started. That is not
+an error. The scrape records `region_applied` and the pages say whether they are
+showing one region or the whole division.
 
-## How It Works
+Both scrapers defend against this by reading back the labels the site prints for
+itself. Standings compares the caption (`#rptMain_st_lbDetail_0`, e.g.
+`26-27 SEASON -- U11 A2 West`) against the requested season, division and
+category. Schedule compares every row's Div/Cat column against the requested
+division. A mismatch is written to the JSON as an error and the run fails, rather
+than publishing another season's or another age group's table.
 
-1. **Scraper Script** (`scrape_standings.py`):
-   - Uses Selenium to navigate to gthlcanada.com/standing/
-   - Applies filters (Division, Category, Region, Season)
-   - Extracts standings table data
-   - Saves to `standings.json`
+## Testing before you deploy
 
-2. **HTML Generator** (`generate_html.py`):
-   - Reads `standings.json`
-   - Generates beautiful HTML page (`index.html`)
-   - Includes timestamp and filter information
+```bash
+pip install -r requirements.txt
+python test_scraper.py
+```
 
-3. **GitHub Action** (`.github/workflows/scrape-standings.yml`):
-   - Runs nightly at 2 AM EST (7 AM UTC)
-   - Installs dependencies and Chrome browser
-   - Executes scraper and HTML generator
-   - Commits and pushes changes if data updated
+This exercises the guard logic, then scrapes both sources live and prints what
+the site actually served, including which of our games it found. Run it after
+changing `config.py` or whenever the GTHL changes its stats app.
 
-4. **GitHub Pages**:
-   - Automatically publishes `index.html`
-   - Updates reflect within minutes of commit
+To rebuild the pages from data already scraped:
+
+```bash
+python generate_html.py
+python generate_schedule_html.py
+python generate_playoffs_html.py
+```
+
+## Playoff format
+
+The GTHL publishes the playoff structure per division per season and it cannot be
+derived from the standings, so it is not guessed. `config.PLAYOFF_FORMAT` is
+`None` until the format for the current season is known, and the playoffs page
+says so. Filling it in seeds the page from the standings:
+
+```python
+PLAYOFF_FORMAT = {
+    "direct_cutoff": 6,                                    # 1st-6th go straight to Round 1
+    "pools": {"A": [7, 10, 11, 14], "B": [8, 9, 12, 13]},  # play-in pools
+    "notes": ["<strong>First Round:</strong> ..."],         # shown on the page
+}
+```
+
+The values above are the 25-26 U10 AA West format, kept as a worked example of
+the shape.
+
+## How it works
+
+1. `scrape_standings.py` drives the standings iframe with Selenium, applies the
+   filters from `config.py`, verifies what the site served, and writes
+   `standings.json`.
+2. `scrape_schedule.py` does the same for the schedule iframe over a date window
+   (`SCHEDULE_DAYS_BACK` to `SCHEDULE_DAYS_AHEAD` from today) and writes
+   `schedule.json`. Both regions are pulled, because interlocking games are
+   scheduled across East and West.
+3. `generate_html.py`, `generate_schedule_html.py` and
+   `generate_playoffs_html.py` turn that JSON into `index.html`,
+   `schedule.html` and `playoffs.html`. Shared bits (the "last updated" line,
+   header badges, notice styling) live in `page_common.py`.
+4. `.github/workflows/scrape-standings.yml` runs the whole chain hourly and on
+   demand, then commits and pushes any changes.
+5. GitHub Pages publishes the committed HTML.
 
 ## Files
 
 ```
-gthl-standings-tracker/
-├── scrape_standings.py         # Main scraper script
-├── generate_html.py             # HTML page generator
+├── config.py                    # Team, division, season, playoff format
+├── page_common.py               # Timestamp, header badges, notice styling
+├── scrape_standings.py          # Standings scraper
+├── scrape_schedule.py           # Schedule scraper
+├── generate_html.py             # Standings page
+├── generate_schedule_html.py    # Schedule page
+├── generate_playoffs_html.py    # Playoffs page
+├── test_scraper.py              # Pre-deploy checks against the live site
 ├── requirements.txt             # Python dependencies
-├── .github/
-│   └── workflows/
-│       └── scrape-standings.yml # GitHub Action workflow
-├── README.md                    # This file
-├── standings.json               # Generated standings data (after first run)
-└── index.html                   # Generated web page (after first run)
+├── .github/workflows/scrape-standings.yml
+├── standings.json               # Scraped data
+├── schedule.json                # Scraped data
+├── index.html                   # Generated
+├── schedule.html                # Generated
+└── playoffs.html                # Generated
 ```
 
 ## Troubleshooting
 
-### Scraper Fails to Find Data
+**The run failed with "Refusing to publish standings for the wrong division or
+season."** The guard did its job: the site served something other than what
+`config.py` asked for. Check that `SEASON`, `DIVISION` and `CATEGORY_VALUE` are
+values the site actually offers, then run `python test_scraper.py` to see the
+caption it returned.
 
-The GTHL website may change its structure. To debug:
+**Standings are empty.** Expected before the season's first games. The caption in
+`standings.json` (`filters.source_label`) confirms which season the site served.
 
-1. Check the GitHub Actions logs for errors
-2. The scraper saves `page_source.html` when it can't find the table
-3. Update the selectors in `scrape_standings.py` if needed
+**No table found.** The scraper writes `page_source.html` or
+`schedule_page_source.html` when it cannot locate the table. The GTHL may have
+changed its markup; update the selectors in `find_standings_table()` or
+`find_schedule_table()`.
 
-### GitHub Pages Not Updating
+**GitHub Pages not updating.** Confirm Pages is enabled under Settings → Pages,
+deploying from `main` / root. Publishing lags a commit by a few minutes.
 
-- Ensure GitHub Pages is enabled in Settings → Pages
-- Check that `index.html` exists in the repository root
-- GitHub Pages may take a few minutes to update after commit
-
-### Action Permission Denied
-
-If the GitHub Action can't commit changes:
-
-1. Go to **Settings** → **Actions** → **General**
-2. Under "Workflow permissions", select **"Read and write permissions"**
-3. Click **Save**
-
-## Customization
-
-### Change Filter Values
-
-Edit `scrape_standings.py`:
-
-```python
-# Configuration - hardcoded values as requested
-DIVISION = "U10"     # Change division
-CATEGORY = "AA"      # Change category
-REGION = "West"      # Change region
-SEASON = "25-26"     # Change season
-```
-
-### Change Schedule
-
-Edit `.github/workflows/scrape-standings.yml`:
-
-```yaml
-schedule:
-  - cron: '0 7 * * *'  # 7 AM UTC = 2 AM EST
-  # Change to run at different time
-```
-
-Cron format: `minute hour day month weekday`
-
-### Customize HTML Styling
-
-Edit the `<style>` section in `generate_html.py` to change:
-- Colors
-- Fonts
-- Layout
-- Responsive breakpoints
-
-## License
-
-MIT License - Feel free to use and modify for your own purposes.
+**The Action cannot commit.** Settings → Actions → General → Workflow
+permissions → "Read and write permissions".
 
 ## Credits
 
-Data sourced from [GTHL Canada](https://gthlcanada.com/)
+Data sourced from [GTHL Canada](https://gthlcanada.com/).

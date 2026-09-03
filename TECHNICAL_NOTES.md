@@ -14,38 +14,38 @@ The scraper (`scrape_standings.py`) uses **Selenium with Chrome** to:
 
 ### Potential Issues & Solutions
 
-#### 1. **Filter Selectors May Need Adjustment**
+#### 1. **The Filters Are ASP.NET Dropdowns, and Two of Them Misbehave**
 
-The current implementation uses generic XPath selectors:
+The filter controls are plain `<select>` elements inside the iframe, driven by
+ASP.NET postbacks. They are addressed by id:
+
 ```python
-division_filter = wait.until(
-    EC.element_to_be_clickable((By.XPATH, f"//*[contains(text(), '{DIVISION}')]"))
-)
+Select(driver.find_element(By.ID, "ddlDiv")).select_by_value("U11")
+Select(driver.find_element(By.ID, "ddlCat")).select_by_value("A2")   # A2 = AA
+Select(driver.find_element(By.ID, "ddlSeason")).select_by_value("26-27")
+Select(driver.find_element(By.ID, "ddlRegion")).select_by_value("West")
 ```
 
-**Why this might fail:**
-- The website may use dropdown menus, buttons, or custom controls
-- Text matching may not work if filters are icons or abbreviations
-- Multiple elements might match the text
+Order matters. Division and category survive a season change and the region
+dropdown only appears once both are set, so the sequence is division, category,
+season, then region.
 
-**How to fix:**
-1. Run the scraper locally: `python3 test_scraper.py`
-2. Check the generated `page_source.html` file
-3. Find the actual HTML structure of the filter controls
-4. Update the selectors in `scrape_standings.py`
+Two behaviours will hand back the wrong data with no error at all:
 
-Example alternative selectors:
-```python
-# If filters are in a select dropdown
-division_select = Select(driver.find_element(By.ID, "division-filter"))
-division_select.select_by_visible_text("U10")
+**The season dropdown lies on page load.** It displays the newest season while
+the server renders the newest season that actually has standings posted.
+Selecting the option the page already shows fires no change event, so no
+postback happens and the filter silently does nothing. `select_season()` forces
+the postback by selecting a different season first.
 
-# If filters are data attributes
-division_filter = driver.find_element(By.CSS_SELECTOR, "[data-division='U10']")
+**The region dropdown is not always present.** It exists only once a division has
+standings groups, so it is missing for a season that has not started. The scrape
+records `region_applied` rather than treating its absence as a failure.
 
-# If filters are specific classes
-division_filter = driver.find_element(By.CSS_SELECTOR, ".filter-division .option-u10")
-```
+Because of both, each scraper reads back the label the site prints for itself and
+refuses to publish a mismatch. Standings check the caption
+`#rptMain_st_lbDetail_0` (e.g. `26-27 SEASON -- U11 A2 West`); the schedule
+checks each row's Div/Cat column (e.g. `Under 11 / AA`).
 
 #### 2. **Table Structure May Vary**
 
@@ -102,10 +102,10 @@ Example:
 ```python
 import requests
 response = requests.get("https://gthlcanada.com/api/standings", params={
-    "division": "U10",
+    "division": "U11",
     "category": "AA",
     "region": "West",
-    "season": "25-26"
+    "season": "26-27"
 })
 data = response.json()
 ```
