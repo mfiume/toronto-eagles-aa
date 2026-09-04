@@ -343,6 +343,63 @@
             letter-spacing: 0.06em;
         }
 
+        /* --- Eagles / all games toggle --- */
+
+        .sched-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 12px;
+        }
+
+        .sched-filter {
+            display: inline-flex;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 3px;
+            background: #ffffff;
+        }
+
+        .sched-filter-btn {
+            appearance: none;
+            border: 0;
+            background: transparent;
+            cursor: pointer;
+            font-family: var(--display);
+            font-weight: 500;
+            font-size: 0.74rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-2);
+            padding: 7px 15px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: baseline;
+            gap: 6px;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .sched-filter-btn:hover {
+            color: var(--ink);
+        }
+
+        .sched-filter-btn[aria-pressed="true"] {
+            background: var(--brand);
+            color: #ffffff;
+        }
+
+        .sched-filter-count {
+            font-size: 0.68rem;
+            opacity: 0.65;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Filtering is a class on the wrapper, set in the generated HTML so
+           there is no flash of the wrong list before the script runs. */
+        .filter-ours tr.game:not(.is-ours),
+        .filter-ours tr.date-row[data-ours="0"] {
+            display: none;
+        }
+
         @media (min-width: 720px) {
             .schedule-table .cell-time,
             .schedule-table .cell-away,
@@ -362,6 +419,16 @@
             }
         }
 
+        /* --- Phone: a dense list, not a stack of cards ---
+           Cards read well but cost four lines a game, which turned a week of
+           hockey into a long scroll.
+
+           The time and both team names are set inline so they flow as one
+           sentence and wrap like prose, with the arena on a quiet line under
+           it: two lines a game instead of four. Score and game type are lifted
+           out into a right rail, because leaving them in the flow made them
+           wrap onto a line of their own the moment a matchup filled the first
+           line. The row reserves room for that rail only when there is one. */
         @media (max-width: 719px) {
             .schedule-table,
             .schedule-table tbody,
@@ -376,77 +443,88 @@
             }
 
             .schedule-table .date-row th {
-                padding: 9px 13px;
+                padding: 7px 12px;
             }
 
             .schedule-table tr.game {
-                display: grid;
-                grid-template-columns: 1fr auto;
-                grid-template-areas:
-                    "time  type"
-                    "away  score"
-                    "home  score"
-                    "arena arena";
-                align-items: center;
-                column-gap: 12px;
-                padding: 11px 13px 12px;
+                position: relative;
+                padding: 8px 12px 9px;
+            }
+
+            .schedule-table.has-rail tr.game {
+                padding-right: 66px;
             }
 
             .schedule-table tr.game td {
                 padding: 0;
             }
 
+            /* One flowing line: "7:10 PM Vaughan Panthers at Humber Valley
+               Sharks", wrapping as prose rather than as three boxes. */
+            .schedule-table .cell-time,
+            .schedule-table .cell-away,
+            .schedule-table .cell-home {
+                display: inline;
+                font-size: 0.88rem;
+                line-height: 1.45;
+            }
+
             .schedule-table .cell-time {
-                grid-area: time;
                 font-family: var(--display);
                 font-weight: 500;
-                font-size: 0.76rem;
-                letter-spacing: 0.08em;
-                text-transform: uppercase;
+                font-size: 0.78rem;
+                letter-spacing: 0.04em;
                 color: var(--ink-2);
-            }
-
-            .schedule-table .cell-type {
-                grid-area: type;
-                text-align: right;
-            }
-
-            .schedule-table .cell-away {
-                grid-area: away;
-                padding-top: 5px !important;
-            }
-
-            .schedule-table .cell-home {
-                grid-area: home;
+                margin-right: 3px;
             }
 
             /* The column headers are gone at this width, so the home side
                has to say so itself. */
             .schedule-table .cell-home::before {
-                content: "at ";
+                content: " at ";
                 color: var(--ink-3);
                 font-weight: 400;
             }
 
-            .schedule-table .cell-away,
-            .schedule-table .cell-home {
-                font-size: 0.95rem;
-                line-height: 1.4;
+            .schedule-table .cell-arena {
+                font-size: 0.74rem;
+                line-height: 1.35;
+                margin-top: 1px;
             }
 
-            .schedule-table .cell-score {
-                grid-area: score;
-                font-family: var(--display);
-                font-weight: 600;
-                font-size: 1.15rem;
-                color: var(--ink);
+            /* The right rail. */
+            .schedule-table .cell-score,
+            .schedule-table .cell-type {
+                position: absolute;
+                right: 12px;
                 text-align: right;
             }
 
-            .schedule-table .cell-arena {
-                grid-area: arena;
-                font-size: 0.76rem;
-                padding-top: 5px !important;
+            .schedule-table .cell-score {
+                top: 7px;
+                font-family: var(--display);
+                font-weight: 600;
+                font-size: 0.98rem;
+                color: var(--ink);
+            }
+
+            .schedule-table .cell-type {
+                bottom: 9px;
+                font-size: 0.68rem;
+            }
+
+            .sched-bar {
+                justify-content: stretch;
+            }
+
+            .sched-filter {
+                width: 100%;
+            }
+
+            .sched-filter-btn {
+                flex: 1;
+                justify-content: center;
+                padding: 9px 10px;
             }
         }
 
@@ -637,7 +715,7 @@
         </div>
 
         <footer>
-            <p>Last updated: just now (Sep 03, 09:33 PM ET)</p>
+            <p>Last updated: 4 hours ago (Sep 03, 09:33 PM ET)</p>
             <p>Updates hourly</p>
         </footer>
     </div>
