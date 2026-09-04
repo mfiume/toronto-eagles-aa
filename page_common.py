@@ -702,8 +702,79 @@ _RESPONSIVE_CSS = """
         }
 """
 
+# --- Sponsor ----------------------------------------------------------------
+# The club's sponsor sits at the end of the page, on its own white band between
+# the content and the small print. It reads as part of the page rather than as
+# an ad: no box, no border around the mark, no dimming, and the logo is shown
+# unaltered on white because it is supplied on an opaque white background.
+
+SPONSOR = {
+    "name": "Recruit Connect",
+    "url": "https://www.recruit-connect.ca/",
+    "logo": "assets/recruit-connect.png",
+    "logo_width": 540,
+    "logo_height": 247,
+}
+
+_SPONSOR_CSS = """
+        .sponsor {
+            background: #ffffff;
+            border-top: 1px solid var(--line);
+            padding: clamp(24px, 5vw, 36px) 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(12px, 2vw, 16px);
+        }
+
+        .sponsor-label {
+            font-family: 'Oswald', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+            font-weight: 500;
+            font-size: 0.68rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #9b9b9b;
+        }
+
+        .sponsor-link {
+            display: block;
+            line-height: 0;
+        }
+
+        .sponsor-logo {
+            width: clamp(158px, 42vw, 196px);
+            height: auto;
+            display: block;
+        }
+"""
+
+
+def sponsor_block():
+    """The sponsor band, shown at the foot of every page."""
+    return f"""        <div class="sponsor">
+            <span class="sponsor-label">Team Sponsor</span>
+            <a class="sponsor-link" href="{SPONSOR['url']}"
+               target="_blank" rel="noopener noreferrer">
+                <img class="sponsor-logo" src="{SPONSOR['logo']}"
+                     alt="{SPONSOR['name']}"
+                     width="{SPONSOR['logo_width']}" height="{SPONSOR['logo_height']}">
+            </a>
+        </div>
+"""
+
+
+def page_footer(*lines):
+    """The sponsor band plus the page's own small print."""
+    html = sponsor_block()
+    html += "\n        <footer>\n"
+    for line in lines:
+        html += f"            <p>{line}</p>\n"
+    html += "        </footer>\n"
+    return html
+
+
 PAGE_CSS = (_TOKENS_CSS + _BASE_CSS + _MASTHEAD_CSS + _TABLE_CSS
-            + _SCHEDULE_CSS + _CHROME_CSS + _RESPONSIVE_CSS)
+            + _SCHEDULE_CSS + _CHROME_CSS + _SPONSOR_CSS + _RESPONSIVE_CSS)
 
 # Playoff-page extras: the round headers and the format box.
 PLAYOFF_CSS = """

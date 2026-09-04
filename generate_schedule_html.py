@@ -134,11 +134,7 @@ def generate_html():
 
     html += f"""        </div>
 
-        <footer>
-            <p>Last updated: {formatted_time}</p>
-            <p>Updates hourly</p>
-        </footer>
-    </div>
+{page_common.page_footer(f"Last updated: {formatted_time}", "Updates hourly")}    </div>
 </body>
 </html>
 """

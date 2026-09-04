@@ -179,11 +179,7 @@ def generate_html():
     # Footer
     html += f"""        </div>
 
-        <footer>
-            <p>Based on current standings as of: {formatted_time}</p>
-            <p>Playoff seeding updates hourly</p>
-        </footer>
-    </div>
+{page_common.page_footer(f"Based on current standings as of: {formatted_time}", "Playoff seeding updates hourly")}    </div>
 </body>
 </html>
 """
