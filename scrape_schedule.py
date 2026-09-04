@@ -28,6 +28,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 
 import config
+import season_schedule
 
 SCHEDULE_URL = "https://gthlcanada.com/schedule/"
 IFRAME_SELECTOR = "iframe[src*='schedules.aspx']"
@@ -268,6 +269,10 @@ def main():
     if "error" in data:
         print(f"Error: {data['error']}")
         exit(1)
+
+    # Fold this window into the season-long accumulators. Done here rather than
+    # as a separate workflow step so a local run cannot leave them stale.
+    season_schedule.write(data["schedule"], data["filters"], data["timestamp"])
 
     count = len(data["schedule"])
     if count:
