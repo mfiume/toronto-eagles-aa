@@ -67,6 +67,13 @@ WEST_TEAMS = [
 SCHEDULE_DAYS_BACK = 7
 SCHEDULE_DAYS_AHEAD = 90
 
+# --- Which pages are linked -------------------------------------------------
+# Pages listed here are still generated but not offered in the tab bar. The
+# playoffs page is nothing but a "format not published yet" notice until the
+# GTHL posts the structure and enough games have been played to seed it, so it
+# is held back rather than shown empty all season. Empty this set to link it.
+HIDDEN_PAGES = {"playoffs.html"}
+
 # --- Playoff format --------------------------------------------------------
 # The GTHL publishes the playoff structure per division per season, and it is
 # not derivable from the standings. Fill this in once the format for the season

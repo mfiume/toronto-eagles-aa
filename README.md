@@ -25,6 +25,7 @@ DIVISION_LABEL = "Under 11"  # how the site spells it in the Div/Cat column
 CATEGORY = "AA"              # human label
 CATEGORY_VALUE = "A2"        # ddlCat value for AA
 REGION = "West"              # ddlRegion value
+HIDDEN_PAGES = {"playoffs.html"}  # generated, but not linked in the tab bar
 ```
 
 Moving up an age group each season is a change to this file only. Both scrapers,
@@ -91,7 +92,7 @@ It writes two files that only ever gain games:
 | File | Contents |
 | --- | --- |
 | `season_schedule.json` | Every game seen this season, all teams in the region |
-| `eagles_schedule.json` | The same, filtered to our games — the small file a client should fetch |
+| `eagles_schedule.json` | The same, filtered to our games: the small file a client should fetch |
 
 Each game is parsed into the fields a client should not have to derive:
 
@@ -196,8 +197,10 @@ the shape.
 ├── page_common.py               # Masthead, timestamp, notice styling
 ├── season_schedule.py           # Stable game ids, season-long accumulators
 ├── assets/
-│   ├── eagles-crest-white.svg   # Club crest, white, for the red masthead
-│   └── eagles-crest-red.svg     # Club crest, original red
+│   ├── eagles-crest-white.svg   # Club crest, white
+│   ├── eagles-crest-red.svg     # Club crest, original red
+│   ├── recruit-connect.png      # Sponsor mark
+│   └── kia.svg                  # Sponsor mark
 ├── scrape_standings.py          # Standings scraper
 ├── scrape_schedule.py           # Schedule scraper
 ├── generate_html.py             # Standings page
@@ -246,8 +249,24 @@ permissions → "Read and write permissions".
 
 Data sourced from [GTHL Canada](https://gthlcanada.com/).
 
-## Crest
+## Crest and the masthead
 
 `assets/` holds the club's own vector crest in two colourways, converted from
-the Illustrator original. Each is a single set of paths with one fill colour, so
-another colourway is a find-and-replace on that value rather than a new export.
+the Illustrator original. Each is a single set of paths with one fill colour,
+so another colourway is a find-and-replace on that value rather than a new
+export.
+
+The masthead does not use it. The crest is line art, and at the size a masthead
+allows its strokes render too thin to sit on the red, so the wordmark carries
+the bar alone. The files stay for other uses.
+
+## Pages that are not linked
+
+`config.HIDDEN_PAGES` lists pages that are still generated but kept out of the
+tab bar. The playoffs page is nothing but a "format not published yet" notice
+until the GTHL posts the structure and enough games have been played to seed
+it, so it is held back rather than shown empty all season. Emptying the set
+links it again.
+
+A hidden page still shows its own tab when it is the page you are on, so
+arriving by direct link does not leave the nav lying about where you are.

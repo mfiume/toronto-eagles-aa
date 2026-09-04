@@ -108,12 +108,6 @@ _MASTHEAD_CSS = """
             min-width: 0;
         }
 
-        .masthead-crest {
-            height: clamp(40px, 10.5vw, 58px);
-            width: auto;
-            flex-shrink: 0;
-            display: block;
-        }
 
         .masthead-wordmark {
             font-family: var(--display);
@@ -183,6 +177,8 @@ _MASTHEAD_CSS = """
         }
 """
 
+# Every page the hub can show. config.HIDDEN_PAGES decides which of them are
+# actually linked, so a page can be built and waiting without being offered.
 NAV_PAGES = [
     ("index.html", "Standings"),
     ("schedule.html", "Schedule"),
@@ -192,7 +188,11 @@ NAV_PAGES = [
 
 def masthead(active_page, meta_main, meta_sub):
     """
-    The red crest bar and the tab bar beneath it, shared by all three pages.
+    The red bar and the tab bar beneath it, shared by every page.
+
+    The club mark is deliberately not here. It is line art, and at masthead
+    size its strokes render too thin to sit on the red; the wordmark carries
+    the bar on its own. Both colourways stay in assets/ for other uses.
 
     `active_page` is the filename of the page being generated, so it can mark
     its own tab. `meta_main` and `meta_sub` are the two right-hand lines, which
@@ -200,8 +200,6 @@ def masthead(active_page, meta_main, meta_sub):
     """
     html = f"""        <header class="masthead">
             <a class="masthead-brand" href="index.html">
-                <img class="masthead-crest" src="assets/eagles-bird-white.svg"
-                     alt="" width="369" height="383">
                 <span class="masthead-wordmark">{config.TEAM_NAME}</span>
             </a>
             <div class="masthead-meta">
@@ -213,6 +211,10 @@ def masthead(active_page, meta_main, meta_sub):
         <nav class="mastnav">
 """
     for href, label in NAV_PAGES:
+        # A hidden page still shows its own tab if that is where you are, so
+        # arriving by direct link does not leave the nav lying about it.
+        if href in config.HIDDEN_PAGES and href != active_page:
+            continue
         active = ' class="active"' if href == active_page else ""
         html += f'            <a href="{href}"{active}>{label}</a>\n'
     html += "        </nav>\n"
@@ -260,7 +262,6 @@ _TOKENS_CSS = """
             --crest: #ed1c24;
             --crest-wash: #fdf3f4;
 
-            --page: #f1f1f3;
             --surface: #ffffff;
             --line: #e6e6e9;
             --line-soft: #f0f0f2;
@@ -289,7 +290,9 @@ _BASE_CSS = """
 
         body {
             font-family: var(--body);
-            background: var(--page);
+            /* White, not a page grey: the container is full width, so a grey
+               body only ever showed as an empty strip below the content. */
+            background: var(--surface);
             color: var(--ink);
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
