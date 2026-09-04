@@ -42,8 +42,6 @@ def generate_html():
     filters = data.get('filters', {})
     error = data.get('error')
 
-    formatted_time = page_common.format_timestamp(timestamp)
-
     our_team = config.TEAM_NAME.lower()
 
     def is_ours(game):
@@ -175,7 +173,7 @@ def generate_html():
 
     html += f"""        </div>
 
-{page_common.page_footer(f"Last updated: {formatted_time}", "Updates hourly")}    </div>
+{page_common.page_footer(timestamp)}    </div>
 {page_common.SCHEDULE_JS}</body>
 </html>
 """

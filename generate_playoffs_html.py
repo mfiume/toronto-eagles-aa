@@ -79,8 +79,6 @@ def generate_html():
     timestamp = data.get("timestamp", "")
     filters = data.get("filters", {})
 
-    formatted_time = page_common.format_timestamp(timestamp)
-
     # Seed teams into the configured playoff structure. Without a format, or
     # without standings, there is nothing to seed and the page says so.
     playoff_format = config.PLAYOFF_FORMAT
@@ -179,7 +177,7 @@ def generate_html():
     # Footer
     html += f"""        </div>
 
-{page_common.page_footer(f"Based on current standings as of: {formatted_time}", "Playoff seeding updates hourly")}    </div>
+{page_common.page_footer(timestamp, "Seeding follows the standings, refreshed hourly")}    </div>
 </body>
 </html>
 """
