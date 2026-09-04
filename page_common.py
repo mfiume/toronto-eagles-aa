@@ -813,22 +813,17 @@ _CHROME_CSS = """
             color: #8f1119;
         }
 
-        footer {
-            text-align: center;
-            padding: 13px clamp(12px, 3vw, 24px) 17px;
-            background: var(--page);
-            border-top: 1px solid var(--line);
-        }
-
-        .footer-meta {
-            font-size: 0.68rem;
-            letter-spacing: 0.02em;
-            color: #a2a2a2;
-        }
-
-        /* No underline or help cursor: there is no hover on a phone, so the
+        /* A footnote to the table above it, on the same white. No underline
+           or help cursor on the time: there is no hover on a phone, so the
            title is a bonus for anyone who looks rather than an advertised
            affordance. */
+        .content-meta {
+            font-size: 0.68rem;
+            letter-spacing: 0.02em;
+            color: #a4a4a4;
+            text-align: right;
+            margin-top: 10px;
+        }
 """
 
 _RESPONSIVE_CSS = """
@@ -952,24 +947,23 @@ def sponsor_block():
     return html
 
 
-def page_footer(timestamp, refresh_note="Refreshes hourly"):
+def freshness(timestamp, refresh_note="Refreshes hourly"):
     """
-    The sponsor band, then a single quiet line saying how fresh the page is.
+    How fresh the page is, as one quiet line under the table it describes.
 
-    A production sports site does not give freshness its own paragraph. Only
-    the relative time is shown; the wall-clock time and the refresh cadence
-    sit in the title, where they are there for anyone who wants them without
-    taking up the end of the page.
+    It sits inside the content, on the same white as the table, rather than in
+    a band of its own: it is a footnote to the data above it, not a section of
+    the page. The wall-clock time and the refresh cadence are in the title.
     """
     detail = " · ".join(x for x in (absolute_time(timestamp), refresh_note) if x)
-    html = sponsor_block()
-    html += f"""
-        <footer>
-            <p class="footer-meta">Updated <time datetime="{machine_time(timestamp)}"
-                    title="{detail}">{relative_time(timestamp)}</time></p>
-        </footer>
-"""
-    return html
+    return (f'            <p class="content-meta">Updated '
+            f'<time datetime="{machine_time(timestamp)}" title="{detail}">'
+            f'{relative_time(timestamp)}</time></p>\n')
+
+
+def page_end():
+    """What closes every page: the sponsor band, and nothing after it."""
+    return sponsor_block()
 
 
 PAGE_CSS = (_TOKENS_CSS + _BASE_CSS + _MASTHEAD_CSS + _TABLE_CSS

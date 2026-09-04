@@ -171,9 +171,9 @@ def generate_html():
             </div>
 """
 
-    html += f"""        </div>
+    html += f"""{page_common.freshness(timestamp)}        </div>
 
-{page_common.page_footer(timestamp)}    </div>
+{page_common.page_end()}    </div>
 {page_common.SCHEDULE_JS}</body>
 </html>
 """

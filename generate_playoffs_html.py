@@ -175,9 +175,9 @@ def generate_html():
 """
 
     # Footer
-    html += f"""        </div>
+    html += f"""{page_common.freshness(timestamp, "Seeding follows the standings, refreshed hourly")}        </div>
 
-{page_common.page_footer(timestamp, "Seeding follows the standings, refreshed hourly")}    </div>
+{page_common.page_end()}    </div>
 </body>
 </html>
 """
