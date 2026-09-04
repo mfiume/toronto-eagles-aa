@@ -708,23 +708,38 @@ _RESPONSIVE_CSS = """
 # an ad: no box, no border around the mark, no dimming, and the logo is shown
 # unaltered on white because it is supplied on an opaque white background.
 
-SPONSOR = {
-    "name": "Recruit Connect",
-    "url": "https://www.recruit-connect.ca/",
-    "logo": "assets/recruit-connect.png",
-    "logo_width": 540,
-    "logo_height": 247,
-}
+SPONSORS = [
+    {
+        "name": "Recruit Connect",
+        "url": "https://www.recruit-connect.ca/",
+        "logo": "assets/recruit-connect.png",
+        "width": 540,
+        "height": 247,
+        # Optical scale, not bounding-box scale. A stacked logo needs more
+        # height than a single-line wordmark to carry the same weight, so each
+        # mark is sized against the row height by its own factor.
+        "scale": 1.0,
+    },
+    {
+        "name": "Kia",
+        "url": "https://www.kia.ca/en",
+        "logo": "assets/kia.svg",
+        "width": 579,
+        "height": 136,
+        "scale": 0.46,
+    },
+]
 
 _SPONSOR_CSS = """
         .sponsor {
+            --sponsor-height: clamp(58px, 13vw, 82px);
             background: #ffffff;
             border-top: 1px solid var(--line);
             padding: clamp(24px, 5vw, 36px) 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: clamp(12px, 2vw, 16px);
+            gap: clamp(14px, 2.4vw, 20px);
         }
 
         .sponsor-label {
@@ -736,14 +751,22 @@ _SPONSOR_CSS = """
             color: #9b9b9b;
         }
 
+        .sponsor-logos {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(26px, 7vw, 60px);
+        }
+
         .sponsor-link {
             display: block;
             line-height: 0;
         }
 
         .sponsor-logo {
-            width: clamp(158px, 42vw, 196px);
-            height: auto;
+            height: calc(var(--sponsor-height) * var(--scale, 1));
+            width: auto;
             display: block;
         }
 """
@@ -751,16 +774,23 @@ _SPONSOR_CSS = """
 
 def sponsor_block():
     """The sponsor band, shown at the foot of every page."""
-    return f"""        <div class="sponsor">
-            <span class="sponsor-label">Team Sponsor</span>
-            <a class="sponsor-link" href="{SPONSOR['url']}"
-               target="_blank" rel="noopener noreferrer">
-                <img class="sponsor-logo" src="{SPONSOR['logo']}"
-                     alt="{SPONSOR['name']}"
-                     width="{SPONSOR['logo_width']}" height="{SPONSOR['logo_height']}">
-            </a>
+    label = "Team Sponsors" if len(SPONSORS) > 1 else "Team Sponsor"
+    html = f"""        <div class="sponsor">
+            <span class="sponsor-label">{label}</span>
+            <div class="sponsor-logos">
+"""
+    for sponsor in SPONSORS:
+        html += f"""                <a class="sponsor-link" href="{sponsor['url']}"
+                   target="_blank" rel="noopener noreferrer">
+                    <img class="sponsor-logo" src="{sponsor['logo']}"
+                         alt="{sponsor['name']}" style="--scale: {sponsor['scale']}"
+                         width="{sponsor['width']}" height="{sponsor['height']}">
+                </a>
+"""
+    html += """            </div>
         </div>
 """
+    return html
 
 
 def page_footer(*lines):
