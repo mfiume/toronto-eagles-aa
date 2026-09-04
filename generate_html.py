@@ -51,8 +51,6 @@ def generate_html():
     filters = data.get("filters", {})
     error = data.get("error")
 
-    formatted_time = page_common.format_timestamp(timestamp)
-
     # Start building HTML
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -154,7 +152,7 @@ def generate_html():
 
     html += f"""        </div>
 
-{page_common.page_footer(f"Last updated: {formatted_time}", "Updates hourly")}    </div>
+{page_common.page_footer(timestamp)}    </div>
 </body>
 </html>
 """

@@ -13,39 +13,49 @@ TORONTO = ZoneInfo("America/Toronto")
 
 # A neutral counterpart to .error, for states that are correct rather than
 # broken: a season that has not started, a playoff format not yet published.
-def format_timestamp(timestamp):
-    """
-    Render a scrape timestamp as "2 hours ago (Sep 03, 12:56 PM ET)".
-
-    Timestamps written by the scrapers carry an explicit UTC offset. Older ones
-    are naive UTC, from when the scrapers ran on GitHub Actions and recorded
-    local server time, so treat a naive value as UTC.
-    """
+def _parse_timestamp(timestamp):
+    """A scrape timestamp as an aware UTC datetime, or None."""
     try:
         scraped = datetime.fromisoformat(timestamp)
     except (TypeError, ValueError):
+        return None
+    # Timestamps written by the scrapers carry an explicit UTC offset. Older
+    # ones are naive UTC, from when the scrapers recorded the GitHub Actions
+    # server's own clock, so treat a naive value as UTC.
+    return scraped.replace(tzinfo=timezone.utc) if scraped.tzinfo is None else scraped
+
+
+def relative_time(timestamp):
+    """How long ago, e.g. "just now" or "3 hours ago"."""
+    scraped = _parse_timestamp(timestamp)
+    if scraped is None:
         return timestamp
 
-    if scraped.tzinfo is None:
-        scraped = scraped.replace(tzinfo=timezone.utc)
-
-    local = scraped.astimezone(TORONTO)
-    elapsed = datetime.now(timezone.utc) - scraped
-
-    seconds = elapsed.total_seconds()
+    seconds = (datetime.now(timezone.utc) - scraped).total_seconds()
     if seconds < 60:
-        relative = "just now"
-    elif seconds < 3600:
+        return "just now"
+    if seconds < 3600:
         minutes = int(seconds / 60)
-        relative = f"{minutes} minute{'s' if minutes != 1 else ''} ago"
-    elif seconds < 86400:
+        return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
+    if seconds < 86400:
         hours = int(seconds / 3600)
-        relative = f"{hours} hour{'s' if hours != 1 else ''} ago"
-    else:
-        days = int(seconds / 86400)
-        relative = f"{days} day{'s' if days != 1 else ''} ago"
+        return f"{hours} hour{'s' if hours != 1 else ''} ago"
+    days = int(seconds / 86400)
+    return f"{days} day{'s' if days != 1 else ''} ago"
 
-    return f"{relative} ({local.strftime('%b %d, %I:%M %p')} ET)"
+
+def absolute_time(timestamp):
+    """The wall-clock time in Toronto, e.g. "Sep 04, 02:18 AM ET"."""
+    scraped = _parse_timestamp(timestamp)
+    if scraped is None:
+        return ""
+    return f"{scraped.astimezone(TORONTO).strftime('%b %d, %I:%M %p')} ET"
+
+
+def machine_time(timestamp):
+    """ISO 8601 for the <time datetime> attribute."""
+    scraped = _parse_timestamp(timestamp)
+    return scraped.isoformat() if scraped else ""
 
 
 def season_not_started_notice(kind):
@@ -805,13 +815,20 @@ _CHROME_CSS = """
 
         footer {
             text-align: center;
-            padding: clamp(18px, 4vw, 28px) clamp(12px, 3vw, 24px);
+            padding: 13px clamp(12px, 3vw, 24px) 17px;
             background: var(--page);
-            color: var(--ink-3);
-            font-size: clamp(0.72rem, 2vw, 0.8rem);
-            line-height: 1.7;
             border-top: 1px solid var(--line);
         }
+
+        .footer-meta {
+            font-size: 0.68rem;
+            letter-spacing: 0.02em;
+            color: #a2a2a2;
+        }
+
+        /* No underline or help cursor: there is no hover on a phone, so the
+           title is a bonus for anyone who looks rather than an advertised
+           affordance. */
 """
 
 _RESPONSIVE_CSS = """
@@ -916,7 +933,7 @@ _SPONSOR_CSS = """
 
 def sponsor_block():
     """The sponsor band, shown at the foot of every page."""
-    label = "Team Sponsors" if len(SPONSORS) > 1 else "Team Sponsor"
+    label = "Sponsored By"
     html = f"""        <div class="sponsor">
             <span class="sponsor-label">{label}</span>
             <div class="sponsor-logos">
@@ -935,13 +952,23 @@ def sponsor_block():
     return html
 
 
-def page_footer(*lines):
-    """The sponsor band plus the page's own small print."""
+def page_footer(timestamp, refresh_note="Refreshes hourly"):
+    """
+    The sponsor band, then a single quiet line saying how fresh the page is.
+
+    A production sports site does not give freshness its own paragraph. Only
+    the relative time is shown; the wall-clock time and the refresh cadence
+    sit in the title, where they are there for anyone who wants them without
+    taking up the end of the page.
+    """
+    detail = " · ".join(x for x in (absolute_time(timestamp), refresh_note) if x)
     html = sponsor_block()
-    html += "\n        <footer>\n"
-    for line in lines:
-        html += f"            <p>{line}</p>\n"
-    html += "        </footer>\n"
+    html += f"""
+        <footer>
+            <p class="footer-meta">Updated <time datetime="{machine_time(timestamp)}"
+                    title="{detail}">{relative_time(timestamp)}</time></p>
+        </footer>
+"""
     return html
 
 
