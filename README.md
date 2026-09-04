@@ -73,14 +73,72 @@ category. Schedule compares every row's Div/Cat column against the requested
 division. A mismatch is written to the JSON as an error and the run fails, rather
 than publishing another season's or another age group's table.
 
+## The season schedule feed
+
+`schedule.json` is a *window*: `SCHEDULE_DAYS_BACK` behind to
+`SCHEDULE_DAYS_AHEAD` ahead. Good for a page showing what is coming up, wrong
+for anything that needs the season. A game drops off it about a week after it is
+played, and its rows carry no identifier, so nothing downstream can say "this is
+the game I tracked" across two scrapes.
+
+`season_schedule.py` fixes both, without changing how the pages are generated.
+`scrape_schedule.py` calls it after every successful scrape, so it cannot go
+stale, and it also runs standalone (`python season_schedule.py`) to rebuild the
+accumulators from the current `schedule.json`.
+
+It writes two files that only ever gain games:
+
+| File | Contents |
+| --- | --- |
+| `season_schedule.json` | Every game seen this season, all teams in the region |
+| `eagles_schedule.json` | The same, filtered to our games — the small file a client should fetch |
+
+Each game is parsed into the fields a client should not have to derive:
+
+```json
+{
+  "id": "2026-10-18_west-mall-lightning_at_toronto-eagles",
+  "date": "2026-10-18", "time": "13:10",
+  "away": "West Mall Lightning", "home": "Toronto Eagles",
+  "arena": "Lambton", "type": "LG",
+  "score": null, "status": "scheduled",
+  "is_eagles": true, "eagles_side": "home",
+  "opponent": "West Mall Lightning", "result": null
+}
+```
+
+**The id is the date plus the two teams, deliberately not the start time.** Ice
+times slide by twenty minutes constantly and that must not orphan a game
+something else has already tracked stats against. A fixture moved to a different
+*date* really is a different fixture and gets a new id.
+
+**Nothing is ever deleted.** A game that ages out of the scrape window is simply
+retained. A game that is inside the window but stops being listed is marked
+`"status": "not_listed"` with a `missing_since` stamp, because a cancellation
+and a scraper failure look identical from here and only a human can tell them
+apart.
+
+**The score is read as `away:home`,** which is the order of the columns in the
+GTHL's own table. No played 26-27 row exists yet to confirm it against, so the
+raw string is kept in `score_raw` and nothing is lost if it turns out to be the
+other way round. Worth checking against the first played game of the season.
+
+Clients should fetch it from `raw.githubusercontent.com`, which sets
+`Access-Control-Allow-Origin: *` (verified 2026-09-04):
+
+```
+https://raw.githubusercontent.com/mfiume/toronto-eagles-aa/main/eagles_schedule.json
+```
+
 ## Testing before you deploy
 
 ```bash
 pip install -r requirements.txt
-python test_scraper.py
+python -m unittest test_season_schedule   # unit tests, no network
+python test_scraper.py                    # live scrape
 ```
 
-This exercises the guard logic, then scrapes both sources live and prints what
+`test_scraper.py` exercises the guard logic, then scrapes both sources live and prints what
 the site actually served, including which of our games it found. Run it after
 changing `config.py` or whenever the GTHL changes its stats app.
 
@@ -136,6 +194,7 @@ the shape.
 ```
 ├── config.py                    # Team, division, season, region roster, playoff format
 ├── page_common.py               # Masthead, timestamp, notice styling
+├── season_schedule.py           # Stable game ids, season-long accumulators
 ├── assets/
 │   ├── eagles-crest-white.svg   # Club crest, white, for the red masthead
 │   └── eagles-crest-red.svg     # Club crest, original red
@@ -145,10 +204,13 @@ the shape.
 ├── generate_schedule_html.py    # Schedule page
 ├── generate_playoffs_html.py    # Playoffs page
 ├── test_scraper.py              # Pre-deploy checks against the live site
+├── test_season_schedule.py      # Unit tests for the accumulator, no network
 ├── requirements.txt             # Python dependencies
 ├── .github/workflows/scrape-standings.yml
 ├── standings.json               # Scraped data
-├── schedule.json                # Scraped data
+├── schedule.json                # Scraped data, a window
+├── season_schedule.json         # Generated, accumulating, every game seen
+├── eagles_schedule.json         # Generated, accumulating, our games only
 ├── index.html                   # Generated
 ├── schedule.html                # Generated
 └── playoffs.html                # Generated
