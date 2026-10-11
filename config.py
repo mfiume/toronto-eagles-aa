@@ -36,8 +36,9 @@ SITE_TITLE = f"{TEAM_NAME} {DIVISION} {CATEGORY}"
 # query against 25-26 mid-season returns every row tagged and the filter works,
 # so the tagging arrives later in the season.
 #
-# These are the 14 teams of 25-26 U10 AA West, the cohort that moved up
-# together. All 24 teams appearing in the 26-27 U11 AA schedule resolve cleanly
+# These started as the 14 teams of 25-26 U10 AA West, the cohort that moved
+# up together. Greater Toronto Capitals came off on 2026-10-11, when the first
+# 26-27 West standings listed 13 teams without them. All 24 teams appearing in the 26-27 U11 AA schedule resolve cleanly
 # to this list or to the East one, with nothing unaccounted for.
 #
 # scrape_standings.py compares this against the real West standings the moment
@@ -45,7 +46,6 @@ SITE_TITLE = f"{TEAM_NAME} {DIVISION} {CATEGORY}"
 # reshuffle cannot quietly start hiding or showing the wrong games.
 WEST_TEAMS = [
     "Duffield Devils",
-    "Greater Toronto Capitals",
     "Humber Valley Sharks",
     "Mississauga Beast",
     "Mississauga Jets",
