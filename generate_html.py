@@ -126,9 +126,7 @@ def generate_html():
                 elif key == 'Logo':
                     continue  # Skip Logo column, it will be included with Team
                 elif key == 'Team':  # Team name
-                    logo_url = row.get('Logo')
-                    logo = (f'<img src="{logo_url}" alt="" class="team-logo" '
-                            'onerror="this.style.display=\'none\'">') if logo_url else ''
+                    logo = page_common.team_logo(value, row.get('Logo'))
                     html += (f'                            <td class="team-name">'
                              f'<span class="team-cell">{logo}<span>{value}</span></span></td>\n')
                 elif key in ['DIFF', 'GD', '+/-']:  # Goal differential

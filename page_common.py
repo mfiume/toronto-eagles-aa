@@ -4,10 +4,13 @@ Pieces shared by the three page generators: the "last updated" line, the
 filter badges in the header, and the styling for a neutral notice box.
 """
 
+import html
+import os
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 import config
+from season_schedule import slug
 
 TORONTO = ZoneInfo("America/Toronto")
 
@@ -76,43 +79,50 @@ def season_not_started_notice(kind):
 
 
 # --- Masthead ---------------------------------------------------------------
-# The crest is the club's own vector artwork, recoloured white for the red bar.
-# Every SVG here is one path set with a single fill, so another colourway is a
-# find-and-replace on that value rather than a new export.
+# A white bar with a thin red rule along the top. Red is the club's accent, not
+# a background: it marks the active tab, our own games and the countdown, and
+# nothing else, so it still means something wherever it appears.
 #
-# The masthead shows the bird alone. The full crest carries its own "EAGLES"
-# lettering, which turns to mush at 44px and repeats what the wordmark beside
-# it already says. assets/ keeps the complete crest either way.
+# The mark is the bird alone, in the crest's own red. The full crest carries its
+# own "EAGLES" lettering, which turns to mush at masthead size and repeats the
+# wordmark beside it. Every SVG in assets/ is one path set with a single fill,
+# so another colourway is a find-and-replace on that value, not a new export.
 
 FONT_LINK = """    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">"""
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">"""
 
 _MASTHEAD_CSS = """
         .masthead {
-            background: var(--brand);
-            color: #ffffff;
+            background: var(--surface);
+            color: var(--ink);
+            border-top: 3px solid var(--brand);
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: clamp(10px, 2vw, 20px);
-            padding: clamp(11px, 2.2vw, 18px) clamp(12px, 3vw, 24px);
+            padding: clamp(11px, 2.2vw, 16px) clamp(12px, 3vw, 24px);
         }
 
         .masthead-brand {
             display: flex;
             align-items: center;
-            gap: clamp(9px, 1.6vw, 16px);
+            gap: clamp(8px, 1.4vw, 12px);
             text-decoration: none;
             color: inherit;
             min-width: 0;
         }
 
+        .masthead-mark {
+            height: clamp(28px, 6vw, 36px);
+            width: auto;
+            flex-shrink: 0;
+        }
 
         .masthead-wordmark {
             font-family: var(--display);
             font-weight: 700;
-            font-size: clamp(1.05rem, 5.2vw, 1.95rem);
+            font-size: clamp(1.05rem, 5vw, 1.75rem);
             letter-spacing: 0.01em;
             text-transform: uppercase;
             line-height: 1;
@@ -129,20 +139,26 @@ _MASTHEAD_CSS = """
             display: block;
             font-family: var(--display);
             font-weight: 600;
-            font-size: clamp(0.66rem, 2.1vw, 0.92rem);
+            font-size: clamp(0.66rem, 2.1vw, 0.82rem);
             letter-spacing: 0.1em;
             text-transform: uppercase;
         }
 
         .masthead-meta-sub {
             display: block;
-            font-size: clamp(0.58rem, 1.7vw, 0.76rem);
-            letter-spacing: 0.05em;
-            color: rgba(255, 255, 255, 0.74);
+            font-size: clamp(0.62rem, 1.7vw, 0.74rem);
+            color: var(--ink-3);
+        }
+
+        @media (max-width: 479px) {
+            .masthead-meta-sub {
+                display: none;
+            }
         }
 
         .mastnav {
-            background: var(--brand-dark);
+            background: var(--surface);
+            border-bottom: 1px solid var(--line);
             display: flex;
             padding: 0 clamp(6px, 2.2vw, 18px);
             overflow-x: auto;
@@ -156,24 +172,24 @@ _MASTHEAD_CSS = """
         .mastnav a {
             font-family: var(--display);
             font-weight: 500;
-            font-size: clamp(0.75rem, 2.1vw, 0.9rem);
-            letter-spacing: 0.09em;
+            font-size: clamp(0.75rem, 2.1vw, 0.86rem);
+            letter-spacing: 0.08em;
             text-transform: uppercase;
             text-decoration: none;
-            color: rgba(255, 255, 255, 0.66);
-            padding: clamp(11px, 1.9vw, 15px) clamp(11px, 2.2vw, 20px);
+            color: var(--ink-2);
+            padding: clamp(11px, 1.9vw, 14px) clamp(11px, 2.2vw, 16px);
             border-bottom: 3px solid transparent;
             white-space: nowrap;
             transition: color 0.15s ease, border-color 0.15s ease;
         }
 
         .mastnav a:hover {
-            color: #ffffff;
+            color: var(--ink);
         }
 
         .mastnav a.active {
-            color: #ffffff;
-            border-bottom-color: #ffffff;
+            color: var(--brand);
+            border-bottom-color: var(--brand);
         }
 """
 
@@ -188,11 +204,7 @@ NAV_PAGES = [
 
 def masthead(active_page, meta_main, meta_sub):
     """
-    The red bar and the tab bar beneath it, shared by every page.
-
-    The club mark is deliberately not here. It is line art, and at masthead
-    size its strokes render too thin to sit on the red; the wordmark carries
-    the bar on its own. Both colourways stay in assets/ for other uses.
+    The masthead and the tab bar beneath it, shared by every page.
 
     `active_page` is the filename of the page being generated, so it can mark
     its own tab. `meta_main` and `meta_sub` are the two right-hand lines, which
@@ -200,6 +212,8 @@ def masthead(active_page, meta_main, meta_sub):
     """
     html = f"""        <header class="masthead">
             <a class="masthead-brand" href="index.html">
+                <img class="masthead-mark" src="assets/eagles-bird-red.svg" alt=""
+                     width="369" height="383">
                 <span class="masthead-wordmark">{config.TEAM_NAME}</span>
             </a>
             <div class="masthead-meta">
@@ -242,6 +256,30 @@ def season_label():
     return f"20{start}-{end} Season"
 
 
+# --- Team logos -------------------------------------------------------------
+# fetch_logos.py caches each club's logo as assets/logos/<team-slug>.png.
+
+LOGO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos")
+
+
+def team_logo(team, fallback_url=None):
+    """
+    A team's logo, served from our own cache.
+
+    Without a cached file this uses `fallback_url` (the GTHL's own copy, which
+    the standings scrape records) if there is one, or the team's initials in
+    the same footprint, so rows never jump around a missing image.
+    """
+    filename = f"{slug(team)}.png"
+    if os.path.exists(os.path.join(LOGO_DIR, filename)):
+        return f'<img class="team-logo" src="assets/logos/{filename}" alt="" loading="lazy">'
+    if fallback_url:
+        return (f'<img class="team-logo" src="{html.escape(fallback_url)}" alt="" loading="lazy" '
+                'onerror="this.style.display=\'none\'">')
+    initials = "".join(w[0] for w in team.removeprefix("The ").split())[:3].upper()
+    return f'<span class="team-logo team-mono" aria-hidden="true">{html.escape(initials)}</span>'
+
+
 # --- Stylesheet -------------------------------------------------------------
 # One stylesheet for all three pages. Each generator used to carry its own
 # near-identical copy, which is how the schedule's column headers drifted out
@@ -263,6 +301,7 @@ _TOKENS_CSS = """
             --crest-wash: #fdf3f4;
 
             --surface: #ffffff;
+            --wash: #f6f5f7;
             --line: #e6e6e9;
             --line-soft: #f0f0f2;
             --ink: #111214;
@@ -270,8 +309,8 @@ _TOKENS_CSS = """
             --ink-3: #86898f;
 
             --display: 'Oswald', 'Arial Narrow', 'Helvetica Neue', sans-serif;
-            --body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-                    'Helvetica Neue', Arial, sans-serif;
+            --body: 'Barlow', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                    Roboto, 'Helvetica Neue', Arial, sans-serif;
 
             --shell: 1180px;
         }
@@ -290,8 +329,6 @@ _BASE_CSS = """
 
         body {
             font-family: var(--body);
-            /* White, not a page grey: the container is full width, so a grey
-               body only ever showed as an empty strip below the content. */
             background: var(--surface);
             color: var(--ink);
             min-height: 100vh;
@@ -302,7 +339,10 @@ _BASE_CSS = """
             background: var(--surface);
         }
 
+        /* A faint grey behind the content only, so the white tables and game
+           cards read as objects on it. The masthead and sponsor stay white. */
         .content {
+            background: var(--wash);
             padding: clamp(12px, 2.6vw, 24px) clamp(10px, 2.6vw, 24px)
                      clamp(26px, 5vw, 44px);
         }
@@ -325,7 +365,6 @@ _TABLE_CSS = """
         .table-wrapper {
             background: var(--surface);
             border: 1px solid var(--line);
-            border-radius: 10px;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
@@ -478,49 +517,128 @@ _TABLE_CSS = """
         }
 """
 
-# The schedule is a table on a laptop and one card per game on a phone, from
-# the same markup. Games are grouped under a date heading either way, so the
-# date is written once instead of on every row.
+# The schedule is a column of game cards, grouped by week, under a card for the
+# next Eagles game. Our own games are one line about the opponent; everyone
+# else's show both teams. Red marks only our games and the countdown.
 _SCHEDULE_CSS = """
-        .date-row th {
-            background: #f6f6f8;
+        .schedule {
+            max-width: 860px;
+            margin: 0 auto;
+            display: grid;
+            gap: 18px;
+        }
+
+        /* --- Next game --- */
+
+        .next {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            padding: 14px 18px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .next-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.74rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--ink-2);
+        }
+
+        .next-when {
+            color: var(--brand);
+        }
+
+        .face {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            align-items: center;
+            gap: 12px;
+        }
+
+        .face-team {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: clamp(0.85rem, 2.6vw, 1.05rem);
+            line-height: 1.15;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .face-team.home {
+            flex-direction: row-reverse;
+            text-align: right;
+        }
+
+        .face-team .team-logo {
+            width: 32px;
+            height: 32px;
+        }
+
+        .face-role {
+            display: block;
+            font-family: var(--body);
+            font-weight: 500;
+            font-size: 0.62rem;
+            letter-spacing: 0.12em;
+            color: var(--ink-3);
+            margin-top: 2px;
+        }
+
+        .face-vs {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--ink-3);
+        }
+
+        .next-foot {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 16px;
+            font-size: 0.9rem;
             color: var(--ink-2);
             border-top: 1px solid var(--line);
-            border-bottom: 1px solid var(--line);
-            font-size: clamp(0.66rem, 1.8vw, 0.74rem);
-            letter-spacing: 0.12em;
-            padding: 8px 10px;
+            padding-top: 10px;
         }
 
-        .schedule-table tbody tr:first-child .date-head {
-            border-top: none;
+        .next-foot strong {
+            color: var(--ink);
+            font-weight: 600;
         }
 
-        .cell-arena {
-            color: var(--ink-3);
-            white-space: normal;
-        }
+        /* --- Heading and the Eagles / all games toggle --- */
 
-        .cell-type {
-            color: var(--ink-3);
-            font-size: 0.74rem;
-            letter-spacing: 0.06em;
-        }
-
-        /* --- Eagles / all games toggle --- */
-
-        .sched-bar {
+        .sched-head {
             display: flex;
-            justify-content: flex-end;
-            margin-bottom: 12px;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .sched-head h2 {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.82rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--ink-2);
         }
 
         .sched-filter {
             display: inline-flex;
             border: 1px solid var(--line);
-            border-radius: 999px;
-            padding: 3px;
-            background: #ffffff;
+            background: var(--surface);
         }
 
         .sched-filter-btn {
@@ -529,13 +647,12 @@ _SCHEDULE_CSS = """
             background: transparent;
             cursor: pointer;
             font-family: var(--display);
-            font-weight: 500;
+            font-weight: 600;
             font-size: 0.74rem;
             letter-spacing: 0.08em;
             text-transform: uppercase;
             color: var(--ink-2);
-            padding: 7px 15px;
-            border-radius: 999px;
+            padding: 8px 14px;
             display: inline-flex;
             align-items: baseline;
             gap: 6px;
@@ -547,148 +664,209 @@ _SCHEDULE_CSS = """
         }
 
         .sched-filter-btn[aria-pressed="true"] {
-            background: var(--brand);
+            background: var(--ink);
             color: #ffffff;
+        }
+
+        .sched-filter-btn:focus-visible {
+            outline: 2px solid var(--brand);
+            outline-offset: 2px;
         }
 
         .sched-filter-count {
             font-size: 0.68rem;
-            opacity: 0.65;
+            opacity: 0.7;
             font-variant-numeric: tabular-nums;
         }
 
-        /* Filtering is a class on the wrapper, set in the generated HTML so
-           there is no flash of the wrong list before the script runs. */
-        .filter-ours tr.game:not(.is-ours),
-        .filter-ours tr.date-row[data-ours="0"] {
+        /* --- Weeks --- */
+
+        .week {
+            display: grid;
+            gap: 8px;
+        }
+
+        .week-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 8px 2px 0;
+        }
+
+        .week-label {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .week-label.now {
+            color: var(--brand);
+        }
+
+        .week-count {
+            font-size: 0.8rem;
+            color: var(--ink-3);
+        }
+
+        /* --- One game --- */
+
+        .game {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            display: grid;
+            grid-template-columns: 74px minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 14px;
+        }
+
+        .game.is-ours {
+            box-shadow: inset 3px 0 0 var(--brand);
+        }
+
+        .day-pill {
+            justify-self: start;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            background: #f1f0f3;
+            padding: 6px 8px;
+            white-space: nowrap;
+        }
+
+        .opp {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .opp .team-logo {
+            width: 26px;
+            height: 26px;
+        }
+
+        .opp-name {
+            display: block;
+            font-weight: 600;
+            font-size: 1.02rem;
+            line-height: 1.2;
+            color: var(--ink);
+        }
+
+        .opp-arena,
+        .side-arena {
+            display: block;
+            color: var(--ink-2);
+            font-size: 0.86rem;
+            margin-top: 2px;
+        }
+
+        .pair {
+            display: grid;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .pair-team {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            min-width: 0;
+            font-size: 0.95rem;
+            color: var(--ink);
+        }
+
+        .pair-team .team-logo {
+            width: 20px;
+            height: 20px;
+        }
+
+        .pair-team.us {
+            font-weight: 600;
+        }
+
+        .side {
+            text-align: right;
+            display: grid;
+            justify-items: end;
+            gap: 5px;
+        }
+
+        .side-arena {
+            margin-top: 0;
+            font-size: 0.8rem;
+        }
+
+        .when {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 1rem;
+            letter-spacing: 0.02em;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            color: var(--ink);
+        }
+
+        .chip {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.62rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 3px 7px;
+        }
+
+        .chip.home {
+            background: #ececf0;
+            color: var(--ink);
+        }
+
+        .chip.away {
+            background: var(--surface);
+            color: var(--ink-2);
+            box-shadow: inset 0 0 0 1px var(--line);
+        }
+
+        /* A team the GTHL has no logo for, usually an East team in an
+           interlocking game, gets its initials in the same footprint. */
+        .team-mono {
+            display: inline-grid;
+            place-items: center;
+            background: #e9e7ec;
+            color: #514c57;
+            font-family: var(--body);
+            font-weight: 700;
+            font-size: 0.56rem;
+            letter-spacing: 0.02em;
+        }
+
+        /* Filtering is a class on the wrapper, set in the generated HTML so the
+           list is right before any script runs. A week with none of our games
+           goes with them, and each week shows the count for the active view. */
+        .filter-ours .game:not(.is-ours),
+        .filter-ours .week[data-ours="0"],
+        .filter-ours .count-all,
+        .sched-weeks:not(.filter-ours) .count-ours {
             display: none;
         }
 
-        @media (min-width: 720px) {
-            .schedule-table .cell-time,
-            .schedule-table .cell-away,
-            .schedule-table .cell-score,
-            .schedule-table .cell-home,
-            .schedule-table .cell-type {
-                width: 1%;
-                white-space: nowrap;
+        @media (max-width: 519px) {
+            .game {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 8px;
             }
 
-            .schedule-table .cell-score {
-                padding-right: 22px;
-            }
-
-            .schedule-table .cell-arena {
-                width: auto;
-            }
-        }
-
-        /* --- Phone: a dense list, not a stack of cards ---
-           Cards read well but cost four lines a game, which turned a week of
-           hockey into a long scroll.
-
-           The time and both team names are set inline so they flow as one
-           sentence and wrap like prose, with the arena on a quiet line under
-           it: two lines a game instead of four. Score and game type are lifted
-           out into a right rail, because leaving them in the flow made them
-           wrap onto a line of their own the moment a matchup filled the first
-           line. The row reserves room for that rail only when there is one. */
-        @media (max-width: 719px) {
-            .schedule-table,
-            .schedule-table tbody,
-            .schedule-table tr,
-            .schedule-table td,
-            .schedule-table th {
-                display: block;
-            }
-
-            .schedule-table thead {
-                display: none;
-            }
-
-            .schedule-table .date-row th {
-                padding: 7px 12px;
-            }
-
-            .schedule-table tr.game {
-                position: relative;
-                padding: 8px 12px 9px;
-            }
-
-            .schedule-table.has-rail tr.game {
-                padding-right: 66px;
-            }
-
-            .schedule-table tr.game td {
-                padding: 0;
-            }
-
-            /* One flowing line: "7:10 PM Vaughan Panthers at Humber Valley
-               Sharks", wrapping as prose rather than as three boxes. */
-            .schedule-table .cell-time,
-            .schedule-table .cell-away,
-            .schedule-table .cell-home {
-                display: inline;
-                font-size: 0.88rem;
-                line-height: 1.45;
-            }
-
-            .schedule-table .cell-time {
-                font-family: var(--display);
-                font-weight: 500;
-                font-size: 0.78rem;
-                letter-spacing: 0.04em;
-                color: var(--ink-2);
-                margin-right: 3px;
-            }
-
-            /* The column headers are gone at this width, so the home side
-               has to say so itself. */
-            .schedule-table .cell-home::before {
-                content: " at ";
-                color: var(--ink-3);
-                font-weight: 400;
-            }
-
-            .schedule-table .cell-arena {
-                font-size: 0.74rem;
-                line-height: 1.35;
-                margin-top: 1px;
-            }
-
-            /* The right rail. */
-            .schedule-table .cell-score,
-            .schedule-table .cell-type {
-                position: absolute;
-                right: 12px;
-                text-align: right;
-            }
-
-            .schedule-table .cell-score {
-                top: 7px;
-                font-family: var(--display);
-                font-weight: 600;
-                font-size: 0.98rem;
-                color: var(--ink);
-            }
-
-            .schedule-table .cell-type {
-                bottom: 9px;
-                font-size: 0.68rem;
-            }
-
-            .sched-bar {
-                justify-content: stretch;
-            }
-
-            .sched-filter {
-                width: 100%;
-            }
-
-            .sched-filter-btn {
-                flex: 1;
-                justify-content: center;
-                padding: 9px 10px;
+            .side {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                text-align: left;
             }
         }
 """
@@ -736,23 +914,17 @@ SCHEDULE_NOSCRIPT = """    <noscript>
         <style>
             /* Without scripting the toggle cannot work, so hide it and show
                every game rather than stranding the reader on a filtered list
-               they cannot leave. These selectors deliberately match the
-               specificity of the rules that do the hiding, and come later, so
-               they win without needing !important. Display is restored per
-               breakpoint because the phone layout lays rows out as blocks. */
-            .sched-bar { display: none; }
+               they cannot leave. Same specificity as the rules that hide, and
+               later, so these win without !important. */
+            .sched-filter { display: none; }
 
-            .filter-ours tr.game:not(.is-ours),
-            .filter-ours tr.date-row[data-ours="0"] {
-                display: block;
+            .filter-ours .game:not(.is-ours),
+            .filter-ours .week[data-ours="0"] {
+                display: grid;
             }
 
-            @media (min-width: 720px) {
-                .filter-ours tr.game:not(.is-ours),
-                .filter-ours tr.date-row[data-ours="0"] {
-                    display: table-row;
-                }
-            }
+            .filter-ours .count-all { display: inline; }
+            .filter-ours .count-ours { display: none; }
         </style>
     </noscript>
 """
@@ -762,7 +934,6 @@ _CHROME_CSS = """
         .error {
             position: relative;
             overflow: hidden;
-            border-radius: 10px;
             text-align: center;
             margin: clamp(14px, 4vw, 28px) auto;
             max-width: 640px;
@@ -853,7 +1024,7 @@ _RESPONSIVE_CSS = """
                 padding-right: 0;
             }
 
-            .team-logo {
+            td .team-logo {
                 display: none;
             }
         }
@@ -988,7 +1159,6 @@ PLAYOFF_CSS = """
             text-transform: uppercase;
             letter-spacing: 0.07em;
             line-height: 1.3;
-            border-radius: 10px 10px 0 0;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -1003,7 +1173,6 @@ PLAYOFF_CSS = """
             background: #ffffff;
             color: var(--brand);
             padding: 3px 9px;
-            border-radius: 3px;
             font-size: 0.68rem;
             font-weight: 600;
             letter-spacing: 0.05em;
@@ -1040,7 +1209,6 @@ PLAYOFF_CSS = """
         }
 
         .section .table-wrapper {
-            border-radius: 0 0 10px 10px;
             border-top: none;
         }
 
@@ -1048,7 +1216,6 @@ PLAYOFF_CSS = """
             background: #fafafa;
             border: 1px solid var(--line);
             border-left: 3px solid var(--crest);
-            border-radius: 8px;
             padding: clamp(14px, 3vw, 18px);
             margin-bottom: clamp(18px, 4vw, 26px);
         }
