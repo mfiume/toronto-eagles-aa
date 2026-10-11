@@ -9,18 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fetch sponsor logos and look for Tasios
+      - name: Fetch Tasios logos
         run: |
           mkdir -p fetched
-          curl -fsSL -A "Mozilla/5.0" -o fetched/performance-auto-group.png \
-            "https://performanceprotection.info/wp-content/uploads/2013/03/Performance-Auto-Group.png" || echo "PAG failed"
-          for site in tasiosortho.com www.tasiosortho.com tasiosorthodontics.com www.tasiosorthodontics.com tasiosortho.ca www.tasiosortho.ca tasiosorthodontics.ca www.tasiosorthodontics.ca; do
-            if curl -fsSL -A "Mozilla/5.0" -m 20 -o "fetched/$site.html" "https://$site/"; then
-              echo "== $site OK"
-              grep -oiE '(src|href|content)="[^"]*(logo|\.svg|og-image)[^"]*"' "fetched/$site.html" | sort -u | head -20
-            else
-              echo "== $site failed"; rm -f "fetched/$site.html"
-            fi
+          for f in tasios-ortho-logo.png tasios-ortho-logo-small.png tasios-logo-footer.png; do
+            curl -fsSL -A "Mozilla/5.0" -o "fetched/$f" "https://tasiosortho.com/wp-content/uploads/2020/11/$f" || echo "$f failed"
           done
           ls -la fetched
       - name: Commit
