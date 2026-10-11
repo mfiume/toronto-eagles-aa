@@ -25,6 +25,27 @@ COLUMN_TIER = {
 }
 
 
+# Before a team has played, the GTHL leaves its record columns blank. With no
+# games played a record is 0-0-0 by definition, so say so; the averages and the
+# streak have no value yet and get a dash rather than a made-up zero.
+RECORD_COLUMNS = {"W-L-T", "Home", "Away", "P10"}
+NO_VALUE_YET = {"WIN%", "GFA", "GAA", "Streak"}
+
+
+def before_first_game(row):
+    """The row with its unplayed blanks filled in, for display only."""
+    if str(row.get("GP", "")).strip() != "0":
+        return row
+    filled = dict(row)
+    for key, value in row.items():
+        if not str(value).strip():
+            if key in RECORD_COLUMNS:
+                filled[key] = "0-0-0"
+            elif key in NO_VALUE_YET:
+                filled[key] = "–"
+    return filled
+
+
 def column_classes(header, *extra):
     """The class attribute for a standings column, tier included."""
     names = [c for c in extra if c]
@@ -115,7 +136,7 @@ def generate_html():
             is_our_team = row.get('Team', '').lower() == config.TEAM_NAME.lower()
             row_class = ' class="highlight"' if is_our_team else ''
             html += f"                        <tr{row_class}>\n"
-            for i, (key, value) in enumerate(row.items()):
+            for i, (key, value) in enumerate(before_first_game(row).items()):
                 # Skip empty column names
                 if key == '':
                     continue
