@@ -57,7 +57,7 @@
         }
 
         /* A faint grey behind the content only, so the white tables and game
-           cards read as objects on it. The masthead and sponsor stay white. */
+           cards read as objects on it. The masthead and sponsors stay white. */
         .content {
             background: var(--wash);
             padding: clamp(12px, 2.6vw, 24px) clamp(10px, 2.6vw, 24px)
@@ -711,43 +711,76 @@
             margin-top: 10px;
         }
 
-        .sponsor {
-            --sponsor-height: clamp(58px, 13vw, 82px);
+        .sponsor-strip {
+            --sponsor-height: 34px;
+            --sponsor-gap: clamp(40px, 7vw, 72px);
             background: #ffffff;
-            border-top: 1px solid var(--line);
-            padding: clamp(24px, 5vw, 36px) 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: clamp(14px, 2.4vw, 20px);
+            border-bottom: 1px solid var(--line);
+            overflow: hidden;
+            padding: 8px 0;
         }
 
-        .sponsor-label {
-            font-family: 'Oswald', 'Arial Narrow', 'Helvetica Neue', sans-serif;
-            font-weight: 500;
-            font-size: 0.68rem;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            color: #9b9b9b;
+        .sponsor-track {
+            display: flex;
+            width: max-content;
+            animation: sponsor-scroll 60s linear infinite;
         }
 
-        .sponsor-logos {
+        .sponsor-strip:hover .sponsor-track,
+        .sponsor-strip:focus-within .sponsor-track {
+            animation-play-state: paused;
+        }
+
+        .sponsor-set {
             display: flex;
-            flex-wrap: wrap;
             align-items: center;
-            justify-content: center;
-            gap: clamp(26px, 7vw, 60px);
+            gap: var(--sponsor-gap);
+            padding-right: var(--sponsor-gap);
         }
 
         .sponsor-link {
             display: block;
             line-height: 0;
+            flex-shrink: 0;
+        }
+
+        .sponsor-link:focus-visible {
+            outline: 2px solid var(--brand);
+            outline-offset: 4px;
         }
 
         .sponsor-logo {
             height: calc(var(--sponsor-height) * var(--scale, 1));
             width: auto;
             display: block;
+        }
+
+        @keyframes sponsor-scroll {
+            to {
+                transform: translateX(-50%);
+            }
+        }
+
+        /* Standing still: one set, centred, and swipeable if it ever outgrows
+           the screen. */
+        @media (prefers-reduced-motion: reduce) {
+            .sponsor-strip {
+                overflow-x: auto;
+                scrollbar-width: none;
+            }
+
+            .sponsor-strip::-webkit-scrollbar {
+                display: none;
+            }
+
+            .sponsor-track {
+                animation: none;
+                margin: 0 auto;
+            }
+
+            .sponsor-set[aria-hidden="true"] {
+                display: none;
+            }
         }
 
         @media (max-width: 719px) {
@@ -814,6 +847,142 @@
             <a href="index.html">Standings</a>
             <a href="schedule.html" class="active">Schedule</a>
         </nav>
+        <aside class="sponsor-strip" aria-label="Our sponsors">
+            <div class="sponsor-track">
+                <div class="sponsor-set">
+                    <a class="sponsor-link" href="https://www.recruit-connect.ca/"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/recruit-connect.png" alt="Recruit Connect"
+                         style="--scale: 1.0" width="540" height="247"></a>
+                    <a class="sponsor-link" href="https://tasiosortho.com/"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/tasios-orthodontics.png" alt="Tasios Orthodontics"
+                         style="--scale: 0.74" width="502" height="154"></a>
+                    <a class="sponsor-link" href="https://www.performance.ca/"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/performance-auto-group.png" alt="Performance Auto Group"
+                         style="--scale: 0.74" width="650" height="203"></a>
+                </div>
+                <div class="sponsor-set" aria-hidden="true">
+                    <a class="sponsor-link" href="https://www.recruit-connect.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/recruit-connect.png" alt=""
+                         style="--scale: 1.0" width="540" height="247"></a>
+                    <a class="sponsor-link" href="https://tasiosortho.com/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/tasios-orthodontics.png" alt=""
+                         style="--scale: 0.74" width="502" height="154"></a>
+                    <a class="sponsor-link" href="https://www.performance.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/performance-auto-group.png" alt=""
+                         style="--scale: 0.74" width="650" height="203"></a>
+                </div>
+                <div class="sponsor-set" aria-hidden="true">
+                    <a class="sponsor-link" href="https://www.recruit-connect.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/recruit-connect.png" alt=""
+                         style="--scale: 1.0" width="540" height="247"></a>
+                    <a class="sponsor-link" href="https://tasiosortho.com/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/tasios-orthodontics.png" alt=""
+                         style="--scale: 0.74" width="502" height="154"></a>
+                    <a class="sponsor-link" href="https://www.performance.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/performance-auto-group.png" alt=""
+                         style="--scale: 0.74" width="650" height="203"></a>
+                </div>
+                <div class="sponsor-set" aria-hidden="true">
+                    <a class="sponsor-link" href="https://www.recruit-connect.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/recruit-connect.png" alt=""
+                         style="--scale: 1.0" width="540" height="247"></a>
+                    <a class="sponsor-link" href="https://tasiosortho.com/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/tasios-orthodontics.png" alt=""
+                         style="--scale: 0.74" width="502" height="154"></a>
+                    <a class="sponsor-link" href="https://www.performance.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/performance-auto-group.png" alt=""
+                         style="--scale: 0.74" width="650" height="203"></a>
+                </div>
+                <div class="sponsor-set" aria-hidden="true">
+                    <a class="sponsor-link" href="https://www.recruit-connect.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/recruit-connect.png" alt=""
+                         style="--scale: 1.0" width="540" height="247"></a>
+                    <a class="sponsor-link" href="https://tasiosortho.com/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/tasios-orthodontics.png" alt=""
+                         style="--scale: 0.74" width="502" height="154"></a>
+                    <a class="sponsor-link" href="https://www.performance.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/performance-auto-group.png" alt=""
+                         style="--scale: 0.74" width="650" height="203"></a>
+                </div>
+                <div class="sponsor-set" aria-hidden="true">
+                    <a class="sponsor-link" href="https://www.recruit-connect.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/recruit-connect.png" alt=""
+                         style="--scale: 1.0" width="540" height="247"></a>
+                    <a class="sponsor-link" href="https://tasiosortho.com/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/tasios-orthodontics.png" alt=""
+                         style="--scale: 0.74" width="502" height="154"></a>
+                    <a class="sponsor-link" href="https://www.performance.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/performance-auto-group.png" alt=""
+                         style="--scale: 0.74" width="650" height="203"></a>
+                </div>
+                <div class="sponsor-set" aria-hidden="true">
+                    <a class="sponsor-link" href="https://www.recruit-connect.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/recruit-connect.png" alt=""
+                         style="--scale: 1.0" width="540" height="247"></a>
+                    <a class="sponsor-link" href="https://tasiosortho.com/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/tasios-orthodontics.png" alt=""
+                         style="--scale: 0.74" width="502" height="154"></a>
+                    <a class="sponsor-link" href="https://www.performance.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/performance-auto-group.png" alt=""
+                         style="--scale: 0.74" width="650" height="203"></a>
+                </div>
+                <div class="sponsor-set" aria-hidden="true">
+                    <a class="sponsor-link" href="https://www.recruit-connect.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/recruit-connect.png" alt=""
+                         style="--scale: 1.0" width="540" height="247"></a>
+                    <a class="sponsor-link" href="https://tasiosortho.com/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/tasios-orthodontics.png" alt=""
+                         style="--scale: 0.74" width="502" height="154"></a>
+                    <a class="sponsor-link" href="https://www.performance.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/performance-auto-group.png" alt=""
+                         style="--scale: 0.74" width="650" height="203"></a>
+                </div>
+                <div class="sponsor-set" aria-hidden="true">
+                    <a class="sponsor-link" href="https://www.recruit-connect.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/recruit-connect.png" alt=""
+                         style="--scale: 1.0" width="540" height="247"></a>
+                    <a class="sponsor-link" href="https://tasiosortho.com/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/tasios-orthodontics.png" alt=""
+                         style="--scale: 0.74" width="502" height="154"></a>
+                    <a class="sponsor-link" href="https://www.performance.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/performance-auto-group.png" alt=""
+                         style="--scale: 0.74" width="650" height="203"></a>
+                </div>
+                <div class="sponsor-set" aria-hidden="true">
+                    <a class="sponsor-link" href="https://www.recruit-connect.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/recruit-connect.png" alt=""
+                         style="--scale: 1.0" width="540" height="247"></a>
+                    <a class="sponsor-link" href="https://tasiosortho.com/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/tasios-orthodontics.png" alt=""
+                         style="--scale: 0.74" width="502" height="154"></a>
+                    <a class="sponsor-link" href="https://www.performance.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/performance-auto-group.png" alt=""
+                         style="--scale: 0.74" width="650" height="203"></a>
+                </div>
+                <div class="sponsor-set" aria-hidden="true">
+                    <a class="sponsor-link" href="https://www.recruit-connect.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/recruit-connect.png" alt=""
+                         style="--scale: 1.0" width="540" height="247"></a>
+                    <a class="sponsor-link" href="https://tasiosortho.com/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/tasios-orthodontics.png" alt=""
+                         style="--scale: 0.74" width="502" height="154"></a>
+                    <a class="sponsor-link" href="https://www.performance.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/performance-auto-group.png" alt=""
+                         style="--scale: 0.74" width="650" height="203"></a>
+                </div>
+                <div class="sponsor-set" aria-hidden="true">
+                    <a class="sponsor-link" href="https://www.recruit-connect.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/recruit-connect.png" alt=""
+                         style="--scale: 1.0" width="540" height="247"></a>
+                    <a class="sponsor-link" href="https://tasiosortho.com/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/tasios-orthodontics.png" alt=""
+                         style="--scale: 0.74" width="502" height="154"></a>
+                    <a class="sponsor-link" href="https://www.performance.ca/" tabindex="-1"
+                       target="_blank" rel="noopener noreferrer"><img class="sponsor-logo" src="assets/performance-auto-group.png" alt=""
+                         style="--scale: 0.74" width="650" height="203"></a>
+                </div>
+            </div>
+        </aside>
 
 
         <div class="content">
@@ -1325,33 +1494,10 @@
                     </div>
                 </section>
                 </div>
-            <p class="content-meta">Updated <time datetime="2026-10-11T23:17:03.580187+00:00" title="Oct 11, 07:17 PM ET · Refreshes hourly">27 minutes ago</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-11T23:17:03.580187+00:00" title="Oct 11, 07:17 PM ET · Refreshes hourly">28 minutes ago</time></p>
             </div>
         </div>
 
-        <div class="sponsor">
-            <span class="sponsor-label">Sponsored By</span>
-            <div class="sponsor-logos">
-                <a class="sponsor-link" href="https://www.recruit-connect.ca/"
-                   target="_blank" rel="noopener noreferrer">
-                    <img class="sponsor-logo" src="assets/recruit-connect.png"
-                         alt="Recruit Connect" style="--scale: 1.0"
-                         width="540" height="247">
-                </a>
-                <a class="sponsor-link" href="https://tasiosortho.com/"
-                   target="_blank" rel="noopener noreferrer">
-                    <img class="sponsor-logo" src="assets/tasios-orthodontics.png"
-                         alt="Tasios Orthodontics" style="--scale: 0.72"
-                         width="502" height="154">
-                </a>
-                <a class="sponsor-link" href="https://www.performance.ca/"
-                   target="_blank" rel="noopener noreferrer">
-                    <img class="sponsor-logo" src="assets/performance-auto-group.png"
-                         alt="Performance Auto Group" style="--scale: 0.72"
-                         width="650" height="203">
-                </a>
-            </div>
-        </div>
     </div>
 
     <script>

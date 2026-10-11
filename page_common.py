@@ -240,7 +240,7 @@ def masthead(active_page, meta_main, meta_sub):
         active = ' class="active"' if href == active_page else ""
         html += f'            <a href="{href}"{active}>{label}</a>\n'
     html += "        </nav>\n"
-    return html
+    return html + sponsor_strip()
 
 
 def division_label(filters=None):
@@ -348,7 +348,7 @@ _BASE_CSS = """
         }
 
         /* A faint grey behind the content only, so the white tables and game
-           cards read as objects on it. The masthead and sponsor stay white. */
+           cards read as objects on it. The masthead and sponsors stay white. */
         .content {
             background: var(--wash);
             padding: clamp(12px, 2.6vw, 24px) clamp(10px, 2.6vw, 24px)
@@ -1001,11 +1001,16 @@ _RESPONSIVE_CSS = """
         }
 """
 
-# --- Sponsor ----------------------------------------------------------------
-# The club's sponsor sits at the end of the page, on its own white band between
-# the content and the small print. It reads as part of the page rather than as
-# an ad: no box, no border around the mark, no dimming, and the logo is shown
-# unaltered on white because it is supplied on an opaque white background.
+# --- Sponsors ---------------------------------------------------------------
+# The club's sponsors run as a slim strip under the tabs on every page, scrolling
+# slowly sideways in a loop. It reads as part of the page rather than as an ad:
+# no box around a mark, no dimming, each logo shown unaltered on white.
+#
+# The loop is the sponsor set repeated until one half of the track is wider
+# than any screen, then the whole track slides left by exactly half, so the
+# seam never shows. Only the first set is announced to screen readers and
+# reachable by keyboard; the copies are decoration. With reduced motion asked
+# for, the strip stands still and can be swiped instead.
 
 SPONSORS = [
     {
@@ -1016,7 +1021,7 @@ SPONSORS = [
         "height": 247,
         # Optical scale, not bounding-box scale. A stacked logo needs more
         # height than a single-line wordmark to carry the same weight, so each
-        # mark is sized against the row height by its own factor.
+        # mark is sized against the strip height by its own factor.
         "scale": 1.0,
     },
     {
@@ -1025,7 +1030,7 @@ SPONSORS = [
         "logo": "assets/tasios-orthodontics.png",
         "width": 502,
         "height": 154,
-        "scale": 0.72,
+        "scale": 0.74,
     },
     {
         "name": "Performance Auto Group",
@@ -1033,42 +1038,52 @@ SPONSORS = [
         "logo": "assets/performance-auto-group.png",
         "width": 650,
         "height": 203,
-        "scale": 0.72,
+        "scale": 0.74,
     },
 ]
 
+# How many times the sponsor set repeats in each half of the track. One set of
+# three logos with their gaps measures about 357px, so six sets (about 2140px)
+# clear a 1920px screen. The animation time grows with it to keep the speed.
+_SPONSOR_SETS_PER_HALF = 6
+
 _SPONSOR_CSS = """
-        .sponsor {
-            --sponsor-height: clamp(58px, 13vw, 82px);
+        .sponsor-strip {
+            --sponsor-height: 34px;
+            --sponsor-gap: clamp(40px, 7vw, 72px);
             background: #ffffff;
-            border-top: 1px solid var(--line);
-            padding: clamp(24px, 5vw, 36px) 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: clamp(14px, 2.4vw, 20px);
+            border-bottom: 1px solid var(--line);
+            overflow: hidden;
+            padding: 8px 0;
         }
 
-        .sponsor-label {
-            font-family: 'Oswald', 'Arial Narrow', 'Helvetica Neue', sans-serif;
-            font-weight: 500;
-            font-size: 0.68rem;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            color: #9b9b9b;
+        .sponsor-track {
+            display: flex;
+            width: max-content;
+            animation: sponsor-scroll 60s linear infinite;
         }
 
-        .sponsor-logos {
+        .sponsor-strip:hover .sponsor-track,
+        .sponsor-strip:focus-within .sponsor-track {
+            animation-play-state: paused;
+        }
+
+        .sponsor-set {
             display: flex;
-            flex-wrap: wrap;
             align-items: center;
-            justify-content: center;
-            gap: clamp(26px, 7vw, 60px);
+            gap: var(--sponsor-gap);
+            padding-right: var(--sponsor-gap);
         }
 
         .sponsor-link {
             display: block;
             line-height: 0;
+            flex-shrink: 0;
+        }
+
+        .sponsor-link:focus-visible {
+            outline: 2px solid var(--brand);
+            outline-offset: 4px;
         }
 
         .sponsor-logo {
@@ -1076,28 +1091,60 @@ _SPONSOR_CSS = """
             width: auto;
             display: block;
         }
+
+        @keyframes sponsor-scroll {
+            to {
+                transform: translateX(-50%);
+            }
+        }
+
+        /* Standing still: one set, centred, and swipeable if it ever outgrows
+           the screen. */
+        @media (prefers-reduced-motion: reduce) {
+            .sponsor-strip {
+                overflow-x: auto;
+                scrollbar-width: none;
+            }
+
+            .sponsor-strip::-webkit-scrollbar {
+                display: none;
+            }
+
+            .sponsor-track {
+                animation: none;
+                margin: 0 auto;
+            }
+
+            .sponsor-set[aria-hidden="true"] {
+                display: none;
+            }
+        }
 """
 
 
-def sponsor_block():
-    """The sponsor band, shown at the foot of every page."""
-    label = "Sponsored By"
-    html = f"""        <div class="sponsor">
-            <span class="sponsor-label">{label}</span>
-            <div class="sponsor-logos">
-"""
+def _sponsor_set(decorative):
+    """One run of every sponsor's logo. Copies are hidden from assistive tech."""
+    hidden = ' aria-hidden="true"' if decorative else ''
+    html = f'                <div class="sponsor-set"{hidden}>\n'
     for sponsor in SPONSORS:
-        html += f"""                <a class="sponsor-link" href="{sponsor['url']}"
-                   target="_blank" rel="noopener noreferrer">
-                    <img class="sponsor-logo" src="{sponsor['logo']}"
-                         alt="{sponsor['name']}" style="--scale: {sponsor['scale']}"
-                         width="{sponsor['width']}" height="{sponsor['height']}">
-                </a>
-"""
-    html += """            </div>
-        </div>
-"""
-    return html
+        tab = ' tabindex="-1"' if decorative else ''
+        alt = '' if decorative else sponsor['name']
+        html += (f'                    <a class="sponsor-link" href="{sponsor["url"]}"{tab}\n'
+                 f'                       target="_blank" rel="noopener noreferrer">'
+                 f'<img class="sponsor-logo" src="{sponsor["logo"]}" alt="{alt}"\n'
+                 f'                         style="--scale: {sponsor["scale"]}" '
+                 f'width="{sponsor["width"]}" height="{sponsor["height"]}"></a>\n')
+    return html + '                </div>\n'
+
+
+def sponsor_strip():
+    """The scrolling sponsor strip that sits under the tabs on every page."""
+    sets = _SPONSOR_SETS_PER_HALF * 2
+    html = ('        <aside class="sponsor-strip" aria-label="Our sponsors">\n'
+            '            <div class="sponsor-track">\n')
+    for n in range(sets):
+        html += _sponsor_set(decorative=n > 0)
+    return html + '            </div>\n        </aside>\n'
 
 
 def freshness(timestamp, refresh_note="Refreshes hourly"):
@@ -1115,8 +1162,11 @@ def freshness(timestamp, refresh_note="Refreshes hourly"):
 
 
 def page_end():
-    """What closes every page: the sponsor band, and nothing after it."""
-    return sponsor_block()
+    """
+    What closes every page. Nothing now: the sponsors moved up under the tabs.
+    Kept so the generators keep one place to add a footer.
+    """
+    return ""
 
 
 PAGE_CSS = (_TOKENS_CSS + _BASE_CSS + _MASTHEAD_CSS + _TABLE_CSS
