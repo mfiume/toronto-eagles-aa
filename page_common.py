@@ -1012,12 +1012,20 @@ SPONSORS = [
         "scale": 1.0,
     },
     {
-        "name": "Kia",
-        "url": "https://www.kia.ca/en",
-        "logo": "assets/kia.svg",
-        "width": 579,
-        "height": 136,
-        "scale": 0.46,
+        "name": "Tasios Orthodontics",
+        "url": "https://tasiosortho.com/",
+        "logo": "assets/tasios-orthodontics.png",
+        "width": 502,
+        "height": 154,
+        "scale": 0.72,
+    },
+    {
+        "name": "Performance Auto Group",
+        "url": "https://www.performance.ca/",
+        "logo": "assets/performance-auto-group.png",
+        "width": 650,
+        "height": 203,
+        "scale": 0.72,
     },
 ]
 
