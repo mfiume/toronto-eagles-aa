@@ -3,20 +3,30 @@ on:
   push:
     branches: [claude/diag-schedule]
 permissions:
-  contents: read
+  contents: write
 jobs:
-  diag:
+  fetch:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip install -r requirements.txt
-      - name: Install Chrome
+      - name: Fetch sponsor logos and look for Tasios
         run: |
-          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
-      - run: python diag_schedule.py
+          mkdir -p fetched
+          curl -fsSL -A "Mozilla/5.0" -o fetched/performance-auto-group.png \
+            "https://performanceprotection.info/wp-content/uploads/2013/03/Performance-Auto-Group.png" || echo "PAG failed"
+          for site in tasiosortho.com www.tasiosortho.com tasiosorthodontics.com www.tasiosorthodontics.com tasiosortho.ca www.tasiosortho.ca tasiosorthodontics.ca www.tasiosorthodontics.ca; do
+            if curl -fsSL -A "Mozilla/5.0" -m 20 -o "fetched/$site.html" "https://$site/"; then
+              echo "== $site OK"
+              grep -oiE '(src|href|content)="[^"]*(logo|\.svg|og-image)[^"]*"' "fetched/$site.html" | sort -u | head -20
+            else
+              echo "== $site failed"; rm -f "fetched/$site.html"
+            fi
+          done
+          ls -la fetched
+      - name: Commit
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add fetched
+          git diff --staged --quiet || git commit -m "Fetched sponsor assets"
+          git push
