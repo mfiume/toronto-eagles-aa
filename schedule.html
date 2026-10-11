@@ -516,126 +516,103 @@
             color: var(--ink-3);
         }
 
-        /* --- One game --- */
+        /* --- One game ---
+           Every game is the same compact row: day and time, both teams
+           stacked, the rink. Ours differ only by the red bar on the left. */
 
-        .game {
+        .week-games {
             background: var(--surface);
             border: 1px solid var(--line);
+        }
+
+        .game {
             display: grid;
-            grid-template-columns: 74px minmax(0, 1fr) auto;
+            grid-template-columns: 62px minmax(0, 1fr) auto;
             align-items: center;
-            gap: 14px;
-            padding: 10px 14px;
+            gap: 12px;
+            padding: 8px 12px;
+        }
+
+        .game + .game {
+            border-top: 1px solid var(--line);
         }
 
         .game.is-ours {
             box-shadow: inset 3px 0 0 var(--brand);
         }
 
-        .day-pill {
-            justify-self: start;
+        .game-when {
+            line-height: 1.15;
+        }
+
+        .game-day {
+            display: block;
             font-family: var(--display);
             font-weight: 600;
-            font-size: 0.78rem;
+            font-size: 0.74rem;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            background: #f1f0f3;
-            padding: 6px 8px;
-            white-space: nowrap;
-        }
-
-        .opp {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 0;
-        }
-
-        .opp .team-logo {
-            width: 26px;
-            height: 26px;
-        }
-
-        .opp-name {
-            display: block;
-            font-weight: 600;
-            font-size: 1.02rem;
-            line-height: 1.2;
             color: var(--ink);
         }
 
-        .opp-arena,
-        .side-arena {
+        .game-time {
             display: block;
-            color: var(--ink-2);
-            font-size: 0.86rem;
-            margin-top: 2px;
-        }
-
-        .pair {
-            display: grid;
-            gap: 6px;
-            min-width: 0;
-        }
-
-        .pair-team {
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            min-width: 0;
-            font-size: 0.95rem;
-            color: var(--ink);
-        }
-
-        .pair-team .team-logo {
-            width: 20px;
-            height: 20px;
-        }
-
-        .pair-team.us {
-            font-weight: 600;
-        }
-
-        .side {
-            text-align: right;
-            display: grid;
-            justify-items: end;
-            gap: 5px;
-        }
-
-        .side-arena {
-            margin-top: 0;
-            font-size: 0.8rem;
-        }
-
-        .when {
             font-family: var(--display);
-            font-weight: 600;
-            font-size: 1rem;
-            letter-spacing: 0.02em;
+            font-weight: 500;
+            font-size: 0.82rem;
             font-variant-numeric: tabular-nums;
-            white-space: nowrap;
-            color: var(--ink);
-        }
-
-        .chip {
-            font-family: var(--display);
-            font-weight: 600;
-            font-size: 0.62rem;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            padding: 3px 7px;
-        }
-
-        .chip.home {
-            background: #ececf0;
-            color: var(--ink);
-        }
-
-        .chip.away {
-            background: var(--surface);
             color: var(--ink-2);
-            box-shadow: inset 0 0 0 1px var(--line);
+            margin-top: 2px;
+            white-space: nowrap;
+        }
+
+        .game-teams {
+            display: grid;
+            gap: 3px;
+            min-width: 0;
+        }
+
+        .game-team {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            font-size: 0.92rem;
+            line-height: 1.25;
+            color: var(--ink);
+        }
+
+        .game-team > span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .game-team.us {
+            font-weight: 600;
+        }
+
+        .game-team .team-logo {
+            width: 18px;
+            height: 18px;
+        }
+
+        .game-rink {
+            font-size: 0.78rem;
+            line-height: 1.2;
+            color: var(--ink-3);
+            text-align: right;
+            max-width: 220px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        @media (max-width: 519px) {
+            .game-rink {
+                max-width: 96px;
+            }
         }
 
         /* A team the GTHL has no logo for, usually an East team in an
@@ -659,20 +636,6 @@
         .filter-ours .count-all,
         .sched-weeks:not(.filter-ours) .count-ours {
             display: none;
-        }
-
-        @media (max-width: 519px) {
-            .game {
-                grid-template-columns: minmax(0, 1fr);
-                gap: 8px;
-            }
-
-            .side {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                text-align: left;
-            }
         }
 
         .notice,
@@ -887,672 +850,478 @@
                     <div class="week-head"><h3 class="week-label">Next week</h3>
                         <span class="week-count"><span class="count-ours">1 game</span><span
                             class="count-all">10 games</span></span></div>
+                    <div class="week-games">
                     <div class="game">
-                        <span class="day-pill">Mon 12</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="side-arena">Scotiabank Pond 2</span></div>
+                        <div class="game-when"><span class="game-day">Mon 12</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div></div>
+                        <div class="game-rink">Scotiabank Pond 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Tue 13</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="side-arena">Mississauga Sports and Entertainment Centre 4</span></div>
+                        <div class="game-when"><span class="game-day">Tue 13</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div></div>
+                        <div class="game-rink">Mississauga Sports and Entertainment Centre 4</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Tue 13</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:15 PM</span>
-                            <span class="side-arena">Tomken 2</span></div>
+                        <div class="game-when"><span class="game-day">Tue 13</span>
+                            <span class="game-time">7:15 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div></div>
+                        <div class="game-rink">Tomken 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Thu 15</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div>
-                        </div>
-                        <div class="side"><span class="when">6:40 PM</span>
-                            <span class="side-arena">Iceland 4</span></div>
+                        <div class="game-when"><span class="game-day">Thu 15</span>
+                            <span class="game-time">6:40 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div></div>
+                        <div class="game-rink">Iceland 4</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Fri 16</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="side-arena">Al Palladini West</span></div>
+                        <div class="game-when"><span class="game-day">Fri 16</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div></div>
+                        <div class="game-rink">Al Palladini West</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Fri 16</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="side-arena">Scotiabank Pond 2</span></div>
+                        <div class="game-when"><span class="game-day">Fri 16</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div><div class="game-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div></div>
+                        <div class="game-rink">Scotiabank Pond 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 18</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div>
-                        </div>
-                        <div class="side"><span class="when">11:10 AM</span>
-                            <span class="side-arena">Vaughan Sports Village B</span></div>
+                        <div class="game-when"><span class="game-day">Sun 18</span>
+                            <span class="game-time">11:10 AM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div></div>
+                        <div class="game-rink">Vaughan Sports Village B</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 18</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div>
-                        </div>
-                        <div class="side"><span class="when">1:00 PM</span>
-                            <span class="side-arena">Vic Johnston</span></div>
+                        <div class="game-when"><span class="game-day">Sun 18</span>
+                            <span class="game-time">1:00 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div><div class="game-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div></div>
+                        <div class="game-rink">Vic Johnston</div>
                     </div>
                     <div class="game is-ours">
-                        <span class="day-pill">Sun 18</span>
-                        <div class="opp"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy">
-                            <div><span class="opp-name">vs West Mall Lightning</span>
-                                <span class="opp-arena">Lambton</span></div></div>
-                        <div class="side"><span class="when">1:10 PM</span>
-                            <span class="chip home">Home</span></div>
+                        <div class="game-when"><span class="game-day">Sun 18</span>
+                            <span class="game-time">1:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div><div class="game-team us"><img class="team-logo" src="assets/logos/toronto-eagles.png" alt="" loading="lazy"><span>Toronto Eagles</span></div></div>
+                        <div class="game-rink">Lambton</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 18</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div>
-                        </div>
-                        <div class="side"><span class="when">5:40 PM</span>
-                            <span class="side-arena">Mississauga Sports and Entertainment Centre 2</span></div>
+                        <div class="game-when"><span class="game-day">Sun 18</span>
+                            <span class="game-time">5:40 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div></div>
+                        <div class="game-rink">Mississauga Sports and Entertainment Centre 2</div>
+                    </div>
                     </div>
                 </section>
                 <section class="week" data-ours="1">
                     <div class="week-head"><h3 class="week-label">Week of Oct 19</h3>
                         <span class="week-count"><span class="count-ours">3 games</span><span
                             class="count-all">15 games</span></span></div>
+                    <div class="week-games">
                     <div class="game is-ours">
-                        <span class="day-pill">Mon 19</span>
-                        <div class="opp"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy">
-                            <div><span class="opp-name">at Mississauga Terriers</span>
-                                <span class="opp-arena">Erin Mills 1</span></div></div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="chip away">Away</span></div>
+                        <div class="game-when"><span class="game-day">Mon 19</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team us"><img class="team-logo" src="assets/logos/toronto-eagles.png" alt="" loading="lazy"><span>Toronto Eagles</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div></div>
+                        <div class="game-rink">Erin Mills 1</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Tue 20</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div>
-                        </div>
-                        <div class="side"><span class="when">6:25 PM</span>
-                            <span class="side-arena">Mississauga Sports and Entertainment Centre 3</span></div>
+                        <div class="game-when"><span class="game-day">Tue 20</span>
+                            <span class="game-time">6:25 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div></div>
+                        <div class="game-rink">Mississauga Sports and Entertainment Centre 3</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Tue 20</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:15 PM</span>
-                            <span class="side-arena">Tomken 2</span></div>
+                        <div class="game-when"><span class="game-day">Tue 20</span>
+                            <span class="game-time">7:15 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div></div>
+                        <div class="game-rink">Tomken 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Thu 22</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div>
-                        </div>
-                        <div class="side"><span class="when">6:10 PM</span>
-                            <span class="side-arena">Amesbury</span></div>
+                        <div class="game-when"><span class="game-day">Thu 22</span>
+                            <span class="game-time">6:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div></div>
+                        <div class="game-rink">Amesbury</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Thu 22</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div>
-                        </div>
-                        <div class="side"><span class="when">6:30 PM</span>
-                            <span class="side-arena">Pinepoint</span></div>
+                        <div class="game-when"><span class="game-day">Thu 22</span>
+                            <span class="game-time">6:30 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div></div>
+                        <div class="game-rink">Pinepoint</div>
                     </div>
                     <div class="game is-ours">
-                        <span class="day-pill">Thu 22</span>
-                        <div class="opp"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy">
-                            <div><span class="opp-name">at Mississauga Jets</span>
-                                <span class="opp-arena">Iceland 4</span></div></div>
-                        <div class="side"><span class="when">6:40 PM</span>
-                            <span class="chip away">Away</span></div>
+                        <div class="game-when"><span class="game-day">Thu 22</span>
+                            <span class="game-time">6:40 PM</span></div>
+                        <div class="game-teams"><div class="game-team us"><img class="team-logo" src="assets/logos/toronto-eagles.png" alt="" loading="lazy"><span>Toronto Eagles</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div></div>
+                        <div class="game-rink">Iceland 4</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Fri 23</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div>
-                        </div>
-                        <div class="side"><span class="when">6:15 PM</span>
-                            <span class="side-arena">Al Palladini West</span></div>
+                        <div class="game-when"><span class="game-day">Fri 23</span>
+                            <span class="game-time">6:15 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div></div>
+                        <div class="game-rink">Al Palladini West</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sat 24</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div>
-                        </div>
-                        <div class="side"><span class="when">10:05 AM</span>
-                            <span class="side-arena">NFP Athletic Centre - Canlan York 1</span></div>
+                        <div class="game-when"><span class="game-day">Sat 24</span>
+                            <span class="game-time">10:05 AM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div></div>
+                        <div class="game-rink">NFP Athletic Centre - Canlan York 1</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sat 24</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div>
-                        </div>
-                        <div class="side"><span class="when">10:05 AM</span>
-                            <span class="side-arena">NFP Athletic Centre - Canlan York 5</span></div>
+                        <div class="game-when"><span class="game-day">Sat 24</span>
+                            <span class="game-time">10:05 AM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div></div>
+                        <div class="game-rink">NFP Athletic Centre - Canlan York 5</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sat 24</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div>
-                        </div>
-                        <div class="side"><span class="when">2:50 PM</span>
-                            <span class="side-arena">NFP Athletic Centre - Canlan York 6</span></div>
+                        <div class="game-when"><span class="game-day">Sat 24</span>
+                            <span class="game-time">2:50 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div><div class="game-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div></div>
+                        <div class="game-rink">NFP Athletic Centre - Canlan York 6</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 25</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div>
-                        </div>
-                        <div class="side"><span class="when">11:10 AM</span>
-                            <span class="side-arena">Vaughan Sports Village B</span></div>
+                        <div class="game-when"><span class="game-day">Sun 25</span>
+                            <span class="game-time">11:10 AM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div></div>
+                        <div class="game-rink">Vaughan Sports Village B</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 25</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div>
-                        </div>
-                        <div class="side"><span class="when">12:00 PM</span>
-                            <span class="side-arena">CWENCH Centre Etobicoke 2</span></div>
+                        <div class="game-when"><span class="game-day">Sun 25</span>
+                            <span class="game-time">12:00 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div><div class="game-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div></div>
+                        <div class="game-rink">CWENCH Centre Etobicoke 2</div>
                     </div>
                     <div class="game is-ours">
-                        <span class="day-pill">Sun 25</span>
-                        <div class="opp"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy">
-                            <div><span class="opp-name">vs The Attack</span>
-                                <span class="opp-arena">Lambton</span></div></div>
-                        <div class="side"><span class="when">12:10 PM</span>
-                            <span class="chip home">Home</span></div>
+                        <div class="game-when"><span class="game-day">Sun 25</span>
+                            <span class="game-time">12:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div><div class="game-team us"><img class="team-logo" src="assets/logos/toronto-eagles.png" alt="" loading="lazy"><span>Toronto Eagles</span></div></div>
+                        <div class="game-rink">Lambton</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 25</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div>
-                        </div>
-                        <div class="side"><span class="when">1:00 PM</span>
-                            <span class="side-arena">Vic Johnston</span></div>
+                        <div class="game-when"><span class="game-day">Sun 25</span>
+                            <span class="game-time">1:00 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div></div>
+                        <div class="game-rink">Vic Johnston</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 25</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div>
-                        </div>
-                        <div class="side"><span class="when">5:40 PM</span>
-                            <span class="side-arena">Mississauga Sports and Entertainment Centre 2</span></div>
+                        <div class="game-when"><span class="game-day">Sun 25</span>
+                            <span class="game-time">5:40 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div></div>
+                        <div class="game-rink">Mississauga Sports and Entertainment Centre 2</div>
+                    </div>
                     </div>
                 </section>
                 <section class="week" data-ours="1">
                     <div class="week-head"><h3 class="week-label">Week of Oct 26</h3>
                         <span class="week-count"><span class="count-ours">2 games</span><span
                             class="count-all">14 games</span></span></div>
+                    <div class="week-games">
                     <div class="game">
-                        <span class="day-pill">Mon 26</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="side-arena">Erin Mills 1</span></div>
+                        <div class="game-when"><span class="game-day">Mon 26</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div></div>
+                        <div class="game-rink">Erin Mills 1</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Tue 27</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="side-arena">Mississauga Sports and Entertainment Centre 4</span></div>
+                        <div class="game-when"><span class="game-day">Tue 27</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div></div>
+                        <div class="game-rink">Mississauga Sports and Entertainment Centre 4</div>
                     </div>
                     <div class="game is-ours">
-                        <span class="day-pill">Tue 27</span>
-                        <div class="opp"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy">
-                            <div><span class="opp-name">at Mississauga North Stars</span>
-                                <span class="opp-arena">Tomken 2</span></div></div>
-                        <div class="side"><span class="when">7:15 PM</span>
-                            <span class="chip away">Away</span></div>
+                        <div class="game-when"><span class="game-day">Tue 27</span>
+                            <span class="game-time">7:15 PM</span></div>
+                        <div class="game-teams"><div class="game-team us"><img class="team-logo" src="assets/logos/toronto-eagles.png" alt="" loading="lazy"><span>Toronto Eagles</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div></div>
+                        <div class="game-rink">Tomken 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Thu 29</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div>
-                        </div>
-                        <div class="side"><span class="when">6:40 PM</span>
-                            <span class="side-arena">Etobicoke Centennial East</span></div>
+                        <div class="game-when"><span class="game-day">Thu 29</span>
+                            <span class="game-time">6:40 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div><div class="game-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div></div>
+                        <div class="game-rink">Etobicoke Centennial East</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Thu 29</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div>
-                        </div>
-                        <div class="side"><span class="when">6:40 PM</span>
-                            <span class="side-arena">Iceland 4</span></div>
+                        <div class="game-when"><span class="game-day">Thu 29</span>
+                            <span class="game-time">6:40 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div></div>
+                        <div class="game-rink">Iceland 4</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Fri 30</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="side-arena">Al Palladini West</span></div>
+                        <div class="game-when"><span class="game-day">Fri 30</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div></div>
+                        <div class="game-rink">Al Palladini West</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Fri 30</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="side-arena">Scotiabank Pond 2</span></div>
+                        <div class="game-when"><span class="game-day">Fri 30</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div><div class="game-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div></div>
+                        <div class="game-rink">Scotiabank Pond 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Fri 30</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="side-arena">Westwood 2</span></div>
+                        <div class="game-when"><span class="game-day">Fri 30</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div></div>
+                        <div class="game-rink">Westwood 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sat 31</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div>
-                        </div>
-                        <div class="side"><span class="when">12:10 PM</span>
-                            <span class="side-arena">Westwood 5</span></div>
+                        <div class="game-when"><span class="game-day">Sat 31</span>
+                            <span class="game-time">12:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div></div>
+                        <div class="game-rink">Westwood 5</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 1</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div>
-                        </div>
-                        <div class="side"><span class="when">11:10 AM</span>
-                            <span class="side-arena">Vaughan Sports Village B</span></div>
+                        <div class="game-when"><span class="game-day">Sun 1</span>
+                            <span class="game-time">11:10 AM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div></div>
+                        <div class="game-rink">Vaughan Sports Village B</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 1</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div>
-                        </div>
-                        <div class="side"><span class="when">12:00 PM</span>
-                            <span class="side-arena">CWENCH Centre Etobicoke 2</span></div>
+                        <div class="game-when"><span class="game-day">Sun 1</span>
+                            <span class="game-time">12:00 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div><div class="game-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div></div>
+                        <div class="game-rink">CWENCH Centre Etobicoke 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 1</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div>
-                        </div>
-                        <div class="side"><span class="when">1:00 PM</span>
-                            <span class="side-arena">Vic Johnston</span></div>
+                        <div class="game-when"><span class="game-day">Sun 1</span>
+                            <span class="game-time">1:00 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div><div class="game-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div></div>
+                        <div class="game-rink">Vic Johnston</div>
                     </div>
                     <div class="game is-ours">
-                        <span class="day-pill">Sun 1</span>
-                        <div class="opp"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy">
-                            <div><span class="opp-name">vs Mississauga Beast</span>
-                                <span class="opp-arena">Lambton</span></div></div>
-                        <div class="side"><span class="when">1:10 PM</span>
-                            <span class="chip home">Home</span></div>
+                        <div class="game-when"><span class="game-day">Sun 1</span>
+                            <span class="game-time">1:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div><div class="game-team us"><img class="team-logo" src="assets/logos/toronto-eagles.png" alt="" loading="lazy"><span>Toronto Eagles</span></div></div>
+                        <div class="game-rink">Lambton</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 1</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div>
-                        </div>
-                        <div class="side"><span class="when">5:40 PM</span>
-                            <span class="side-arena">Mississauga Sports and Entertainment Centre 2</span></div>
+                        <div class="game-when"><span class="game-day">Sun 1</span>
+                            <span class="game-time">5:40 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div></div>
+                        <div class="game-rink">Mississauga Sports and Entertainment Centre 2</div>
+                    </div>
                     </div>
                 </section>
                 <section class="week" data-ours="1">
                     <div class="week-head"><h3 class="week-label">Week of Nov 2</h3>
                         <span class="week-count"><span class="count-ours">1 game</span><span
                             class="count-all">11 games</span></span></div>
+                    <div class="week-games">
                     <div class="game">
-                        <span class="day-pill">Mon 2</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="side-arena">Erin Mills 1</span></div>
+                        <div class="game-when"><span class="game-day">Mon 2</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div></div>
+                        <div class="game-rink">Erin Mills 1</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Mon 2</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:55 PM</span>
-                            <span class="side-arena">Scotiabank Pond 3</span></div>
+                        <div class="game-when"><span class="game-day">Mon 2</span>
+                            <span class="game-time">7:55 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div></div>
+                        <div class="game-rink">Scotiabank Pond 3</div>
                     </div>
                     <div class="game is-ours">
-                        <span class="day-pill">Tue 3</span>
-                        <div class="opp"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy">
-                            <div><span class="opp-name">at Mississauga Rattlers</span>
-                                <span class="opp-arena">Mississauga Sports and Entertainment Centre 2</span></div></div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="chip away">Away</span></div>
+                        <div class="game-when"><span class="game-day">Tue 3</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team us"><img class="team-logo" src="assets/logos/toronto-eagles.png" alt="" loading="lazy"><span>Toronto Eagles</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div></div>
+                        <div class="game-rink">Mississauga Sports and Entertainment Centre 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Tue 3</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="side-arena">Mississauga Sports and Entertainment Centre 4</span></div>
+                        <div class="game-when"><span class="game-day">Tue 3</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div></div>
+                        <div class="game-rink">Mississauga Sports and Entertainment Centre 4</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Tue 3</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:15 PM</span>
-                            <span class="side-arena">Tomken 2</span></div>
+                        <div class="game-when"><span class="game-day">Tue 3</span>
+                            <span class="game-time">7:15 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div></div>
+                        <div class="game-rink">Tomken 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Thu 5</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div>
-                        </div>
-                        <div class="side"><span class="when">6:40 PM</span>
-                            <span class="side-arena">Iceland 4</span></div>
+                        <div class="game-when"><span class="game-day">Thu 5</span>
+                            <span class="game-time">6:40 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div></div>
+                        <div class="game-rink">Iceland 4</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Fri 6</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="side-arena">Al Palladini West</span></div>
+                        <div class="game-when"><span class="game-day">Fri 6</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div></div>
+                        <div class="game-rink">Al Palladini West</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Fri 6</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:15 PM</span>
-                            <span class="side-arena">Scotiabank Pond 2</span></div>
+                        <div class="game-when"><span class="game-day">Fri 6</span>
+                            <span class="game-time">7:15 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div><div class="game-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div></div>
+                        <div class="game-rink">Scotiabank Pond 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sat 7</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div>
-                        </div>
-                        <div class="side"><span class="when">12:15 PM</span>
-                            <span class="side-arena">CWENCH Centre Etobicoke 1</span></div>
+                        <div class="game-when"><span class="game-day">Sat 7</span>
+                            <span class="game-time">12:15 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div><div class="game-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div></div>
+                        <div class="game-rink">CWENCH Centre Etobicoke 1</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 8</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div>
-                        </div>
-                        <div class="side"><span class="when">11:10 AM</span>
-                            <span class="side-arena">Vaughan Sports Village B</span></div>
+                        <div class="game-when"><span class="game-day">Sun 8</span>
+                            <span class="game-time">11:10 AM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div></div>
+                        <div class="game-rink">Vaughan Sports Village B</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 8</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div>
-                        </div>
-                        <div class="side"><span class="when">11:30 AM</span>
-                            <span class="side-arena">CWENCH Centre Etobicoke 2</span></div>
+                        <div class="game-when"><span class="game-day">Sun 8</span>
+                            <span class="game-time">11:30 AM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div><div class="game-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div></div>
+                        <div class="game-rink">CWENCH Centre Etobicoke 2</div>
+                    </div>
                     </div>
                 </section>
                 <section class="week" data-ours="1">
                     <div class="week-head"><h3 class="week-label">Week of Nov 9</h3>
                         <span class="week-count"><span class="count-ours">2 games</span><span
                             class="count-all">10 games</span></span></div>
+                    <div class="week-games">
                     <div class="game">
-                        <span class="day-pill">Mon 9</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="side-arena">Erin Mills 1</span></div>
+                        <div class="game-when"><span class="game-day">Mon 9</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div></div>
+                        <div class="game-rink">Erin Mills 1</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Tue 10</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="side-arena">Mississauga Sports and Entertainment Centre 2</span></div>
+                        <div class="game-when"><span class="game-day">Tue 10</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div></div>
+                        <div class="game-rink">Mississauga Sports and Entertainment Centre 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Tue 10</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:15 PM</span>
-                            <span class="side-arena">Tomken 2</span></div>
+                        <div class="game-when"><span class="game-day">Tue 10</span>
+                            <span class="game-time">7:15 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div></div>
+                        <div class="game-rink">Tomken 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Thu 12</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div>
-                        </div>
-                        <div class="side"><span class="when">6:15 PM</span>
-                            <span class="side-arena">Pinepoint</span></div>
+                        <div class="game-when"><span class="game-day">Thu 12</span>
+                            <span class="game-time">6:15 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div></div>
+                        <div class="game-rink">Pinepoint</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Thu 12</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div>
-                        </div>
-                        <div class="side"><span class="when">6:40 PM</span>
-                            <span class="side-arena">Iceland 4</span></div>
+                        <div class="game-when"><span class="game-day">Thu 12</span>
+                            <span class="game-time">6:40 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div></div>
+                        <div class="game-rink">Iceland 4</div>
                     </div>
                     <div class="game is-ours">
-                        <span class="day-pill">Fri 13</span>
-                        <div class="opp"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy">
-                            <div><span class="opp-name">at West Mall Lightning</span>
-                                <span class="opp-arena">Etobicoke Centennial West</span></div></div>
-                        <div class="side"><span class="when">6:25 PM</span>
-                            <span class="chip away">Away</span></div>
+                        <div class="game-when"><span class="game-day">Fri 13</span>
+                            <span class="game-time">6:25 PM</span></div>
+                        <div class="game-teams"><div class="game-team us"><img class="team-logo" src="assets/logos/toronto-eagles.png" alt="" loading="lazy"><span>Toronto Eagles</span></div><div class="game-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div></div>
+                        <div class="game-rink">Etobicoke Centennial West</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 15</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div>
-                        </div>
-                        <div class="side"><span class="when">1:00 PM</span>
-                            <span class="side-arena">Vic Johnston</span></div>
+                        <div class="game-when"><span class="game-day">Sun 15</span>
+                            <span class="game-time">1:00 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div><div class="game-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div></div>
+                        <div class="game-rink">Vic Johnston</div>
                     </div>
                     <div class="game is-ours">
-                        <span class="day-pill">Sun 15</span>
-                        <div class="opp"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy">
-                            <div><span class="opp-name">vs Humber Valley Sharks</span>
-                                <span class="opp-arena">Lambton</span></div></div>
-                        <div class="side"><span class="when">1:10 PM</span>
-                            <span class="chip home">Home</span></div>
+                        <div class="game-when"><span class="game-day">Sun 15</span>
+                            <span class="game-time">1:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div><div class="game-team us"><img class="team-logo" src="assets/logos/toronto-eagles.png" alt="" loading="lazy"><span>Toronto Eagles</span></div></div>
+                        <div class="game-rink">Lambton</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 15</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div>
-                        </div>
-                        <div class="side"><span class="when">1:40 PM</span>
-                            <span class="side-arena">Westwood 2</span></div>
+                        <div class="game-when"><span class="game-day">Sun 15</span>
+                            <span class="game-time">1:40 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div></div>
+                        <div class="game-rink">Westwood 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 15</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div>
-                        </div>
-                        <div class="side"><span class="when">5:40 PM</span>
-                            <span class="side-arena">Mississauga Sports and Entertainment Centre 2</span></div>
+                        <div class="game-when"><span class="game-day">Sun 15</span>
+                            <span class="game-time">5:40 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div></div>
+                        <div class="game-rink">Mississauga Sports and Entertainment Centre 2</div>
+                    </div>
                     </div>
                 </section>
                 <section class="week" data-ours="1">
                     <div class="week-head"><h3 class="week-label">Week of Nov 16</h3>
                         <span class="week-count"><span class="count-ours">1 game</span><span
                             class="count-all">12 games</span></span></div>
+                    <div class="week-games">
                     <div class="game">
-                        <span class="day-pill">Mon 16</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="side-arena">Erin Mills 1</span></div>
+                        <div class="game-when"><span class="game-day">Mon 16</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></div></div>
+                        <div class="game-rink">Erin Mills 1</div>
                     </div>
                     <div class="game is-ours">
-                        <span class="day-pill">Mon 16</span>
-                        <div class="opp"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy">
-                            <div><span class="opp-name">at The Attack</span>
-                                <span class="opp-arena">Scotiabank Pond 2</span></div></div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="chip away">Away</span></div>
+                        <div class="game-when"><span class="game-day">Mon 16</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team us"><img class="team-logo" src="assets/logos/toronto-eagles.png" alt="" loading="lazy"><span>Toronto Eagles</span></div><div class="game-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div></div>
+                        <div class="game-rink">Scotiabank Pond 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Tue 17</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="side-arena">Mississauga Sports and Entertainment Centre 4</span></div>
+                        <div class="game-when"><span class="game-day">Tue 17</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div></div>
+                        <div class="game-rink">Mississauga Sports and Entertainment Centre 4</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Tue 17</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:15 PM</span>
-                            <span class="side-arena">Tomken 2</span></div>
+                        <div class="game-when"><span class="game-day">Tue 17</span>
+                            <span class="game-time">7:15 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div></div>
+                        <div class="game-rink">Tomken 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Thu 19</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div>
-                        </div>
-                        <div class="side"><span class="when">6:40 PM</span>
-                            <span class="side-arena">Iceland 4</span></div>
+                        <div class="game-when"><span class="game-day">Thu 19</span>
+                            <span class="game-time">6:40 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></div></div>
+                        <div class="game-rink">Iceland 4</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Fri 20</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div>
-                        </div>
-                        <div class="side"><span class="when">6:15 PM</span>
-                            <span class="side-arena">Al Palladini West</span></div>
+                        <div class="game-when"><span class="game-day">Fri 20</span>
+                            <span class="game-time">6:15 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></div></div>
+                        <div class="game-rink">Al Palladini West</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Fri 20</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="side-arena">Scotiabank Pond 2</span></div>
+                        <div class="game-when"><span class="game-day">Fri 20</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div><div class="game-team"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></div></div>
+                        <div class="game-rink">Scotiabank Pond 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Fri 20</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div>
-                        </div>
-                        <div class="side"><span class="when">7:10 PM</span>
-                            <span class="side-arena">Westwood 2</span></div>
+                        <div class="game-when"><span class="game-day">Fri 20</span>
+                            <span class="game-time">7:10 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div></div>
+                        <div class="game-rink">Westwood 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 22</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div>
-                        </div>
-                        <div class="side"><span class="when">11:30 AM</span>
-                            <span class="side-arena">Vaughan Sports Village B</span></div>
+                        <div class="game-when"><span class="game-day">Sun 22</span>
+                            <span class="game-time">11:30 AM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></div><div class="game-team"><img class="team-logo" src="assets/logos/vaughan-panthers.png" alt="" loading="lazy"><span>Vaughan Panthers</span></div></div>
+                        <div class="game-rink">Vaughan Sports Village B</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 22</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div>
-                        </div>
-                        <div class="side"><span class="when">1:00 PM</span>
-                            <span class="side-arena">Vic Johnston</span></div>
+                        <div class="game-when"><span class="game-day">Sun 22</span>
+                            <span class="game-time">1:00 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/humber-valley-sharks.png" alt="" loading="lazy"><span>Humber Valley Sharks</span></div><div class="game-team"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></div></div>
+                        <div class="game-rink">Vic Johnston</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 22</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div>
-                        </div>
-                        <div class="side"><span class="when">1:40 PM</span>
-                            <span class="side-arena">Westwood 2</span></div>
+                        <div class="game-when"><span class="game-day">Sun 22</span>
+                            <span class="game-time">1:40 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-beast.png" alt="" loading="lazy"><span>Mississauga Beast</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></div></div>
+                        <div class="game-rink">Westwood 2</div>
                     </div>
                     <div class="game">
-                        <span class="day-pill">Sun 22</span>
-                        <div class="pair">
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div>
-                            <div class="pair-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div>
-                        </div>
-                        <div class="side"><span class="when">5:40 PM</span>
-                            <span class="side-arena">Mississauga Sports and Entertainment Centre 2</span></div>
+                        <div class="game-when"><span class="game-day">Sun 22</span>
+                            <span class="game-time">5:40 PM</span></div>
+                        <div class="game-teams"><div class="game-team"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></div><div class="game-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></div></div>
+                        <div class="game-rink">Mississauga Sports and Entertainment Centre 2</div>
+                    </div>
                     </div>
                 </section>
                 </div>
-            <p class="content-meta">Updated <time datetime="2026-10-11T23:17:03.580187+00:00" title="Oct 11, 07:17 PM ET · Refreshes hourly">just now</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-11T23:17:03.580187+00:00" title="Oct 11, 07:17 PM ET · Refreshes hourly">14 minutes ago</time></p>
             </div>
         </div>
 

@@ -81,37 +81,24 @@ def next_game_card(game, day, today):
 
 def game_row(game, day, our_team):
     """
-    One game. Ours read as a line about the opponent with a home or away tag;
-    anyone else's show both teams.
+    One game as a compact row: day and time, both teams stacked, the rink.
+    Ours look the same as everyone else's apart from the red bar.
     """
     away, home = game.get('Away', ''), game.get('Home', '')
-    arena = escape(game.get('Arena', ''))
+    ours = our_team in (away.lower(), home.lower())
     when = escape(format_score(game.get('Score')) or game.get('Time', ''))
-    pill_text = f"{day.strftime('%a')} {day.day}" if day else escape(game.get('Date', ''))
-    pill = f'<span class="day-pill">{pill_text}</span>'
+    day_text = f"{day.strftime('%a')} {day.day}" if day else escape(game.get('Date', ''))
 
-    if our_team in (away.lower(), home.lower()):
-        at_home = home.lower() == our_team
-        opponent = away if at_home else home
-        side = "home" if at_home else "away"
-        return f"""                    <div class="game is-ours">
-                        {pill}
-                        <div class="opp">{page_common.team_logo(opponent)}
-                            <div><span class="opp-name">{'vs' if at_home else 'at'} {escape(opponent)}</span>
-                                <span class="opp-arena">{arena}</span></div></div>
-                        <div class="side"><span class="when">{when}</span>
-                            <span class="chip {side}">{side.title()}</span></div>
-                    </div>
-"""
+    def team(name):
+        us = ' us' if name.lower() == our_team else ''
+        return (f'<div class="game-team{us}">{page_common.team_logo(name)}'
+                f'<span>{escape(name)}</span></div>')
 
-    return f"""                    <div class="game">
-                        {pill}
-                        <div class="pair">
-                            <div class="pair-team">{page_common.team_logo(away)}<span>{escape(away)}</span></div>
-                            <div class="pair-team">{page_common.team_logo(home)}<span>{escape(home)}</span></div>
-                        </div>
-                        <div class="side"><span class="when">{when}</span>
-                            <span class="side-arena">{arena}</span></div>
+    return f"""                    <div class="game{' is-ours' if ours else ''}">
+                        <div class="game-when"><span class="game-day">{day_text}</span>
+                            <span class="game-time">{when}</span></div>
+                        <div class="game-teams">{team(away)}{team(home)}</div>
+                        <div class="game-rink">{escape(game.get('Arena', ''))}</div>
                     </div>
 """
 
@@ -229,9 +216,10 @@ def generate_html(today=None):
                         <span class="week-count"><span class="count-ours">{plural(n_ours, 'game')}</span><span
                             class="count-all">{plural(len(items), 'game')}</span></span></div>
 """
+            html += '                    <div class="week-games">\n'
             for game, day in items:
                 html += game_row(game, day, our_team)
-            html += "                </section>\n"
+            html += "                    </div>\n                </section>\n"
 
         html += f"""                </div>
 {page_common.freshness(timestamp)}            </div>
