@@ -204,7 +204,8 @@ the shape.
 │   ├── eagles-bird-red.svg      # The bird alone, red: the masthead mark
 │   ├── logos/                   # Club logos, one <team-slug>.png each
 │   ├── recruit-connect.png      # Sponsor mark
-│   └── kia.svg                  # Sponsor mark
+│   ├── tasios-orthodontics.png  # Sponsor mark
+│   └── performance-auto-group.png # Sponsor mark
 ├── scrape_standings.py          # Standings scraper
 ├── scrape_schedule.py           # Schedule scraper
 ├── generate_html.py             # Standings page
