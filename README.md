@@ -136,7 +136,7 @@ https://raw.githubusercontent.com/mfiume/toronto-eagles-aa/main/eagles_schedule.
 
 ```bash
 pip install -r requirements.txt
-python -m unittest test_season_schedule   # unit tests, no network
+python -m unittest test_season_schedule test_schedule_parse   # unit tests, no network
 python test_scraper.py                    # live scrape
 ```
 
@@ -212,6 +212,7 @@ the shape.
 ├── generate_playoffs_html.py    # Playoffs page
 ├── test_scraper.py              # Pre-deploy checks against the live site
 ├── test_season_schedule.py      # Unit tests for the accumulator, no network
+├── test_schedule_parse.py       # Unit tests for reading the schedule table
 ├── requirements.txt             # Python dependencies
 ├── .github/workflows/scrape-standings.yml
 ├── standings.json               # Scraped data
