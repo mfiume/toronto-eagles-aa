@@ -4,19 +4,19 @@ Generate HTML page from scraped schedule data
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
+from html import escape
 
 import config
 import page_common
 
 
-def format_game_date(raw):
-    """'12-Oct-2026 Mon' -> 'Mon, Oct 12', for the date heading above a group."""
+def parse_game_date(raw):
+    """'12-Oct-2026 Mon' -> date(2026, 10, 12), or None if unreadable."""
     try:
-        parsed = datetime.strptime(raw.split()[0], "%d-%b-%Y")
-    except (ValueError, IndexError):
-        return raw
-    return f"{parsed.strftime('%a, %b')} {parsed.day}"
+        return datetime.strptime(raw.split()[0], "%d-%b-%Y").date()
+    except (ValueError, IndexError, AttributeError):
+        return None
 
 
 def format_score(raw):
@@ -30,7 +30,110 @@ def format_score(raw):
     return "" if cleaned in ("", ":") else cleaned
 
 
-def generate_html():
+def countdown(day, today):
+    """How far off a game is, from today in Toronto."""
+    days = (day - today).days
+    if days == 0:
+        return "Today"
+    if days == 1:
+        return "Tomorrow"
+    return f"In {days} days"
+
+
+def week_label(monday, this_monday):
+    """'This week', 'Next week', 'Last week', or 'Week of Oct 19'."""
+    weeks = (monday - this_monday).days // 7
+    if weeks == 0:
+        return "This week"
+    if weeks == 1:
+        return "Next week"
+    if weeks == -1:
+        return "Last week"
+    return f"Week of {monday.strftime('%b')} {monday.day}"
+
+
+def plural(n, word):
+    return f"{n} {word}{'' if n == 1 else 's'}"
+
+
+def next_game_card(game, day, today):
+    """The card for the next Eagles game: both teams, when and where."""
+    away, home = game.get('Away', ''), game.get('Home', '')
+    return f"""
+                <section class="next" aria-label="Next game">
+                    <div class="next-top"><span>Next game</span>
+                        <span class="next-when">{countdown(day, today)}</span></div>
+                    <div class="face">
+                        <div class="face-team">{page_common.team_logo(away)}
+                            <span>{escape(away)}<span class="face-role">Away</span></span></div>
+                        <div class="face-vs">VS</div>
+                        <div class="face-team home">{page_common.team_logo(home)}
+                            <span>{escape(home)}<span class="face-role">Home</span></span></div>
+                    </div>
+                    <div class="next-foot">
+                        <span><strong>{day.strftime('%A, %B')} {day.day}</strong></span>
+                        <span><strong>{escape(game.get('Time', ''))}</strong></span>
+                        <span>{escape(game.get('Arena', ''))}</span>
+                    </div>
+                </section>
+"""
+
+
+def game_row(game, day, our_team):
+    """
+    One game. Ours read as a line about the opponent with a home or away tag;
+    anyone else's show both teams.
+    """
+    away, home = game.get('Away', ''), game.get('Home', '')
+    arena = escape(game.get('Arena', ''))
+    when = escape(format_score(game.get('Score')) or game.get('Time', ''))
+    pill_text = f"{day.strftime('%a')} {day.day}" if day else escape(game.get('Date', ''))
+    pill = f'<span class="day-pill">{pill_text}</span>'
+
+    if our_team in (away.lower(), home.lower()):
+        at_home = home.lower() == our_team
+        opponent = away if at_home else home
+        side = "home" if at_home else "away"
+        return f"""                    <div class="game is-ours">
+                        {pill}
+                        <div class="opp">{page_common.team_logo(opponent)}
+                            <div><span class="opp-name">{'vs' if at_home else 'at'} {escape(opponent)}</span>
+                                <span class="opp-arena">{arena}</span></div></div>
+                        <div class="side"><span class="when">{when}</span>
+                            <span class="chip {side}">{side.title()}</span></div>
+                    </div>
+"""
+
+    return f"""                    <div class="game">
+                        {pill}
+                        <div class="pair">
+                            <div class="pair-team">{page_common.team_logo(away)}<span>{escape(away)}</span></div>
+                            <div class="pair-team">{page_common.team_logo(home)}<span>{escape(home)}</span></div>
+                        </div>
+                        <div class="side"><span class="when">{when}</span>
+                            <span class="side-arena">{arena}</span></div>
+                    </div>
+"""
+
+
+def group_by_week(games):
+    """
+    [(monday, [(game, day), ...]), ...] in the order the GTHL lists games.
+
+    A game whose date cannot be read gets a group of its own, under a None
+    week, rather than being dropped.
+    """
+    weeks = []
+    for game, day in games:
+        monday = day - timedelta(days=day.weekday()) if day else None
+        if weeks and monday is not None and weeks[-1][0] == monday:
+            weeks[-1][1].append((game, day))
+        else:
+            weeks.append((monday, [(game, day)]))
+    return weeks
+
+
+def generate_html(today=None):
     """Generate HTML page from schedule.json"""
 
     # Load schedule data
@@ -43,22 +146,16 @@ def generate_html():
     error = data.get('error')
 
     our_team = config.TEAM_NAME.lower()
+    # Week labels and the countdown are relative to the day the page is built.
+    # The workflow rebuilds it hourly, so "This week" turns over on Monday.
+    today = today or datetime.now(page_common.TORONTO).date()
+    this_monday = today - timedelta(days=today.weekday())
 
     def is_ours(game):
-        return (our_team in game.get('Away', '').lower()
-                or our_team in game.get('Home', '').lower())
+        return our_team in (game.get('Away', '').lower(), game.get('Home', '').lower())
 
     ours_count = sum(1 for g in schedule if is_ours(g))
 
-    # Drop columns that say nothing. Before a game is played every Score cell
-    # is empty, and a division playing only league games has "LG" on every
-    # row; both are a column of noise on a phone and a column of nothing on a
-    # laptop. They come back on their own once the data varies.
-    show_score = any(format_score(g.get('Score')) for g in schedule)
-    show_type = len({g.get('Type', '') for g in schedule}) > 1
-    span = 4 + show_score + show_type
-
-    # Start building HTML (EXACT copy of standings structure)
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -83,7 +180,7 @@ def generate_html():
                 <p>{error}</p>
                 <p>The scraper will try again during the next scheduled run.</p>
             </div>
-"""
+{page_common.freshness(timestamp)}"""
     elif not schedule:
         html += f"""
             <div class="notice">
@@ -92,86 +189,55 @@ def generate_html():
                 games between {filters.get('from_date', '')} and
                 {filters.get('to_date', '')}.</p>
             </div>
-"""
+{page_common.freshness(timestamp)}"""
     else:
-        # One table, two shapes: columns on a laptop, one card per game on a
-        # phone. Games sit under a date heading either way, so the date is
-        # written once per day instead of on every row.
+        games = [(g, parse_game_date(g.get('Date', ''))) for g in schedule]
+        html += '            <div class="schedule">\n'
+
+        upcoming = next(((g, d) for g, d in games
+                         if is_ours(g) and d and d >= today
+                         and not format_score(g.get('Score'))), None)
+        if upcoming:
+            html += next_game_card(upcoming[0], upcoming[1], today)
+
         # Default to our own games, unless there are none to show.
         default_ours = ours_count > 0
+        short_name = config.TEAM_NAME.split()[-1]
         html += f"""
-            <div class="sched-bar">
-                <div class="sched-filter" role="group" aria-label="Which games to show">
-                    <button type="button" class="sched-filter-btn" data-filter="ours"
-                            aria-pressed="{str(default_ours).lower()}">{config.TEAM_NAME.split()[-1]}
-                        <span class="sched-filter-count">{ours_count}</span></button>
-                    <button type="button" class="sched-filter-btn" data-filter="all"
-                            aria-pressed="{str(not default_ours).lower()}">All
-                        <span class="sched-filter-count">{len(schedule)}</span></button>
+                <div class="sched-head">
+                    <h2>Schedule</h2>
+                    <div class="sched-filter" role="group" aria-label="Which games to show">
+                        <button type="button" class="sched-filter-btn" data-filter="ours"
+                                aria-pressed="{str(default_ours).lower()}">{short_name}
+                            <span class="sched-filter-count">{ours_count}</span></button>
+                        <button type="button" class="sched-filter-btn" data-filter="all"
+                                aria-pressed="{str(not default_ours).lower()}">All
+                            <span class="sched-filter-count">{len(schedule)}</span></button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="table-wrapper{' filter-ours' if default_ours else ''}"
-                 data-schedule-view data-has-ours="{int(bool(ours_count))}">
-                <table class="schedule-table{' has-rail' if (show_score or show_type) else ''}">
-                    <thead>
-                        <tr>
-                            <th class="cell-time">Time</th>
-                            <th class="cell-away">Away</th>
-"""
-        if show_score:
-            html += '                            <th class="cell-score stat">Score</th>\n'
-        html += """                            <th class="cell-home">Home</th>
-                            <th class="cell-arena">Arena</th>
-"""
-        if show_type:
-            html += '                            <th class="cell-type">Type</th>\n'
-        html += """                        </tr>
-                    </thead>
-                    <tbody>
+                <div class="sched-weeks{' filter-ours' if default_ours else ''}"
+                     data-schedule-view data-has-ours="{int(bool(ours_count))}">
 """
 
-        current_date = None
-
-        for game in schedule:
-            date = game.get('Date', '')
-            away = game.get('Away', '')
-            home = game.get('Home', '')
-            score = format_score(game.get('Score'))
-
-            if date != current_date:
-                current_date = date
-                # A day with none of our games is hidden along with its games
-                # when the list is filtered, so the heading has to know.
-                day_has_ours = int(any(
-                    g.get('Date') == date and is_ours(g) for g in schedule))
-                html += ('                        <tr class="date-row" '
-                         f'data-ours="{day_has_ours}">'
-                         f'<th colspan="{span}" class="date-head">'
-                         f'{format_game_date(date)}</th></tr>\n')
-
-            our_game = is_ours(game)
-            row_class = 'game is-ours highlight' if our_game else 'game'
-
-            html += f"""                        <tr class="{row_class}">
-                            <td class="cell-time">{game.get('Time', '')}</td>
-                            <td class="cell-away team-name">{away}</td>
+        for monday, items in group_by_week(games):
+            n_ours = sum(1 for g, _ in items if is_ours(g))
+            label = week_label(monday, this_monday) if monday else "Date to be confirmed"
+            now = ' now' if monday == this_monday else ''
+            html += f"""                <section class="week" data-ours="{int(bool(n_ours))}">
+                    <div class="week-head"><h3 class="week-label{now}">{label}</h3>
+                        <span class="week-count"><span class="count-ours">{plural(n_ours, 'game')}</span><span
+                            class="count-all">{plural(len(items), 'game')}</span></span></div>
 """
-            if show_score:
-                html += f'                            <td class="cell-score stat">{score}</td>\n'
-            html += f"""                            <td class="cell-home team-name">{home}</td>
-                            <td class="cell-arena">{game.get('Arena', '')}</td>
-"""
-            if show_type:
-                html += f'                            <td class="cell-type">{game.get("Type", "")}</td>\n'
-            html += "                        </tr>\n"
+            for game, day in items:
+                html += game_row(game, day, our_team)
+            html += "                </section>\n"
 
-        html += """                    </tbody>
-                </table>
-            </div>
+        html += f"""                </div>
+{page_common.freshness(timestamp)}            </div>
 """
 
-    html += f"""{page_common.freshness(timestamp)}        </div>
+    html += f"""        </div>
 
 {page_common.page_end()}    </div>
 {page_common.SCHEDULE_JS}</body>

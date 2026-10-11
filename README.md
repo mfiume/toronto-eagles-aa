@@ -8,7 +8,8 @@ and schedule from the GTHL (Greater Toronto Hockey League).
 ## Features
 
 - Standings for the division, with the Eagles highlighted and club logos
-- Schedule for our region only, with scores, Eagles games highlighted
+- Schedule for our region only, grouped by week, with the next Eagles game on top
+  and club logos on every game
 - Playoff seeding picture, once the GTHL publishes the format for the season
 - Rebuilt hourly by GitHub Actions, published by GitHub Pages, no server to run
 
@@ -194,11 +195,14 @@ the shape.
 
 ```
 ├── config.py                    # Team, division, season, region roster, playoff format
-├── page_common.py               # Masthead, timestamp, notice styling
+├── page_common.py               # Masthead, timestamp, notice styling, team logos
+├── fetch_logos.py               # Caches club logos into assets/logos
 ├── season_schedule.py           # Stable game ids, season-long accumulators
 ├── assets/
 │   ├── eagles-crest-white.svg   # Club crest, white
 │   ├── eagles-crest-red.svg     # Club crest, original red
+│   ├── eagles-bird-red.svg      # The bird alone, red: the masthead mark
+│   ├── logos/                   # Club logos, one <team-slug>.png each
 │   ├── recruit-connect.png      # Sponsor mark
 │   └── kia.svg                  # Sponsor mark
 ├── scrape_standings.py          # Standings scraper
@@ -256,9 +260,19 @@ the Illustrator original. Each is a single set of paths with one fill colour,
 so another colourway is a find-and-replace on that value rather than a new
 export.
 
-The masthead does not use it. The crest is line art, and at the size a masthead
-allows its strokes render too thin to sit on the red, so the wordmark carries
-the bar alone. The files stay for other uses.
+The masthead is white with a thin red rule, and shows the bird alone in red
+(`eagles-bird-red.svg`). The full crest's own "EAGLES" lettering turns to mush
+at masthead size and repeats the wordmark beside it.
+
+## Team logos
+
+`fetch_logos.py` runs in the hourly workflow after the scrapers. For every
+standings row it saves the club logo the GTHL serves to
+`assets/logos/<team-slug>.png`, once, and the pages serve that copy rather than
+hotlinking agilex.ca. The files are keyed by team name because the schedule
+only knows names. A team with no cached logo, usually an East team in an
+interlocking game, shows its initials in the same space. A failed download is
+reported and skipped, never a reason to fail the run.
 
 ## Pages that are not linked
 
