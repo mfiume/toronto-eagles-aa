@@ -711,126 +711,103 @@ _SCHEDULE_CSS = """
             color: var(--ink-3);
         }
 
-        /* --- One game --- */
+        /* --- One game ---
+           Every game is the same compact row: day and time, both teams
+           stacked, the rink. Ours differ only by the red bar on the left. */
 
-        .game {
+        .week-games {
             background: var(--surface);
             border: 1px solid var(--line);
+        }
+
+        .game {
             display: grid;
-            grid-template-columns: 74px minmax(0, 1fr) auto;
+            grid-template-columns: 62px minmax(0, 1fr) auto;
             align-items: center;
-            gap: 14px;
-            padding: 10px 14px;
+            gap: 12px;
+            padding: 8px 12px;
+        }
+
+        .game + .game {
+            border-top: 1px solid var(--line);
         }
 
         .game.is-ours {
             box-shadow: inset 3px 0 0 var(--brand);
         }
 
-        .day-pill {
-            justify-self: start;
+        .game-when {
+            line-height: 1.15;
+        }
+
+        .game-day {
+            display: block;
             font-family: var(--display);
             font-weight: 600;
-            font-size: 0.78rem;
+            font-size: 0.74rem;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            background: #f1f0f3;
-            padding: 6px 8px;
-            white-space: nowrap;
-        }
-
-        .opp {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 0;
-        }
-
-        .opp .team-logo {
-            width: 26px;
-            height: 26px;
-        }
-
-        .opp-name {
-            display: block;
-            font-weight: 600;
-            font-size: 1.02rem;
-            line-height: 1.2;
             color: var(--ink);
         }
 
-        .opp-arena,
-        .side-arena {
+        .game-time {
             display: block;
-            color: var(--ink-2);
-            font-size: 0.86rem;
-            margin-top: 2px;
-        }
-
-        .pair {
-            display: grid;
-            gap: 6px;
-            min-width: 0;
-        }
-
-        .pair-team {
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            min-width: 0;
-            font-size: 0.95rem;
-            color: var(--ink);
-        }
-
-        .pair-team .team-logo {
-            width: 20px;
-            height: 20px;
-        }
-
-        .pair-team.us {
-            font-weight: 600;
-        }
-
-        .side {
-            text-align: right;
-            display: grid;
-            justify-items: end;
-            gap: 5px;
-        }
-
-        .side-arena {
-            margin-top: 0;
-            font-size: 0.8rem;
-        }
-
-        .when {
             font-family: var(--display);
-            font-weight: 600;
-            font-size: 1rem;
-            letter-spacing: 0.02em;
+            font-weight: 500;
+            font-size: 0.82rem;
             font-variant-numeric: tabular-nums;
-            white-space: nowrap;
-            color: var(--ink);
-        }
-
-        .chip {
-            font-family: var(--display);
-            font-weight: 600;
-            font-size: 0.62rem;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            padding: 3px 7px;
-        }
-
-        .chip.home {
-            background: #ececf0;
-            color: var(--ink);
-        }
-
-        .chip.away {
-            background: var(--surface);
             color: var(--ink-2);
-            box-shadow: inset 0 0 0 1px var(--line);
+            margin-top: 2px;
+            white-space: nowrap;
+        }
+
+        .game-teams {
+            display: grid;
+            gap: 3px;
+            min-width: 0;
+        }
+
+        .game-team {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            font-size: 0.92rem;
+            line-height: 1.25;
+            color: var(--ink);
+        }
+
+        .game-team > span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .game-team.us {
+            font-weight: 600;
+        }
+
+        .game-team .team-logo {
+            width: 18px;
+            height: 18px;
+        }
+
+        .game-rink {
+            font-size: 0.78rem;
+            line-height: 1.2;
+            color: var(--ink-3);
+            text-align: right;
+            max-width: 220px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        @media (max-width: 519px) {
+            .game-rink {
+                max-width: 96px;
+            }
         }
 
         /* A team the GTHL has no logo for, usually an East team in an
@@ -854,20 +831,6 @@ _SCHEDULE_CSS = """
         .filter-ours .count-all,
         .sched-weeks:not(.filter-ours) .count-ours {
             display: none;
-        }
-
-        @media (max-width: 519px) {
-            .game {
-                grid-template-columns: minmax(0, 1fr);
-                gap: 8px;
-            }
-
-            .side {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                text-align: left;
-            }
         }
 """
 
