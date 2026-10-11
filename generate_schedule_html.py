@@ -150,6 +150,7 @@ def generate_html(today=None):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{config.SITE_TITLE} - Schedule</title>
 {page_common.FONT_LINK}
+{page_common.FAVICON_LINKS}
     <style>
 {page_common.PAGE_CSS}    </style>
 {page_common.SCHEDULE_NOSCRIPT}</head>

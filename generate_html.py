@@ -80,6 +80,7 @@ def generate_html():
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{config.SITE_TITLE} - Standings</title>
 {page_common.FONT_LINK}
+{page_common.FAVICON_LINKS}
     <style>
 {page_common.PAGE_CSS}    </style>
 </head>

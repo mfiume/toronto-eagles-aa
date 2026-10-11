@@ -92,6 +92,14 @@ FONT_LINK = """    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">"""
 
+# The browser-tab and home-screen icon: the bird in white on the club red.
+# assets/favicon.svg is the source; the PNGs are rendered from it for browsers
+# that do not take an SVG icon (Safari's tab bar, iOS and Android home screens).
+FAVICON_LINKS = """    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="assets/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">"""
+
 _MASTHEAD_CSS = """
         .masthead {
             background: var(--surface);
