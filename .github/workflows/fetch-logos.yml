@@ -1,0 +1,32 @@
+name: Fetch team logos
+
+# Caches the GTHL's club logos in assets/logos so the pages serve them from
+# GitHub Pages instead of hotlinking agilex.ca.
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/schedule-redesign]
+    paths: [.github/workflows/fetch-logos.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download logos
+        run: |
+          mkdir -p assets/logos
+          for code in DUF GBA GTC HVS MBR MBT MJE MNS MTE STR TEG VAP VAR WML; do
+            curl -fsSL -o "assets/logos/$code.png" "https://www.agilex.ca/SSP/Images/GTHL/Logo/$code.png"
+          done
+          ls -la assets/logos
+      - name: Commit
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add assets/logos
+          git diff --staged --quiet || git commit -m "Cache GTHL team logos"
+          git push
