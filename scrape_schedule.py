@@ -116,8 +116,38 @@ def read_headers(table):
             "Div/Cat", "Type"]
 
 
+# Since October 2026 the GTHL renders the match as one cell spanning the Away,
+# Score and Home columns, with each part in its own labelled span and the two
+# club logos beside the names. Reading cells by position then shifts every
+# later column by two, which is how Div/Cat came back empty on every row.
+MATCH_PARTS = {"cell-away": "Away", "cell-score": "Score", "cell-home": "Home"}
+
+
+def read_match(cell):
+    """Away, Score and Home, plus both logo URLs, from the combined match cell."""
+    game = {}
+    for part in cell.find_elements(By.CSS_SELECTOR, ".cell-away, .cell-score, .cell-home"):
+        classes = (part.get_attribute("class") or "").split()
+        key = next((MATCH_PARTS[c] for c in classes if c in MATCH_PARTS), None)
+        if key:
+            # An unplayed game reads ':'; a played one '3 : 2'. Spaces dropped.
+            text = part.text.strip()
+            game[key] = "".join(text.split()) if key == "Score" else text
+    logos = [img.get_attribute("src") or "" for img in
+             cell.find_elements(By.CSS_SELECTOR, "img.logo-img")]
+    if len(logos) == 2:
+        game["AwayLogo"], game["HomeLogo"] = logos
+    return game
+
+
 def parse_rows(table, headers):
-    """Extract one dict per game, in the order the site lists them."""
+    """
+    Extract one dict per game, in the order the site lists them.
+
+    A cell is keyed by its own data-label where it has one, and otherwise by
+    the header over its column, counting colspans so that a merged cell cannot
+    shift the columns after it.
+    """
     games = []
 
     for row in table.find_elements(By.TAG_NAME, "tr")[1:]:  # skip header row
@@ -131,9 +161,17 @@ def parse_rows(table, headers):
                 continue
 
             game = {}
-            for i, cell in enumerate(cells):
-                if i < len(headers) and headers[i]:
-                    game[headers[i]] = cell.text.strip()
+            column = 0
+            for cell in cells:
+                if cell.find_elements(By.CSS_SELECTOR, ".cell-away"):
+                    game.update(read_match(cell))
+                else:
+                    label = (cell.get_attribute("data-label") or "").strip()
+                    if not label and column < len(headers):
+                        label = headers[column]
+                    if label:
+                        game[label] = cell.text.strip()
+                column += int(cell.get_attribute("colspan") or 1)
 
             if game:
                 games.append(game)
