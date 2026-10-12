@@ -274,7 +274,10 @@ at masthead size and repeats the wordmark beside it.
 
 ## Rink directions
 
-Every rink on the schedule links to Google Maps directions. The addresses are
+Every rink on the schedule links to directions in the phone's own maps app.
+The HTML carries a Google Maps link, which Android opens in Google Maps and a
+computer in the browser; a few lines of script swap in the Apple Maps link on
+iPhone and iPad. Without scripting everyone gets Google Maps. The addresses are
 the GTHL's own, from its arena directory at gthlcanada.com/arenas, copied into
 `arenas.json` (61 arenas, retrieved 2026-10-12).
 

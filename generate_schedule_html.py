@@ -64,8 +64,10 @@ def directions_link(rink, css_class, text):
         return ""
     arena = arenas.find(rink)
     label = f"Directions to {arena['name']}, {arenas.address(arena)}"
-    return (f'<a class="{css_class}" href="{escape(url)}" target="_blank" '
-            f'rel="noopener noreferrer" aria-label="{escape(label)}">{escape(text)}</a>')
+    apple = arenas.apple_directions_url(rink)
+    return (f'<a class="{css_class}" href="{escape(url)}" data-apple-maps="{escape(apple)}" '
+            f'target="_blank" rel="noopener noreferrer" aria-label="{escape(label)}">'
+            f'{escape(text)}</a>')
 
 
 def rink_cell(rink):
