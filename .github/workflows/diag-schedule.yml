@@ -9,13 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fetch Shoxs site
+      - name: Fetch Shoxs logos
         run: |
           mkdir -p fetched
-          for site in shoxs.ca www.shoxs.ca; do
-            curl -fsSL -A "Mozilla/5.0" -m 20 -o "fetched/$site.html" "https://$site/" && echo "== $site OK" || { echo "== $site failed"; rm -f "fetched/$site.html"; }
-          done
-          ls -la fetched
+          B=https://imagedelivery.net/aPDHOWLzkdlEAMvg3YLQug
+          curl -fsSL -A "Mozilla/5.0" -o fetched/shoxs-logo "$B/production-ueia4jg1wx40vevfkaw38h7dsms1/large" || echo "logo failed"
+          curl -fsSL -A "Mozilla/5.0" -o fetched/shoxs-logo.png "$B/production-ueia4jg1wx40vevfkaw38h7dsms1/format=png" || echo "logo png failed"
+          curl -fsSL -A "Mozilla/5.0" -o fetched/shoxs-icon-512.png "$B/production-31uxhbenltmtm6guq06tdlvcvrdd/fit=cover,format=png,gravity=auto,height=512,width=512" || echo "icon failed"
+          file fetched/*
       - name: Commit
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
