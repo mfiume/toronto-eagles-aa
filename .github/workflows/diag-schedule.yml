@@ -9,16 +9,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - name: Install Chrome
+        run: |
+          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq google-chrome-stable
       - name: Look for the GTHL arena directory
         run: |
           mkdir -p fetched
-          get() { curl -fsSL -A "Mozilla/5.0" -m 25 -o "fetched/$1" "$2" && echo "== $1 OK $(wc -c < fetched/$1)" || { echo "== $1 failed"; rm -f "fetched/$1"; }; }
-          get home.html https://gthlcanada.com/
-          get arenas.html https://gthlcanada.com/arenas/
-          get arena.html https://gthlcanada.com/arena/
-          get schedule.html https://gthlcanada.com/schedule/
-          grep -ohiE 'href="[^"]*(arena|rink|facilit|venue)[^"]*"' fetched/*.html | sort -u | head -40
-          grep -ohiE 'src="[^"]*agilex[^"]*"' fetched/*.html | sort -u | head
+          git show origin/main:scrape_schedule.py > scrape_schedule.py 2>/dev/null || true
+          python diag_arenas.py
       - name: Commit
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
