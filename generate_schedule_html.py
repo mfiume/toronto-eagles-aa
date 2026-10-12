@@ -7,6 +7,7 @@ import json
 from datetime import datetime, timedelta
 from html import escape
 
+import arenas
 import config
 import page_common
 
@@ -56,6 +57,23 @@ def plural(n, word):
     return f"{n} {word}{'' if n == 1 else 's'}"
 
 
+def directions_link(rink, css_class, text):
+    """A directions link for a rink, or nothing if its address is not known."""
+    url = arenas.directions_url(rink)
+    if not url:
+        return ""
+    arena = arenas.find(rink)
+    label = f"Directions to {arena['name']}, {arenas.address(arena)}"
+    return (f'<a class="{css_class}" href="{escape(url)}" target="_blank" '
+            f'rel="noopener noreferrer" aria-label="{escape(label)}">{escape(text)}</a>')
+
+
+def rink_cell(rink):
+    """The rink, as a directions link when its address is known."""
+    linked = directions_link(rink, "game-rink", rink)
+    return linked or f'<div class="game-rink">{escape(rink)}</div>'
+
+
 def next_game_card(game, day, today):
     """The card for the next Eagles game: both teams, when and where."""
     away, home = game.get('Away', ''), game.get('Home', '')
@@ -73,7 +91,7 @@ def next_game_card(game, day, today):
                     <div class="next-foot">
                         <span><strong>{day.strftime('%A, %B')} {day.day}</strong></span>
                         <span><strong>{escape(game.get('Time', ''))}</strong></span>
-                        <span>{escape(game.get('Arena', ''))}</span>
+                        <span>{escape(game.get('Arena', ''))}</span>{directions_link(game.get('Arena', ''), 'next-directions', 'Directions')}
                     </div>
                 </section>
 """
@@ -98,7 +116,7 @@ def game_row(game, day, our_team):
                         <div class="game-when"><span class="game-day">{day_text}</span>
                             <span class="game-time">{when}</span></div>
                         <div class="game-teams">{team(away)}{team(home)}</div>
-                        <div class="game-rink">{escape(game.get('Arena', ''))}</div>
+                        {rink_cell(game.get('Arena', ''))}
                     </div>
 """
 

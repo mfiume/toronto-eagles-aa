@@ -136,7 +136,7 @@ https://raw.githubusercontent.com/mfiume/toronto-eagles-aa/main/eagles_schedule.
 
 ```bash
 pip install -r requirements.txt
-python -m unittest test_season_schedule test_schedule_parse   # unit tests, no network
+python -m unittest test_season_schedule test_schedule_parse test_arenas   # unit tests, no network
 python test_scraper.py                    # live scrape
 ```
 
@@ -197,6 +197,8 @@ the shape.
 ├── config.py                    # Team, division, season, region roster, playoff format
 ├── page_common.py               # Masthead, timestamp, notice styling, team logos
 ├── fetch_logos.py               # Caches club logos into assets/logos
+├── arenas.py                    # Rink name -> GTHL arena address, directions links
+├── arenas.json                  # The GTHL's arena directory, as published
 ├── season_schedule.py           # Stable game ids, season-long accumulators
 ├── assets/
 │   ├── eagles-crest-white.svg   # Club crest, white
@@ -269,6 +271,21 @@ export.
 The masthead is white with a thin red rule, and shows the bird alone in red
 (`eagles-bird-red.svg`). The full crest's own "EAGLES" lettering turns to mush
 at masthead size and repeats the wordmark beside it.
+
+## Rink directions
+
+Every rink on the schedule links to Google Maps directions. The addresses are
+the GTHL's own, from its arena directory at gthlcanada.com/arenas, copied into
+`arenas.json` (61 arenas, retrieved 2026-10-12).
+
+The schedule names a rink by building and pad ("Iceland 4", "Al Palladini
+West"), so `arenas.py` drops the pad and looks the building up. A rink links
+only when its building is in the directory under the same name, or is listed in
+`arenas.RENAMED` with a source for the rename (Paramount Fine Foods Centre is
+now the Mississauga Sports and Entertainment Centre, for one). Anything else is
+shown as plain text: a missing link is better than a wrong pin.
+`test_arenas.py` fails if a rink seen this season does not resolve; add it to
+`RENAMED` with a source.
 
 ## Team logos
 
