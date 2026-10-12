@@ -202,8 +202,9 @@ the shape.
 │   ├── eagles-crest-white.svg   # Club crest, white
 │   ├── eagles-crest-red.svg     # Club crest, original red
 │   ├── eagles-bird-red.svg      # The bird alone, red: the masthead mark
-│   ├── favicon.svg              # Tab icon: white bird on red, source for the PNG icons
-│   ├── favicon-32.png, icon-192.png, apple-touch-icon.png
+│   ├── favicon.svg              # Tab icon: red bird on white, lines thickened for 16px
+│   ├── app-icon.svg             # Home-screen icon: red bird on white, original lines
+│   ├── favicon-32.png, icon-192.png, apple-touch-icon.png  # Rendered from the two above
 │   ├── logos/                   # Club logos, one <team-slug>.png each
 │   ├── recruit-connect.png      # Sponsor mark
 │   ├── tasios-orthodontics.png  # Sponsor mark
