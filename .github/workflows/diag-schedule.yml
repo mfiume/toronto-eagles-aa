@@ -2,6 +2,7 @@ name: Diagnose schedule scrape
 on:
   push:
     branches: [claude/diag-schedule]
+  workflow_dispatch:
 permissions:
   contents: write
 jobs:
@@ -9,27 +10,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip install -r requirements.txt
-      - name: Install Chrome
+      # Fetch the TeamSnap calendar and commit it only in encrypted form, to a
+      # public key whose private half lives in one Claude session. Nothing
+      # readable reaches the repository or this log. The feed URL comes from
+      # the TEAMSNAP_ICS_URL secret and is never printed.
+      - name: Fetch and encrypt the team calendar
+        env:
+          ICS_URL: ${{ secrets.TEAMSNAP_ICS_URL }}
         run: |
-          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq google-chrome-stable
-      - name: Look for the GTHL arena directory
-        run: |
-          mkdir -p fetched
-          git show origin/main:scrape_schedule.py > scrape_schedule.py 2>/dev/null || true
-          python diag_arenas.py
+          if [ -z "$ICS_URL" ]; then echo "TEAMSNAP_ICS_URL secret is not set yet"; exit 0; fi
+          curl -fsSL -A "Mozilla/5.0" -o /tmp/team.ics "$ICS_URL"
+          echo "Fetched $(wc -c < /tmp/team.ics) bytes, $(grep -c '^BEGIN:VEVENT' /tmp/team.ics) events"
+          openssl rand -out /tmp/k.bin 32
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in /tmp/team.ics -out fetched/team.ics.enc -pass file:/tmp/k.bin
+          openssl pkeyutl -encrypt -pubin -inkey fetched/session-key.pub.pem -pkeyopt rsa_padding_mode:oaep -in /tmp/k.bin -out fetched/team.key.enc
+          rm -f /tmp/team.ics /tmp/k.bin
       - name: Commit
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add fetched
-          git diff --staged --quiet || git commit -m "Fetched sponsor assets"
+          git diff --staged --quiet || git commit -m "Encrypted team calendar"
           git push
