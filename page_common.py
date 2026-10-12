@@ -1040,12 +1040,23 @@ SPONSORS = [
         "height": 203,
         "scale": 0.74,
     },
+    {
+        "name": "Shoxs Billiard Lounge",
+        "url": "https://shoxs.ca/",
+        "logo": "assets/shoxs.jpg",
+        "width": 640,
+        "height": 256,
+        # The oval fills its whole frame, so it needs more height than the
+        # wordmarks to read at the same size.
+        "scale": 1.1,
+    },
 ]
 
 # How many times the sponsor set repeats in each half of the track. One set of
-# three logos with their gaps measures about 357px, so six sets (about 2140px)
-# clear a 1920px screen. The animation time grows with it to keep the speed.
-_SPONSOR_SETS_PER_HALF = 6
+# four logos with their gaps measures about 490px, so four sets (about 1960px)
+# clear a 1920px screen. Adding a sponsor widens the set and speeds the strip
+# up: re-check this and the animation time so it stays near 33px a second.
+_SPONSOR_SETS_PER_HALF = 4
 
 _SPONSOR_CSS = """
         .sponsor-strip {

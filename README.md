@@ -207,7 +207,8 @@ the shape.
 │   ├── logos/                   # Club logos, one <team-slug>.png each
 │   ├── recruit-connect.png      # Sponsor mark
 │   ├── tasios-orthodontics.png  # Sponsor mark
-│   └── performance-auto-group.png # Sponsor mark
+│   ├── performance-auto-group.png # Sponsor mark
+│   └── shoxs.jpg                # Sponsor mark
 ├── scrape_standings.py          # Standings scraper
 ├── scrape_schedule.py           # Schedule scraper
 ├── generate_html.py             # Standings page
