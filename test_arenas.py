@@ -47,6 +47,12 @@ class FindArena(unittest.TestCase):
         self.assertTrue(url.startswith("https://www.google.com/maps/dir/?api=1&destination="))
         self.assertIn("4100%20Dundas%20Street%20West", url)
 
+    def test_apple_maps_link_carries_the_same_address(self):
+        url = arenas.apple_directions_url("Iceland 4")
+        self.assertTrue(url.startswith("https://maps.apple.com/?daddr="))
+        self.assertIn("705%20Matheson%20Boulevard%20East", url)
+        self.assertIsNone(arenas.apple_directions_url("Somewhere Else 2"))
+
     def test_every_rink_seen_this_season_resolves(self):
         with open("season_schedule.json", encoding="utf-8") as f:
             data = json.load(f)

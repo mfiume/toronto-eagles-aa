@@ -97,8 +97,24 @@ def address(arena):
 
 
 def directions_url(rink):
-    """A Google Maps directions link for a schedule rink name, or None."""
+    """
+    A Google Maps directions link for a schedule rink name, or None.
+
+    This is the link every device gets in the HTML: Android opens it in the
+    Google Maps app and a computer in the browser.
+    """
     arena = find(rink)
     if not arena:
         return None
     return "https://www.google.com/maps/dir/?api=1&destination=" + quote(address(arena))
+
+
+def apple_directions_url(rink):
+    """
+    The same directions as an Apple Maps link, or None. The page swaps this in
+    on iPhone and iPad, where it opens the Apple Maps app.
+    """
+    arena = find(rink)
+    if not arena:
+        return None
+    return "https://maps.apple.com/?daddr=" + quote(address(arena)) + "&dirflg=d"

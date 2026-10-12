@@ -898,6 +898,21 @@ _SCHEDULE_CSS = """
 # choice.
 SCHEDULE_JS = """
     <script>
+    // Directions open in the phone's own maps app. Every link is Google Maps
+    // in the HTML, which Android opens in Google Maps and a computer in the
+    // browser; on iPhone and iPad it is swapped for Apple Maps. iPadOS reports
+    // itself as a Mac, so a Mac with a touch screen counts as an iPad.
+    (function () {
+      var ua = navigator.userAgent;
+      var apple = /iPhone|iPad|iPod/.test(ua) ||
+                  (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+      if (!apple) return;
+      document.querySelectorAll('a[data-apple-maps]').forEach(function (a) {
+        a.href = a.dataset.appleMaps;
+        a.removeAttribute('target');
+      });
+    })();
+
     (function () {
       var view = document.querySelector('[data-schedule-view]');
       var buttons = document.querySelectorAll('.sched-filter-btn');
