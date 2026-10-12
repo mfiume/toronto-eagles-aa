@@ -9,11 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fetch Tasios logos
+      - name: Fetch Shoxs site
         run: |
           mkdir -p fetched
-          for f in tasios-ortho-logo.png tasios-ortho-logo-small.png tasios-logo-footer.png; do
-            curl -fsSL -A "Mozilla/5.0" -o "fetched/$f" "https://tasiosortho.com/wp-content/uploads/2020/11/$f" || echo "$f failed"
+          for site in shoxs.ca www.shoxs.ca; do
+            curl -fsSL -A "Mozilla/5.0" -m 20 -o "fetched/$site.html" "https://$site/" && echo "== $site OK" || { echo "== $site failed"; rm -f "fetched/$site.html"; }
           done
           ls -la fetched
       - name: Commit
