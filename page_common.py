@@ -814,6 +814,54 @@ _SCHEDULE_CSS = """
             overflow: hidden;
         }
 
+        /* A rink with a known address opens directions. It keeps the quiet
+           rink styling and adds a dotted underline and a pin, so it reads as
+           tappable without competing with the teams. */
+        a.game-rink {
+            text-decoration: underline dotted;
+            text-underline-offset: 2px;
+            text-decoration-color: var(--ink-3);
+        }
+
+        a.game-rink::before,
+        .next-directions::before {
+            content: "";
+            display: inline-block;
+            width: 0.62em;
+            height: 0.8em;
+            margin-right: 3px;
+            vertical-align: -0.05em;
+            background: currentColor;
+            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 13'%3E%3Cpath d='M5 0a5 5 0 0 0-5 5c0 3.6 5 8 5 8s5-4.4 5-8a5 5 0 0 0-5-5Zm0 7a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z'/%3E%3C/svg%3E") center / contain no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 13'%3E%3Cpath d='M5 0a5 5 0 0 0-5 5c0 3.6 5 8 5 8s5-4.4 5-8a5 5 0 0 0-5-5Zm0 7a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z'/%3E%3C/svg%3E") center / contain no-repeat;
+        }
+
+        a.game-rink:hover {
+            color: var(--ink);
+        }
+
+        a.game-rink:focus-visible,
+        .next-directions:focus-visible {
+            outline: 2px solid var(--brand);
+            outline-offset: 2px;
+        }
+
+        .next-directions {
+            margin-left: auto;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.74rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ink);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .next-directions:hover {
+            color: var(--brand);
+        }
+
         @media (max-width: 519px) {
             .game-rink {
                 max-width: 96px;
