@@ -545,6 +545,10 @@
             box-shadow: inset 3px 0 0 var(--brand);
         }
 
+        .game.is-final {
+            grid-template-columns: 62px minmax(0, 1fr);
+        }
+
         .game-when {
             line-height: 1.15;
         }
@@ -622,8 +626,7 @@
             text-decoration-color: var(--ink-3);
         }
 
-        a.game-rink::before,
-        .next-directions::before {
+        a.game-rink::before {
             content: "";
             display: inline-block;
             width: 0.62em;
@@ -639,31 +642,258 @@
             color: var(--ink);
         }
 
-        a.game-rink:focus-visible,
-        .next-directions:focus-visible {
+        a.game-rink:focus-visible {
             outline: 2px solid var(--brand);
             outline-offset: 2px;
         }
 
-        .next-directions {
-            margin-left: auto;
-            font-family: var(--display);
-            font-weight: 600;
-            font-size: 0.74rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: var(--ink);
-            text-decoration: none;
-            white-space: nowrap;
+        /* In the next-game card the rink itself is the directions link. */
+        .next-rink {
+            color: inherit;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            text-decoration-color: var(--ink-3);
         }
 
-        .next-directions:hover {
-            color: var(--brand);
+        .next-rink:hover {
+            color: var(--ink);
+        }
+
+        .next-rink:focus-visible {
+            outline: 2px solid var(--brand);
+            outline-offset: 2px;
+        }
+
+        /* --- A played game ---
+           "Final" in the time's place, each team's goals at the end of its
+           line, the winner bold and the loser quieter. */
+        .game-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-width: 0;
+        }
+
+        .game-goals {
+            margin-left: auto;
+            padding-left: 10px;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 1rem;
+            font-variant-numeric: tabular-nums;
+            min-width: 1.4em;
+            text-align: right;
+        }
+
+        .game-team.won {
+            font-weight: 600;
+        }
+
+        .game-team.lost {
+            color: var(--ink-2);
+        }
+
+        .game-team.lost .game-goals {
+            font-weight: 500;
+        }
+
+        .game-final {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.7rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ink-2);
+        }
+
+        .game-result {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 1px 5px;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.66rem;
+            letter-spacing: 0.06em;
+            vertical-align: 1px;
+        }
+
+        .result-w {
+            background: var(--ink);
+            color: #ffffff;
+        }
+
+        .result-l {
+            color: var(--ink-2);
+            box-shadow: inset 0 0 0 1px var(--line);
+        }
+
+        .result-t {
+            background: #ececf0;
+            color: var(--ink);
         }
 
         @media (max-width: 519px) {
             .game-rink {
                 max-width: 96px;
+            }
+        }
+
+        /* --- Team events (unlocked) ---
+           Same row as a game. A team event has a grey bar where our games
+           have red, and one line about what it is. */
+        .game-extra {
+            font-size: 0.78rem;
+            line-height: 1.3;
+            color: var(--ink-2);
+            margin-top: 1px;
+        }
+
+        .game.team-event.is-ours {
+            box-shadow: inset 3px 0 0 #cfcdd3;
+        }
+
+        .game.team-event.kind-tournament {
+            box-shadow: inset 3px 0 0 var(--ink);
+            background: #fafafb;
+        }
+
+        .event-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            line-height: 1.25;
+            color: var(--ink);
+            min-width: 0;
+        }
+
+        .event-title > span:last-child {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .event-tag {
+            flex-shrink: 0;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.6rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 2px 5px;
+            background: var(--ink);
+            color: #ffffff;
+        }
+
+        .next-extra .game-extra {
+            margin-top: 0;
+            font-size: 0.84rem;
+        }
+
+        /* --- Team events lock ---
+           One quiet line under the heading: a password field until unlocked,
+           then a note that team events are showing, with a way to lock. */
+        .team-lock {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 10px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            padding: 8px 10px;
+        }
+
+        .team-lock-text {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.74rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ink-2);
+            margin-right: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .team-lock-text::before {
+            content: "";
+            width: 0.75em;
+            height: 0.9em;
+            background: currentColor;
+            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 14'%3E%3Cpath d='M3 6V4a3 3 0 0 1 6 0v2h1a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h1Zm1.5 0h3V4a1.5 1.5 0 0 0-3 0v2Z'/%3E%3C/svg%3E") center / contain no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 14'%3E%3Cpath d='M3 6V4a3 3 0 0 1 6 0v2h1a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h1Zm1.5 0h3V4a1.5 1.5 0 0 0-3 0v2Z'/%3E%3C/svg%3E") center / contain no-repeat;
+        }
+
+        .team-lock.is-unlocked .team-lock-text::before {
+            display: none;
+        }
+
+        .team-lock-input {
+            font: inherit;
+            font-size: 16px; /* 16px stops iOS zooming into the field */
+            border: 1px solid var(--line);
+            padding: 6px 8px;
+            width: 11em;
+            min-width: 0;
+            flex: 1 1 9em;
+            max-width: 16em;
+            background: #ffffff;
+            color: var(--ink);
+        }
+
+        .team-lock-input:focus-visible {
+            outline: 2px solid var(--brand);
+            outline-offset: 1px;
+        }
+
+        .team-lock-btn {
+            appearance: none;
+            border: 0;
+            cursor: pointer;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.74rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 8px 14px;
+            background: var(--ink);
+            color: #ffffff;
+        }
+
+        .team-lock.is-unlocked .team-lock-btn {
+            background: transparent;
+            color: var(--ink-2);
+            box-shadow: inset 0 0 0 1px var(--line);
+            padding: 6px 12px;
+        }
+
+        .team-lock-btn:focus-visible {
+            outline: 2px solid var(--brand);
+            outline-offset: 2px;
+        }
+
+        .team-lock-msg {
+            flex-basis: 100%;
+            margin: 0;
+            font-size: 0.8rem;
+            color: var(--ink-2);
+        }
+
+        .team-lock-msg:empty {
+            display: none;
+        }
+
+        /* On a phone the label gets its own line, so the field and the button
+           sit side by side under it. */
+        @media (max-width: 519px) {
+            form.team-lock .team-lock-text {
+                flex-basis: 100%;
+            }
+
+            .team-lock-input {
+                max-width: none;
             }
         }
 
@@ -1202,7 +1432,7 @@
                     </tbody>
                 </table>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-13T08:35:25.894928+00:00" title="Oct 13, 04:35 AM ET · Refreshes hourly">just now</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-13T12:58:51.269549+00:00" title="Oct 13, 08:58 AM ET · Refreshes hourly">just now</time></p>
         </div>
 
     </div>
