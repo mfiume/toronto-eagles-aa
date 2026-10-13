@@ -161,15 +161,23 @@ def extra_line(*parts, details=False):
     return f'<div class="{cls}">' + " · ".join(escape(p) for p in parts) + "</div>"
 
 
-def row_attrs(classes, details):
+def row_attrs(classes, details, row_type="game"):
     """
     The opening tag's attributes for a row. A row with details opens on tap.
     There is deliberately no visual cue; it stays focusable and announces
     itself as a toggle, so keyboards and screen readers still find it.
+
+    `row_type` is what the Games / Practices filter goes by: "game",
+    "practice" (ice and dryland) or "other".
     """
-    if not details:
-        return f'class="{classes}"'
-    return f'class="{classes} has-details" tabindex="0" role="button" aria-expanded="false"'
+    attrs = f'class="{classes}{" has-details" if details else ""}" data-type="{row_type}"'
+    if details:
+        attrs += ' tabindex="0" role="button" aria-expanded="false"'
+    return attrs
+
+
+# The Games / Practices filter's grouping of team events.
+ROW_TYPES = {"practice": "practice", "dryland": "practice", "tournament": "game"}
 
 
 
@@ -268,7 +276,7 @@ def team_event_row(event, start):
     tag = '<span class="event-tag">Tournament</span>' if kind == "tournament" else ''
     wear = wear_text(event.get("wear"), False) if kind != "practice" else ""
     details = extra_line(arrival(event) if event.get("timed") else "", wear, details=True)
-    return f"""                    <div {row_attrs(f"game is-ours team-event kind-{kind}", details)}>
+    return f"""                    <div {row_attrs(f"game is-ours team-event kind-{kind}", details, ROW_TYPES.get(kind, "other"))}>
                         <div class="game-when"><span class="game-day">{start.strftime('%a')} {start.day}</span>
                             <span class="game-time">{time_text}</span></div>
                         <div class="game-teams"><div class="event-title">{tag}<span>{escape(title)}</span></div>{details}</div>
@@ -424,6 +432,18 @@ def build_block(schedule, today, our_team, team_events=None):
                                 aria-pressed="{str(not default_ours).lower()}">All
                             <span class="sched-filter-count">{games_all}</span></button>
                     </div>
+                </div>
+"""
+    if team_events is not None:
+        # Logged in only: there is nothing but games without the team events.
+        html += """
+                <div class="type-filter sched-filter" role="group" aria-label="What to show">
+                    <button type="button" class="sched-filter-btn sched-type-btn" data-type-filter="game"
+                            aria-pressed="false">Games</button>
+                    <button type="button" class="sched-filter-btn sched-type-btn" data-type-filter="practice"
+                            aria-pressed="false">Practices</button>
+                    <button type="button" class="sched-filter-btn sched-type-btn" data-type-filter="all"
+                            aria-pressed="true">All</button>
                 </div>
 """
 
