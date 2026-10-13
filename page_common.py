@@ -96,11 +96,14 @@ FONT_LINK = """    <link rel="preconnect" href="https://fonts.googleapis.com">
 # assets/favicon.svg (tab) lightly thickens the line art so it survives at
 # 16px; assets/app-icon.svg (home screen) keeps the original lines untouched so
 # it stays crisp at full size. The PNGs are rendered from those two for
-# browsers that do not take an SVG icon.
+# browsers that do not take an SVG icon. manifest.webmanifest lists the same
+# icons and names the home-screen shortcut "Eagles" on iOS and Android.
 FAVICON_LINKS = """    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
     <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
     <link rel="icon" href="assets/icon-192.png" type="image/png" sizes="192x192">
-    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">"""
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="apple-mobile-web-app-title" content="Eagles">"""
 
 _MASTHEAD_CSS = """
         .masthead {
