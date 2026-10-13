@@ -136,7 +136,7 @@ https://raw.githubusercontent.com/mfiume/toronto-eagles-aa/main/eagles_schedule.
 
 ```bash
 pip install -r requirements.txt
-python -m unittest test_season_schedule test_schedule_parse test_arenas   # unit tests, no network
+python -m unittest test_season_schedule test_schedule_parse test_arenas test_teamsnap   # unit tests, no network
 python test_scraper.py                    # live scrape
 ```
 
@@ -197,6 +197,8 @@ the shape.
 ├── config.py                    # Team, division, season, region roster, playoff format
 ├── page_common.py               # Masthead, timestamp, notice styling, team logos
 ├── fetch_logos.py               # Caches club logos into assets/logos
+├── teamsnap.py                  # Team calendar: practices, events, arrival, uniform
+├── team_crypto.py               # Encrypts team events with the team password
 ├── arenas.py                    # Rink name -> GTHL arena address, directions links
 ├── arenas.json                  # The GTHL's arena directory, as published
 ├── season_schedule.py           # Stable game ids, season-long accumulators
@@ -271,6 +273,32 @@ export.
 The masthead is white with a thin red rule, and shows the bird alone in red
 (`eagles-bird-red.svg`). The full crest's own "EAGLES" lettering turns to mush
 at masthead size and repeats the wordmark beside it.
+
+## Team events (password protected)
+
+The team's own TeamSnap calendar adds practices, dryland, tournaments, the
+games the GTHL does not list (exhibition, preseason, tournament), and arrival
+times and jersey colours on our league games. The website is public, so these
+are only ever published encrypted.
+
+- `teamsnap.py` fetches the feed from the `TEAMSNAP_ICS_URL` secret and keeps
+  only when, what, where, arrival time and what to wear. TeamSnap's free-text
+  notes are dropped, since they can hold names and phone numbers. It writes
+  `team_events.json`, which stays on the Actions runner (it is gitignored and
+  the workflow never adds it).
+- `generate_schedule_html.py` builds the schedule twice: the public version,
+  league games only, and the team version. The team version is encrypted with
+  the `TEAM_EVENTS_PASSWORD` secret (`team_crypto.py`: PBKDF2-SHA256, 600,000
+  iterations, AES-GCM) and embedded in the page.
+- In the browser, a parent enters the password once; the page decrypts the
+  team version with the Web Crypto API and swaps it in, and the phone remembers
+  the password. "Lock" forgets it.
+
+Use a passphrase of four or five random words. To change it, update the
+`TEAM_EVENTS_PASSWORD` secret; the next hourly run re-encrypts with it, and a
+phone holding the old one is asked for the new one. Without either secret the
+page is simply the public version. `test_teamsnap.py` checks that nothing from
+the calendar reaches the page unencrypted.
 
 ## Rink directions
 

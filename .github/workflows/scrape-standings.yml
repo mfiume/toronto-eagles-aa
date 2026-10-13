@@ -51,7 +51,18 @@ jobs:
         run: |
           python fetch_logos.py
 
+      # The team's own calendar. The feed URL is a secret and never printed;
+      # team_events.json stays on the runner and is never committed. The
+      # schedule page carries it only encrypted with the team password.
+      - name: Fetch team calendar
+        env:
+          TEAMSNAP_ICS_URL: ${{ secrets.TEAMSNAP_ICS_URL }}
+        run: |
+          python teamsnap.py
+
       - name: Generate HTML pages
+        env:
+          TEAM_EVENTS_PASSWORD: ${{ secrets.TEAM_EVENTS_PASSWORD }}
         run: |
           python generate_html.py
           python generate_schedule_html.py

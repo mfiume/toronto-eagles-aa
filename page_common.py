@@ -939,6 +939,165 @@ _SCHEDULE_CSS = """
             }
         }
 
+        /* --- Team events (unlocked) ---
+           Same row as a game. A team event has a grey bar where our games
+           have red, and one line about what it is. */
+        .game-extra {
+            font-size: 0.78rem;
+            line-height: 1.3;
+            color: var(--ink-2);
+            margin-top: 1px;
+        }
+
+        .game.team-event.is-ours {
+            box-shadow: inset 3px 0 0 #cfcdd3;
+        }
+
+        .game.team-event.kind-tournament {
+            box-shadow: inset 3px 0 0 var(--ink);
+            background: #fafafb;
+        }
+
+        .event-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            line-height: 1.25;
+            color: var(--ink);
+            min-width: 0;
+        }
+
+        .event-title > span:last-child {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .event-tag {
+            flex-shrink: 0;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.6rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 2px 5px;
+            background: var(--ink);
+            color: #ffffff;
+        }
+
+        .next-extra .game-extra {
+            margin-top: 0;
+            font-size: 0.84rem;
+        }
+
+        /* --- Team events lock ---
+           One quiet line under the heading: a password field until unlocked,
+           then a note that team events are showing, with a way to lock. */
+        .team-lock {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 10px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            padding: 8px 10px;
+        }
+
+        .team-lock-text {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.74rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ink-2);
+            margin-right: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .team-lock-text::before {
+            content: "";
+            width: 0.75em;
+            height: 0.9em;
+            background: currentColor;
+            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 14'%3E%3Cpath d='M3 6V4a3 3 0 0 1 6 0v2h1a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h1Zm1.5 0h3V4a1.5 1.5 0 0 0-3 0v2Z'/%3E%3C/svg%3E") center / contain no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 14'%3E%3Cpath d='M3 6V4a3 3 0 0 1 6 0v2h1a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h1Zm1.5 0h3V4a1.5 1.5 0 0 0-3 0v2Z'/%3E%3C/svg%3E") center / contain no-repeat;
+        }
+
+        .team-lock.is-unlocked .team-lock-text::before {
+            display: none;
+        }
+
+        .team-lock-input {
+            font: inherit;
+            font-size: 16px; /* 16px stops iOS zooming into the field */
+            border: 1px solid var(--line);
+            padding: 6px 8px;
+            width: 11em;
+            min-width: 0;
+            flex: 1 1 9em;
+            max-width: 16em;
+            background: #ffffff;
+            color: var(--ink);
+        }
+
+        .team-lock-input:focus-visible {
+            outline: 2px solid var(--brand);
+            outline-offset: 1px;
+        }
+
+        .team-lock-btn {
+            appearance: none;
+            border: 0;
+            cursor: pointer;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.74rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 8px 14px;
+            background: var(--ink);
+            color: #ffffff;
+        }
+
+        .team-lock.is-unlocked .team-lock-btn {
+            background: transparent;
+            color: var(--ink-2);
+            box-shadow: inset 0 0 0 1px var(--line);
+            padding: 6px 12px;
+        }
+
+        .team-lock-btn:focus-visible {
+            outline: 2px solid var(--brand);
+            outline-offset: 2px;
+        }
+
+        .team-lock-msg {
+            flex-basis: 100%;
+            margin: 0;
+            font-size: 0.8rem;
+            color: var(--ink-2);
+        }
+
+        .team-lock-msg:empty {
+            display: none;
+        }
+
+        /* On a phone the label gets its own line, so the field and the button
+           sit side by side under it. */
+        @media (max-width: 519px) {
+            form.team-lock .team-lock-text {
+                flex-basis: 100%;
+            }
+
+            .team-lock-input {
+                max-width: none;
+            }
+        }
+
         /* A team the GTHL has no logo for, usually an East team in an
            interlocking game, gets its initials in the same footprint. */
         .team-mono {
@@ -965,52 +1124,135 @@ _SCHEDULE_CSS = """
 
 # Progressive enhancement: the generated HTML already carries the default
 # filter class, so the list is correct before this runs and correct if it never
-# does. The script only switches between the two views and remembers the
-# choice.
+# does. The script switches between the two views and remembers the choice,
+# points directions at Apple Maps on iPhone and iPad, and unlocks team events.
+#
+# enhance() runs on load and again after the team version of the schedule is
+# swapped in, since that replaces the elements it works on.
 SCHEDULE_JS = """
     <script>
-    // Directions open in the phone's own maps app. Every link is Google Maps
-    // in the HTML, which Android opens in Google Maps and a computer in the
-    // browser; on iPhone and iPad it is swapped for Apple Maps. iPadOS reports
-    // itself as a Mac, so a Mac with a touch screen counts as an iPad.
     (function () {
+      var FILTER_KEY = 'eagles-schedule-filter';
+      var PASS_KEY = 'eagles-team-password';
+      var block = document.querySelector('[data-schedule-block]');
+      var payloadEl = document.getElementById('team-events');
+      var publicHtml = block ? block.innerHTML : '';
+
+      function store(key, value) {
+        try {
+          if (value === null) localStorage.removeItem(key);
+          else localStorage.setItem(key, value);
+        } catch (e) {}
+      }
+      function stored(key) {
+        try { return localStorage.getItem(key); } catch (e) { return null; }
+      }
+
+      // Directions open in the phone's own maps app. Every link is Google Maps
+      // in the HTML, which Android opens in Google Maps and a computer in the
+      // browser; on iPhone and iPad it is swapped for Apple Maps. iPadOS
+      // reports itself as a Mac, so a Mac with a touch screen counts as an iPad.
       var ua = navigator.userAgent;
       var apple = /iPhone|iPad|iPod/.test(ua) ||
                   (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-      if (!apple) return;
-      document.querySelectorAll('a[data-apple-maps]').forEach(function (a) {
-        a.href = a.dataset.appleMaps;
-        a.removeAttribute('target');
-      });
-    })();
 
-    (function () {
-      var view = document.querySelector('[data-schedule-view]');
-      var buttons = document.querySelectorAll('.sched-filter-btn');
-      if (!view || !buttons.length) return;
+      function enhance() {
+        if (apple) {
+          document.querySelectorAll('a[data-apple-maps]').forEach(function (a) {
+            a.href = a.dataset.appleMaps;
+            a.removeAttribute('target');
+          });
+        }
 
-      var KEY = 'eagles-schedule-filter';
+        var view = document.querySelector('[data-schedule-view]');
+        var buttons = document.querySelectorAll('.sched-filter-btn');
+        if (view && buttons.length) {
+          var apply = function (mode, remember) {
+            view.classList.toggle('filter-ours', mode === 'ours');
+            buttons.forEach(function (b) {
+              b.setAttribute('aria-pressed', String(b.dataset.filter === mode));
+            });
+            if (remember) store(FILTER_KEY, mode);
+          };
+          var saved = stored(FILTER_KEY);
+          // Only honour a stored choice the page can actually show.
+          if (saved === 'all' || (saved === 'ours' && view.dataset.hasOurs === '1')) {
+            apply(saved, false);
+          }
+          buttons.forEach(function (b) {
+            b.addEventListener('click', function () { apply(b.dataset.filter, true); });
+          });
+        }
 
-      function apply(mode, remember) {
-        view.classList.toggle('filter-ours', mode === 'ours');
-        buttons.forEach(function (b) {
-          b.setAttribute('aria-pressed', String(b.dataset.filter === mode));
-        });
-        if (remember) {
-          try { localStorage.setItem(KEY, mode); } catch (e) {}
+        var form = document.querySelector('[data-team-lock]');
+        if (form) {
+          form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            var input = form.querySelector('input');
+            var msg = form.querySelector('.team-lock-msg');
+            msg.textContent = 'Unlocking\\u2026';
+            unlock(input.value).then(function (ok) {
+              if (!ok) {
+                msg.textContent = 'That password didn\\u2019t work. Check the team message for it.';
+                input.select();
+              }
+            });
+          });
+        }
+        var forget = document.querySelector('[data-team-forget]');
+        if (forget) {
+          forget.addEventListener('click', function () {
+            store(PASS_KEY, null);
+            block.innerHTML = publicHtml;
+            enhance();
+          });
         }
       }
 
-      var saved = null;
-      try { saved = localStorage.getItem(KEY); } catch (e) {}
-      // Only honour a stored choice the page can actually show.
-      if (saved === 'all' || (saved === 'ours' && view.dataset.hasOurs === '1')) {
-        apply(saved, false);
+      function bytes(b64) {
+        return Uint8Array.from(atob(b64), function (c) { return c.charCodeAt(0); });
       }
 
-      buttons.forEach(function (b) {
-        b.addEventListener('click', function () { apply(b.dataset.filter, true); });
-      });
+      // The team events are encrypted with the team password: PBKDF2-SHA256
+      // for the key, AES-GCM for the data (team_crypto.py writes them). A wrong
+      // password fails the AES-GCM check rather than producing garbage.
+      function unlock(password) {
+        if (!payloadEl || !password || !window.crypto || !crypto.subtle) {
+          return Promise.resolve(false);
+        }
+        var p = JSON.parse(payloadEl.textContent);
+        return crypto.subtle.importKey('raw', new TextEncoder().encode(password),
+                                       'PBKDF2', false, ['deriveKey'])
+          .then(function (base) {
+            return crypto.subtle.deriveKey(
+              { name: 'PBKDF2', salt: bytes(p.salt), iterations: p.iter, hash: 'SHA-256' },
+              base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+          })
+          .then(function (key) {
+            return crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes(p.iv) }, key, bytes(p.ct));
+          })
+          .then(function (plain) {
+            block.innerHTML = new TextDecoder().decode(plain);
+            store(PASS_KEY, password);
+            enhance();
+            return true;
+          })
+          .catch(function () { return false; });
+      }
+
+      enhance();
+
+      // A phone that unlocked before unlocks again on its own. If the password
+      // has since changed, it is forgotten and the form says why.
+      var remembered = stored(PASS_KEY);
+      if (remembered && payloadEl) {
+        unlock(remembered).then(function (ok) {
+          if (ok) return;
+          store(PASS_KEY, null);
+          var msg = document.querySelector('.team-lock-msg');
+          if (msg) msg.textContent = 'The team password has changed. Enter the new one.';
+        });
+      }
     })();
     </script>
 """
@@ -1032,6 +1274,9 @@ SCHEDULE_NOSCRIPT = """    <noscript>
 
             .filter-ours .count-all { display: inline; }
             .filter-ours .count-ours { display: none; }
+
+            /* Team events need scripting to decrypt. */
+            .team-lock { display: none; }
         </style>
     </noscript>
 """
