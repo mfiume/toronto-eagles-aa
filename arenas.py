@@ -118,3 +118,16 @@ def apple_directions_url(rink):
     if not arena:
         return None
     return "https://maps.apple.com/?daddr=" + quote(address(arena)) + "&dirflg=d"
+
+
+def address_urls(address):
+    """
+    (Google, Apple) directions links for a free-form street address, such as
+    the one TeamSnap gives each team event. The address is the team's own, so
+    it is passed through as written.
+    """
+    if not address:
+        return None, None
+    q = quote(address)
+    return ("https://www.google.com/maps/dir/?api=1&destination=" + q,
+            "https://maps.apple.com/?daddr=" + q + "&dirflg=d")
