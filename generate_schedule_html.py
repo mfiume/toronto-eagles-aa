@@ -147,15 +147,14 @@ def extra_line(*parts, details=False):
 
 def row_attrs(classes, details):
     """
-    The opening tag's attributes for a row. A row with details can be opened:
-    it is focusable, announces itself as a toggle, and shows a chevron.
+    The opening tag's attributes for a row. A row with details opens on tap.
+    There is deliberately no visual cue; it stays focusable and announces
+    itself as a toggle, so keyboards and screen readers still find it.
     """
     if not details:
         return f'class="{classes}"'
     return f'class="{classes} has-details" tabindex="0" role="button" aria-expanded="false"'
 
-
-CHEVRON = '<span class="game-chevron" aria-hidden="true"></span>'
 
 
 
@@ -214,7 +213,7 @@ def game_row(game, day, our_team, team=None):
     classes = f"game{' is-ours' if ours else ''}{' is-final' if score else ''}"
     return f"""                    <div {row_attrs(classes, extra)}>
                         <div class="game-when"><span class="game-day">{day_text}</span>
-                            {when}{CHEVRON if extra else ''}</div>
+                            {when}</div>
                         <div class="game-teams">{teams}{extra}</div>
                         {'' if score else rink_cell(game.get('Arena', ''))}
                     </div>
@@ -235,7 +234,7 @@ def team_game_row(event, start):
     details = extra_line(arrival(event), wear_text(event.get("wear"), True), details=True)
     return f"""                    <div {row_attrs("game is-ours team-game", details)}>
                         <div class="game-when"><span class="game-day">{start.strftime('%a')} {start.day}</span>
-                            <span class="game-time">{time_text}</span>{CHEVRON if details else ''}</div>
+                            <span class="game-time">{time_text}</span></div>
                         <div class="game-teams">{team_line(away)}{team_line(home)}{extra_line(event.get("label"))}{details}</div>
                         {venue_cell(event.get("venue"), event.get("address"))}
                     </div>
@@ -255,7 +254,7 @@ def team_event_row(event, start):
     details = extra_line(arrival(event) if event.get("timed") else "", wear, details=True)
     return f"""                    <div {row_attrs(f"game is-ours team-event kind-{kind}", details)}>
                         <div class="game-when"><span class="game-day">{start.strftime('%a')} {start.day}</span>
-                            <span class="game-time">{time_text}</span>{CHEVRON if details else ''}</div>
+                            <span class="game-time">{time_text}</span></div>
                         <div class="game-teams"><div class="event-title">{tag}<span>{escape(title)}</span></div>{details}</div>
                         {venue_cell(event.get("venue"), event.get("address"))}
                     </div>

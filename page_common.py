@@ -1043,8 +1043,8 @@ _SCHEDULE_CSS = """
         }
 
         /* Arrival time and what to wear stay folded away until the row is
-           tapped; the next-game card shows them open. A chevron under the
-           time marks a row that has them. */
+           tapped; the next-game card shows them open. There is no marker on
+           purpose: it is a quiet extra, not something to learn. */
         .game.has-details {
             cursor: pointer;
         }
@@ -1060,33 +1060,6 @@ _SCHEDULE_CSS = """
         .game.has-details:focus-visible {
             outline: 2px solid var(--brand);
             outline-offset: -2px;
-        }
-
-        /* Beside the date, so it adds no height to the row. */
-        .game-when {
-            position: relative;
-        }
-
-        .game-chevron {
-            position: absolute;
-            top: 2px;
-            right: 4px;
-            width: 7px;
-            height: 7px;
-            border-right: 1.5px solid var(--ink-3);
-            border-bottom: 1.5px solid var(--ink-3);
-            transform: rotate(45deg);
-            transition: transform 0.15s ease;
-        }
-
-        .game.is-open .game-chevron {
-            transform: translate(0, 3px) rotate(-135deg);
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .game-chevron {
-                transition: none;
-            }
         }
 
         .next-extra .game-extra {
