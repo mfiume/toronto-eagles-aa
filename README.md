@@ -290,8 +290,8 @@ are only ever published encrypted.
   league games only, and the team version. The team version is encrypted with
   the `TEAM_EVENTS_PASSWORD` secret (`team_crypto.py`: PBKDF2-SHA256, 600,000
   iterations, AES-GCM) and embedded in the page.
-- In the browser it works like a log-in: "Log in" at the right of the tabs
-  (on every page) opens a Family log in box. The page decrypts the team
+- In the browser it works like a log-in: "Team Login" at the right of the
+  tabs (on every page) opens a Team Login box. The page decrypts the team
   version with the Web Crypto API and swaps it in, and the phone stays logged
   in until "Log out".
 
