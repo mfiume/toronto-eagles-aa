@@ -1,0 +1,18 @@
+name: Diagnose
+on:
+  push:
+    branches: [claude/diag-schedule]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the live home-screen icon as an iPhone requests it
+        run: |
+          UA="Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+          B=https://mfiume.github.io/toronto-eagles-aa
+          for u in "$B/schedule.html" "$B/" "$B/assets/apple-touch-icon.png" "$B/assets/icon-192.png" "$B/assets/favicon.svg" "https://mfiume.github.io/apple-touch-icon.png" "https://mfiume.github.io/apple-touch-icon-precomposed.png"; do
+            echo "== $u"; curl -sS -A "$UA" -o /tmp/out -D - "$u" | grep -iE "^HTTP|^content-type|^content-length|^last-modified|^cache-control"; file /tmp/out
+          done
+          curl -sS -A "$UA" "$B/schedule.html" | grep -n 'apple-touch-icon\|rel="icon"' | head
