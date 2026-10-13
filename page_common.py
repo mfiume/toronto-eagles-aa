@@ -92,12 +92,12 @@ FONT_LINK = """    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">"""
 
-# The browser-tab and home-screen icons: the bird in club red on white.
-# assets/favicon.svg (tab) lightly thickens the line art so it survives at
-# 16px; assets/app-icon.svg (home screen) keeps the original lines untouched so
-# it stays crisp at full size. The PNGs are rendered from those two for
-# browsers that do not take an SVG icon. manifest.webmanifest lists the same
-# icons and names the home-screen shortcut "Eagles" on iOS and Android.
+# The browser-tab and home-screen icons: the bird in club red on white, in the
+# crest's own line weight. assets/favicon.svg (tab) and assets/app-icon.svg
+# (home screen) differ only in how much of the square the bird fills. The PNGs
+# are rendered from those two for browsers that do not take an SVG icon.
+# manifest.webmanifest lists the same icons and names the home-screen shortcut
+# "Eagles" on iOS and Android.
 FAVICON_LINKS = """    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
     <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
     <link rel="icon" href="assets/icon-192.png" type="image/png" sizes="192x192">
