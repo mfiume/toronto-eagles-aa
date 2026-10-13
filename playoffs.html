@@ -1197,6 +1197,27 @@
             <a href="index.html">Standings</a>
             <a href="schedule.html">Schedule</a>
             <a href="playoffs.html" class="active">Playoffs</a>
+            <a class="mastnav-auth" href="schedule.html#login" data-auth-link>Log in</a>
+            <script>
+            (function () {
+              var link = document.currentScript.previousElementSibling;
+              var saved = null;
+              try { saved = localStorage.getItem('eagles-team-password'); } catch (e) {}
+              if (!saved) return;
+              link.textContent = 'Log out';
+              link.dataset.loggedIn = '1';
+              link.addEventListener('click', function (event) {
+                // The schedule page logs out itself (it also has to put the
+                // public schedule back). This runs before the rest of the page
+                // has loaded, so which page it is can only be told on click.
+                if (document.querySelector('[data-schedule-block]')) return;
+                event.preventDefault();
+                try { localStorage.removeItem('eagles-team-password'); } catch (e) {}
+                link.textContent = 'Log in';
+                delete link.dataset.loggedIn;
+              }, { once: true });
+            })();
+            </script>
         </nav>
         <aside class="sponsor-strip" aria-label="Our sponsors">
             <div class="sponsor-track">
@@ -1325,7 +1346,7 @@
                 in with the seeding picture once the format is out and games have
                 been played.</p>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-13T16:31:36.123305+00:00" title="Oct 13, 12:31 PM ET · Seeding follows the standings, refreshed hourly">9 minutes ago</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-13T16:42:52.207749+00:00" title="Oct 13, 12:42 PM ET · Seeding follows the standings, refreshed hourly">just now</time></p>
         </div>
 
     </div>
