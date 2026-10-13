@@ -1185,12 +1185,18 @@ _SCHEDULE_CSS = """
         .team-mono {
             display: inline-grid;
             place-items: center;
+            border-radius: 50%; /* a round badge, like the crests it stands in for */
             background: #e9e7ec;
             color: #514c57;
             font-family: var(--body);
             font-weight: 700;
             font-size: 0.56rem;
             letter-spacing: 0.02em;
+            line-height: 1;
+        }
+
+        .face-team .team-mono {
+            font-size: 0.72rem;
         }
 
         /* Filtering is a class on the wrapper, set in the generated HTML so the
