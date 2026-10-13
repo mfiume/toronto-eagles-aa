@@ -205,7 +205,7 @@ _MASTHEAD_CSS = """
             border-bottom-color: var(--brand);
         }
 
-        /* Log in / Log out sits at the far right of the tabs, quieter than a
+        /* Team Login / Log out sits at the far right of the tabs, quieter than a
            tab: no underline state, just the label. */
         .mastnav a.mastnav-auth {
             margin-left: auto;
@@ -273,10 +273,10 @@ def auth_enabled():
 # Family log-in, at the right end of the tab bar on every page. Logging in
 # means entering the team password, which unlocks the team events on the
 # schedule page (see team_crypto.py); the phone remembers it until Log out.
-# The link starts as "Log in" and a few lines of script set it from what the
+# The link starts as "Team Login" and a few lines of script set it from what the
 # phone remembers. On the schedule page SCHEDULE_JS takes it over to open the
 # log-in box in place; elsewhere it goes to the schedule page and opens it.
-AUTH_LINK = """            <a class="mastnav-auth" href="schedule.html#login" data-auth-link>Log in</a>
+AUTH_LINK = """            <a class="mastnav-auth" href="schedule.html#login" data-auth-link>Team Login</a>
             <script>
             (function () {
               var link = document.currentScript.previousElementSibling;
@@ -292,7 +292,7 @@ AUTH_LINK = """            <a class="mastnav-auth" href="schedule.html#login" da
                 if (document.querySelector('[data-schedule-block]')) return;
                 event.preventDefault();
                 try { localStorage.removeItem('eagles-team-password'); } catch (e) {}
-                link.textContent = 'Log in';
+                link.textContent = 'Team Login';
                 delete link.dataset.loggedIn;
               }, { once: true });
             })();
@@ -1097,10 +1097,19 @@ _SCHEDULE_CSS = """
         /* --- Family log-in box ---
            A plain modal: title, one line of explanation, the password, and
            Log in / Cancel. */
+        /* The page's reset zeroes every margin, which also strips the
+           browser's own centring of a dialog, so it is placed here: centred
+           across, and in the top third rather than the middle, so the phone
+           keyboard opening under it never covers the field. */
         .login-dialog {
+            position: fixed;
+            inset: 0;
+            margin: max(14vh, 24px) auto auto;
+            height: fit-content;
+            max-height: calc(100vh - 48px);
             border: 1px solid var(--line);
-            padding: 20px;
-            width: min(92vw, 360px);
+            padding: 22px 20px 20px;
+            width: min(calc(100vw - 32px), 380px);
             color: var(--ink);
             background: var(--surface);
             box-shadow: 0 18px 48px rgba(17, 18, 20, 0.18);
@@ -1304,7 +1313,7 @@ SCHEDULE_JS = """
 
       function setAuthLink(loggedIn) {
         if (!authLink) return;
-        authLink.textContent = loggedIn ? 'Log out' : 'Log in';
+        authLink.textContent = loggedIn ? 'Log out' : 'Team Login';
         if (loggedIn) authLink.dataset.loggedIn = '1';
         else delete authLink.dataset.loggedIn;
       }

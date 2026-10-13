@@ -289,7 +289,7 @@ def next_game_card(away, home, day, time_text, rink_html, today, extra=""):
 LOGIN_DIALOG = """
             <dialog class="login-dialog" id="login-dialog" aria-labelledby="login-title">
                 <form method="dialog">
-                    <h2 id="login-title">Family log in</h2>
+                    <h2 id="login-title">Team Login</h2>
                     <p>Enter the team password to see practices, dryland and team events.</p>
                     <label for="login-password">Team password</label>
                     <input id="login-password" class="login-input" type="password"
