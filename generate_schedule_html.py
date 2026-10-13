@@ -10,6 +10,7 @@ from html import escape
 import arenas
 import config
 import page_common
+from season_schedule import parse_score
 
 
 def parse_game_date(raw):
@@ -93,7 +94,7 @@ def next_game_card(game, day, today):
                     <div class="next-foot">
                         <span><strong>{day.strftime('%A, %B')} {day.day}</strong></span>
                         <span><strong>{escape(game.get('Time', ''))}</strong></span>
-                        <span>{escape(game.get('Arena', ''))}</span>{directions_link(game.get('Arena', ''), 'next-directions', 'Directions')}
+                        {directions_link(game.get('Arena', ''), 'next-rink', game.get('Arena', '')) or f"<span>{escape(game.get('Arena', ''))}</span>"}
                     </div>
                 </section>
 """
@@ -103,22 +104,47 @@ def game_row(game, day, our_team):
     """
     One game as a compact row: day and time, both teams stacked, the rink.
     Ours look the same as everyone else's apart from the red bar.
+
+    Once played, "Final" takes the time's place and each team's goals sit at
+    the end of its own line, the winner in bold, so a score never reads as a
+    time. Our games add a W, L or T. A played game drops the rink: nobody needs
+    directions to it any more, and the names get the room. The GTHL writes the
+    score as away:home, the order of its own columns.
     """
     away, home = game.get('Away', ''), game.get('Home', '')
     ours = our_team in (away.lower(), home.lower())
-    when = escape(format_score(game.get('Score')) or game.get('Time', ''))
+    score = parse_score(format_score(game.get('Score')))
     day_text = f"{day.strftime('%a')} {day.day}" if day else escape(game.get('Date', ''))
 
-    def team(name):
-        us = ' us' if name.lower() == our_team else ''
-        return (f'<div class="game-team{us}">{page_common.team_logo(name)}'
-                f'<span>{escape(name)}</span></div>')
+    def team(name, goals, other):
+        classes = ['game-team']
+        if name.lower() == our_team:
+            classes.append('us')
+        if score is not None:
+            classes.append('won' if goals > other else 'lost' if goals < other else 'tied')
+        goals_html = f'<span class="game-goals">{goals}</span>' if score is not None else ''
+        return (f'<div class="{" ".join(classes)}">{page_common.team_logo(name)}'
+                f'<span class="game-name">{escape(name)}</span>{goals_html}</div>')
 
-    return f"""                    <div class="game{' is-ours' if ours else ''}">
+    if score is not None:
+        a, h = score['away'], score['home']
+        status = '<span class="game-final">Final</span>'
+        if ours:
+            mine, theirs = (h, a) if home.lower() == our_team else (a, h)
+            result = 'W' if mine > theirs else 'L' if mine < theirs else 'T'
+            status += (f'<span class="game-result result-{result.lower()}" '
+                       f'title="{ {"W": "Win", "L": "Loss", "T": "Tie"}[result] }">{result}</span>')
+        when = f'<span class="game-time">{status}</span>'
+        teams = team(away, a, h) + team(home, h, a)
+    else:
+        when = f'<span class="game-time">{escape(game.get("Time", ""))}</span>'
+        teams = team(away, 0, 0) + team(home, 0, 0)
+
+    return f"""                    <div class="game{' is-ours' if ours else ''}{' is-final' if score else ''}">
                         <div class="game-when"><span class="game-day">{day_text}</span>
-                            <span class="game-time">{when}</span></div>
-                        <div class="game-teams">{team(away)}{team(home)}</div>
-                        {rink_cell(game.get('Arena', ''))}
+                            {when}</div>
+                        <div class="game-teams">{teams}</div>
+                        {'' if score else rink_cell(game.get('Arena', ''))}
                     </div>
 """
 
