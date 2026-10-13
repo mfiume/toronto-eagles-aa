@@ -4,6 +4,19 @@ on:
   # Allow manual trigger
   workflow_dispatch:
 
+  # Rebuild the pages as soon as the code that draws them changes. The pages
+  # have to be built here, where the team password is: built anywhere else
+  # they come out without the family log-in. The paths leave out the files
+  # this workflow commits itself, so its own commits do not set it off again.
+  push:
+    branches: [main]
+    paths:
+      - '*.py'
+      - 'arenas.json'
+      - 'assets/**'
+      - 'requirements.txt'
+      - '.github/workflows/scrape-standings.yml'
+
   # Run every hour
   schedule:
     - cron: '0 * * * *'
