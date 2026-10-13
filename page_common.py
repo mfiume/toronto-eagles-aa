@@ -1021,6 +1021,19 @@ _SCHEDULE_CSS = """
             box-shadow: inset 3px 0 0 #cfcdd3;
         }
 
+        /* A team event's title is one short word ("Practice"), so the venue
+           takes the rest of the row instead of the narrow column a game row
+           keeps for it, and wraps far less. Selected this specifically to win
+           over the phone rule that narrows .game-rink. */
+        .game.team-event {
+            grid-template-columns: 62px auto minmax(0, 1fr);
+        }
+
+        .game.team-event .game-rink {
+            max-width: none;
+            justify-self: end;
+        }
+
         .game.team-event.kind-tournament {
             box-shadow: inset 3px 0 0 var(--ink);
             background: #fafafb;
