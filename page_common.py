@@ -1039,6 +1039,53 @@ _SCHEDULE_CSS = """
             color: #ffffff;
         }
 
+        /* Arrival time and what to wear stay folded away until the row is
+           tapped; the next-game card shows them open. A chevron under the
+           time marks a row that has them. */
+        .game.has-details {
+            cursor: pointer;
+        }
+
+        .game.has-details .game-details {
+            display: none;
+        }
+
+        .game.has-details.is-open .game-details {
+            display: block;
+        }
+
+        .game.has-details:focus-visible {
+            outline: 2px solid var(--brand);
+            outline-offset: -2px;
+        }
+
+        /* Beside the date, so it adds no height to the row. */
+        .game-when {
+            position: relative;
+        }
+
+        .game-chevron {
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            width: 7px;
+            height: 7px;
+            border-right: 1.5px solid var(--ink-3);
+            border-bottom: 1.5px solid var(--ink-3);
+            transform: rotate(45deg);
+            transition: transform 0.15s ease;
+        }
+
+        .game.is-open .game-chevron {
+            transform: translate(0, 3px) rotate(-135deg);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .game-chevron {
+                transition: none;
+            }
+        }
+
         .next-extra .game-extra {
             margin-top: 0;
             font-size: 0.84rem;
@@ -1198,6 +1245,26 @@ SCHEDULE_JS = """
             a.removeAttribute('target');
           });
         }
+
+        // A row with details opens on tap (or Enter / Space), except when
+        // the tap is on a link inside it, such as the rink's directions.
+        document.querySelectorAll('.game.has-details').forEach(function (row) {
+          var toggle = function () {
+            var open = row.classList.toggle('is-open');
+            row.setAttribute('aria-expanded', String(open));
+          };
+          row.addEventListener('click', function (event) {
+            if (event.target.closest('a, button')) return;
+            toggle();
+          });
+          row.addEventListener('keydown', function (event) {
+            if (event.target !== row) return;
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              toggle();
+            }
+          });
+        });
 
         var view = document.querySelector('[data-schedule-view]');
         var buttons = document.querySelectorAll('.sched-filter-btn');
