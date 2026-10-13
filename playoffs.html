@@ -176,6 +176,21 @@
             border-bottom-color: var(--brand);
         }
 
+        /* Log in / Log out sits at the far right of the tabs, quieter than a
+           tab: no underline state, just the label. */
+        .mastnav a.mastnav-auth {
+            margin-left: auto;
+            color: var(--ink-2);
+            text-transform: none;
+            letter-spacing: 0.02em;
+            font-family: var(--body);
+            font-weight: 600;
+        }
+
+        .mastnav a.mastnav-auth:hover {
+            color: var(--ink);
+        }
+
         .table-wrapper {
             background: var(--surface);
             border: 1px solid var(--line);
@@ -791,110 +806,93 @@
             font-size: 0.84rem;
         }
 
-        /* --- Team events lock ---
-           One quiet line under the heading: a password field until unlocked,
-           then a note that team events are showing, with a way to lock. */
-        .team-lock {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 8px 10px;
-            background: var(--surface);
+        /* --- Family log-in box ---
+           A plain modal: title, one line of explanation, the password, and
+           Log in / Cancel. */
+        .login-dialog {
             border: 1px solid var(--line);
-            padding: 8px 10px;
+            padding: 20px;
+            width: min(92vw, 360px);
+            color: var(--ink);
+            background: var(--surface);
+            box-shadow: 0 18px 48px rgba(17, 18, 20, 0.18);
         }
 
-        .team-lock-text {
+        .login-dialog::backdrop {
+            background: rgba(17, 18, 20, 0.45);
+        }
+
+        .login-dialog h2 {
             font-family: var(--display);
             font-weight: 600;
-            font-size: 0.74rem;
-            letter-spacing: 0.1em;
+            font-size: 1.05rem;
+            letter-spacing: 0.06em;
             text-transform: uppercase;
+            margin: 0 0 6px;
+        }
+
+        .login-dialog p {
+            font-size: 0.9rem;
+            line-height: 1.45;
             color: var(--ink-2);
-            margin-right: auto;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+            margin: 0 0 14px;
         }
 
-        .team-lock-text::before {
-            content: "";
-            width: 0.75em;
-            height: 0.9em;
-            background: currentColor;
-            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 14'%3E%3Cpath d='M3 6V4a3 3 0 0 1 6 0v2h1a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h1Zm1.5 0h3V4a1.5 1.5 0 0 0-3 0v2Z'/%3E%3C/svg%3E") center / contain no-repeat;
-            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 14'%3E%3Cpath d='M3 6V4a3 3 0 0 1 6 0v2h1a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h1Zm1.5 0h3V4a1.5 1.5 0 0 0-3 0v2Z'/%3E%3C/svg%3E") center / contain no-repeat;
+        .login-dialog label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 4px;
         }
 
-        .team-lock.is-unlocked .team-lock-text::before {
-            display: none;
-        }
-
-        .team-lock-input {
+        .login-input {
+            display: block;
+            width: 100%;
             font: inherit;
             font-size: 16px; /* 16px stops iOS zooming into the field */
             border: 1px solid var(--line);
-            padding: 6px 8px;
-            width: 11em;
-            min-width: 0;
-            flex: 1 1 9em;
-            max-width: 16em;
+            padding: 9px 10px;
             background: #ffffff;
             color: var(--ink);
         }
 
-        .team-lock-input:focus-visible {
+        .login-input:focus-visible,
+        .login-btn:focus-visible {
             outline: 2px solid var(--brand);
-            outline-offset: 1px;
+            outline-offset: 2px;
         }
 
-        .team-lock-btn {
+        .login-msg {
+            min-height: 1.3em;
+            margin: 8px 0 0 !important;
+            font-size: 0.82rem !important;
+        }
+
+        .login-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .login-btn {
             appearance: none;
             border: 0;
             cursor: pointer;
             font-family: var(--display);
             font-weight: 600;
-            font-size: 0.74rem;
+            font-size: 0.8rem;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            padding: 8px 14px;
+            padding: 9px 16px;
             background: var(--ink);
             color: #ffffff;
         }
 
-        .team-lock.is-unlocked .team-lock-btn {
+        .login-btn.secondary {
             background: transparent;
             color: var(--ink-2);
             box-shadow: inset 0 0 0 1px var(--line);
-            padding: 6px 12px;
-        }
-
-        .team-lock-btn:focus-visible {
-            outline: 2px solid var(--brand);
-            outline-offset: 2px;
-        }
-
-        .team-lock-msg {
-            flex-basis: 100%;
-            margin: 0;
-            font-size: 0.8rem;
-            color: var(--ink-2);
-        }
-
-        .team-lock-msg:empty {
-            display: none;
-        }
-
-        /* On a phone the label gets its own line, so the field and the button
-           sit side by side under it. */
-        @media (max-width: 519px) {
-            form.team-lock .team-lock-text {
-                flex-basis: 100%;
-            }
-
-            .team-lock-input {
-                max-width: none;
-            }
         }
 
         /* A team the GTHL has no logo for, usually an East team in an
@@ -1327,7 +1325,7 @@
                 in with the seeding picture once the format is out and games have
                 been played.</p>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-13T16:31:36.123305+00:00" title="Oct 13, 12:31 PM ET · Seeding follows the standings, refreshed hourly">just now</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-13T16:31:36.123305+00:00" title="Oct 13, 12:31 PM ET · Seeding follows the standings, refreshed hourly">9 minutes ago</time></p>
         </div>
 
     </div>

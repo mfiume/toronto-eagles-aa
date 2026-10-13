@@ -201,6 +201,21 @@ _MASTHEAD_CSS = """
             color: var(--brand);
             border-bottom-color: var(--brand);
         }
+
+        /* Log in / Log out sits at the far right of the tabs, quieter than a
+           tab: no underline state, just the label. */
+        .mastnav a.mastnav-auth {
+            margin-left: auto;
+            color: var(--ink-2);
+            text-transform: none;
+            letter-spacing: 0.02em;
+            font-family: var(--body);
+            font-weight: 600;
+        }
+
+        .mastnav a.mastnav-auth:hover {
+            color: var(--ink);
+        }
 """
 
 # Every page the hub can show. config.HIDDEN_PAGES decides which of them are
@@ -241,8 +256,45 @@ def masthead(active_page, meta_main, meta_sub):
             continue
         active = ' class="active"' if href == active_page else ""
         html += f'            <a href="{href}"{active}>{label}</a>\n'
+    if auth_enabled():
+        html += AUTH_LINK
     html += "        </nav>\n"
     return html + sponsor_strip()
+
+
+def auth_enabled():
+    """Whether the site offers the family log-in: the team password is set."""
+    return bool(os.environ.get("TEAM_EVENTS_PASSWORD"))
+
+
+# Family log-in, at the right end of the tab bar on every page. Logging in
+# means entering the team password, which unlocks the team events on the
+# schedule page (see team_crypto.py); the phone remembers it until Log out.
+# The link starts as "Log in" and a few lines of script set it from what the
+# phone remembers. On the schedule page SCHEDULE_JS takes it over to open the
+# log-in box in place; elsewhere it goes to the schedule page and opens it.
+AUTH_LINK = """            <a class="mastnav-auth" href="schedule.html#login" data-auth-link>Log in</a>
+            <script>
+            (function () {
+              var link = document.currentScript.previousElementSibling;
+              var saved = null;
+              try { saved = localStorage.getItem('eagles-team-password'); } catch (e) {}
+              if (!saved) return;
+              link.textContent = 'Log out';
+              link.dataset.loggedIn = '1';
+              link.addEventListener('click', function (event) {
+                // The schedule page logs out itself (it also has to put the
+                // public schedule back). This runs before the rest of the page
+                // has loaded, so which page it is can only be told on click.
+                if (document.querySelector('[data-schedule-block]')) return;
+                event.preventDefault();
+                try { localStorage.removeItem('eagles-team-password'); } catch (e) {}
+                link.textContent = 'Log in';
+                delete link.dataset.loggedIn;
+              }, { once: true });
+            })();
+            </script>
+"""
 
 
 def division_label(filters=None):
@@ -992,110 +1044,93 @@ _SCHEDULE_CSS = """
             font-size: 0.84rem;
         }
 
-        /* --- Team events lock ---
-           One quiet line under the heading: a password field until unlocked,
-           then a note that team events are showing, with a way to lock. */
-        .team-lock {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 8px 10px;
-            background: var(--surface);
+        /* --- Family log-in box ---
+           A plain modal: title, one line of explanation, the password, and
+           Log in / Cancel. */
+        .login-dialog {
             border: 1px solid var(--line);
-            padding: 8px 10px;
+            padding: 20px;
+            width: min(92vw, 360px);
+            color: var(--ink);
+            background: var(--surface);
+            box-shadow: 0 18px 48px rgba(17, 18, 20, 0.18);
         }
 
-        .team-lock-text {
+        .login-dialog::backdrop {
+            background: rgba(17, 18, 20, 0.45);
+        }
+
+        .login-dialog h2 {
             font-family: var(--display);
             font-weight: 600;
-            font-size: 0.74rem;
-            letter-spacing: 0.1em;
+            font-size: 1.05rem;
+            letter-spacing: 0.06em;
             text-transform: uppercase;
+            margin: 0 0 6px;
+        }
+
+        .login-dialog p {
+            font-size: 0.9rem;
+            line-height: 1.45;
             color: var(--ink-2);
-            margin-right: auto;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+            margin: 0 0 14px;
         }
 
-        .team-lock-text::before {
-            content: "";
-            width: 0.75em;
-            height: 0.9em;
-            background: currentColor;
-            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 14'%3E%3Cpath d='M3 6V4a3 3 0 0 1 6 0v2h1a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h1Zm1.5 0h3V4a1.5 1.5 0 0 0-3 0v2Z'/%3E%3C/svg%3E") center / contain no-repeat;
-            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 14'%3E%3Cpath d='M3 6V4a3 3 0 0 1 6 0v2h1a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h1Zm1.5 0h3V4a1.5 1.5 0 0 0-3 0v2Z'/%3E%3C/svg%3E") center / contain no-repeat;
+        .login-dialog label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 4px;
         }
 
-        .team-lock.is-unlocked .team-lock-text::before {
-            display: none;
-        }
-
-        .team-lock-input {
+        .login-input {
+            display: block;
+            width: 100%;
             font: inherit;
             font-size: 16px; /* 16px stops iOS zooming into the field */
             border: 1px solid var(--line);
-            padding: 6px 8px;
-            width: 11em;
-            min-width: 0;
-            flex: 1 1 9em;
-            max-width: 16em;
+            padding: 9px 10px;
             background: #ffffff;
             color: var(--ink);
         }
 
-        .team-lock-input:focus-visible {
+        .login-input:focus-visible,
+        .login-btn:focus-visible {
             outline: 2px solid var(--brand);
-            outline-offset: 1px;
+            outline-offset: 2px;
         }
 
-        .team-lock-btn {
+        .login-msg {
+            min-height: 1.3em;
+            margin: 8px 0 0 !important;
+            font-size: 0.82rem !important;
+        }
+
+        .login-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .login-btn {
             appearance: none;
             border: 0;
             cursor: pointer;
             font-family: var(--display);
             font-weight: 600;
-            font-size: 0.74rem;
+            font-size: 0.8rem;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            padding: 8px 14px;
+            padding: 9px 16px;
             background: var(--ink);
             color: #ffffff;
         }
 
-        .team-lock.is-unlocked .team-lock-btn {
+        .login-btn.secondary {
             background: transparent;
             color: var(--ink-2);
             box-shadow: inset 0 0 0 1px var(--line);
-            padding: 6px 12px;
-        }
-
-        .team-lock-btn:focus-visible {
-            outline: 2px solid var(--brand);
-            outline-offset: 2px;
-        }
-
-        .team-lock-msg {
-            flex-basis: 100%;
-            margin: 0;
-            font-size: 0.8rem;
-            color: var(--ink-2);
-        }
-
-        .team-lock-msg:empty {
-            display: none;
-        }
-
-        /* On a phone the label gets its own line, so the field and the button
-           sit side by side under it. */
-        @media (max-width: 519px) {
-            form.team-lock .team-lock-text {
-                flex-basis: 100%;
-            }
-
-            .team-lock-input {
-                max-width: none;
-            }
         }
 
         /* A team the GTHL has no logo for, usually an East team in an
@@ -1184,29 +1219,60 @@ SCHEDULE_JS = """
           });
         }
 
-        var form = document.querySelector('[data-team-lock]');
-        if (form) {
-          form.addEventListener('submit', function (event) {
-            event.preventDefault();
-            var input = form.querySelector('input');
-            var msg = form.querySelector('.team-lock-msg');
-            msg.textContent = 'Unlocking\\u2026';
-            unlock(input.value).then(function (ok) {
-              if (!ok) {
-                msg.textContent = 'That password didn\\u2019t work. Check the team message for it.';
-                input.select();
-              }
-            });
+      }
+
+      // The log-in box. Log in decrypts the team version and swaps it in;
+      // Log out forgets the password and puts the public version back.
+      var dialog = document.getElementById('login-dialog');
+      var authLink = document.querySelector('[data-auth-link]');
+
+      function setAuthLink(loggedIn) {
+        if (!authLink) return;
+        authLink.textContent = loggedIn ? 'Log out' : 'Log in';
+        if (loggedIn) authLink.dataset.loggedIn = '1';
+        else delete authLink.dataset.loggedIn;
+      }
+
+      function openLogin(message) {
+        if (!dialog) return;
+        var msg = dialog.querySelector('.login-msg');
+        msg.textContent = message || '';
+        if (dialog.showModal) dialog.showModal(); else dialog.setAttribute('open', '');
+        dialog.querySelector('input').focus();
+      }
+
+      function logOut() {
+        store(PASS_KEY, null);
+        block.innerHTML = publicHtml;
+        setAuthLink(false);
+        enhance();
+      }
+
+      if (authLink && dialog) {
+        authLink.addEventListener('click', function (event) {
+          event.preventDefault();
+          if (authLink.dataset.loggedIn) logOut(); else openLogin();
+        });
+        var form = dialog.querySelector('form');
+        form.addEventListener('submit', function (event) {
+          event.preventDefault();
+          var input = form.querySelector('input');
+          var msg = dialog.querySelector('.login-msg');
+          msg.textContent = 'Logging in\u2026';
+          unlock(input.value).then(function (ok) {
+            if (ok) {
+              input.value = '';
+              msg.textContent = '';
+              dialog.close ? dialog.close() : dialog.removeAttribute('open');
+            } else {
+              msg.textContent = 'That password didn\u2019t work. Check the team message for it.';
+              input.select();
+            }
           });
-        }
-        var forget = document.querySelector('[data-team-forget]');
-        if (forget) {
-          forget.addEventListener('click', function () {
-            store(PASS_KEY, null);
-            block.innerHTML = publicHtml;
-            enhance();
-          });
-        }
+        });
+        dialog.querySelector('[data-login-cancel]').addEventListener('click', function () {
+          dialog.close ? dialog.close() : dialog.removeAttribute('open');
+        });
       }
 
       function bytes(b64) {
@@ -1234,6 +1300,7 @@ SCHEDULE_JS = """
           .then(function (plain) {
             block.innerHTML = new TextDecoder().decode(plain);
             store(PASS_KEY, password);
+            setAuthLink(true);
             enhance();
             return true;
           })
@@ -1242,16 +1309,20 @@ SCHEDULE_JS = """
 
       enhance();
 
-      // A phone that unlocked before unlocks again on its own. If the password
-      // has since changed, it is forgotten and the form says why.
+      // A phone that logged in before logs in again on its own. If the
+      // password has since changed, it is forgotten and the log-in box says
+      // why. Arriving from another page's Log in link opens the box.
       var remembered = stored(PASS_KEY);
       if (remembered && payloadEl) {
         unlock(remembered).then(function (ok) {
           if (ok) return;
           store(PASS_KEY, null);
-          var msg = document.querySelector('.team-lock-msg');
-          if (msg) msg.textContent = 'The team password has changed. Enter the new one.';
+          setAuthLink(false);
+          openLogin('The team password has changed. Enter the new one.');
         });
+      } else if (location.hash === '#login' && payloadEl) {
+        history.replaceState(null, '', location.pathname);
+        openLogin();
       }
     })();
     </script>
@@ -1275,8 +1346,8 @@ SCHEDULE_NOSCRIPT = """    <noscript>
             .filter-ours .count-all { display: inline; }
             .filter-ours .count-ours { display: none; }
 
-            /* Team events need scripting to decrypt. */
-            .team-lock { display: none; }
+            /* Logging in needs scripting to decrypt the team events. */
+            .mastnav-auth { display: none; }
         </style>
     </noscript>
 """

@@ -263,23 +263,21 @@ def next_game_card(away, home, day, time_text, rink_html, today, extra=""):
 """
 
 
-def lock_bar(unlocked):
-    """The team-events control: a password form, or a note with a Lock button."""
-    if unlocked:
-        return """
-                <div class="team-lock is-unlocked">
-                    <span class="team-lock-text">Showing practices and team events</span>
-                    <button type="button" class="team-lock-btn" data-team-forget>Lock</button>
-                </div>
-"""
-    return """
-                <form class="team-lock" data-team-lock>
-                    <label class="team-lock-text" for="team-pass">Practices &amp; team events</label>
-                    <input id="team-pass" class="team-lock-input" type="password" autocomplete="current-password"
-                           placeholder="Team password" required>
-                    <button type="submit" class="team-lock-btn">Unlock</button>
-                    <p class="team-lock-msg" role="status" aria-live="polite"></p>
+LOGIN_DIALOG = """
+            <dialog class="login-dialog" id="login-dialog" aria-labelledby="login-title">
+                <form method="dialog">
+                    <h2 id="login-title">Family log in</h2>
+                    <p>Enter the team password to see practices, dryland and team events.</p>
+                    <label for="login-password">Team password</label>
+                    <input id="login-password" class="login-input" type="password"
+                           autocomplete="current-password" required>
+                    <p class="login-msg" role="status" aria-live="polite"></p>
+                    <div class="login-actions">
+                        <button type="button" class="login-btn secondary" data-login-cancel>Cancel</button>
+                        <button type="submit" class="login-btn">Log in</button>
+                    </div>
                 </form>
+            </dialog>
 """
 
 
@@ -313,7 +311,6 @@ def build_block(schedule, today, our_team, team_events=None):
     weeks. Without team_events this is the public version.
     """
     this_monday = today - timedelta(days=today.weekday())
-    unlocked = team_events is not None
 
     def is_ours(game):
         return our_team in (game.get('Away', '').lower(), game.get('Home', '').lower())
@@ -391,8 +388,6 @@ def build_block(schedule, today, our_team, team_events=None):
                     </div>
                 </div>
 """
-    if TEAM_LOCK_ENABLED[0]:
-        html += lock_bar(unlocked)
 
     html += f"""
                 <div class="sched-weeks{' filter-ours' if default_ours else ''}"
@@ -429,9 +424,6 @@ def build_block(schedule, today, our_team, team_events=None):
     return html
 
 
-# Whether the page offers team events at all; set by generate_html.
-TEAM_LOCK_ENABLED = [False]
-
 
 def load_team_events():
     """The team calendar and password, or (None, None) if either is missing."""
@@ -460,7 +452,6 @@ def generate_html(today=None):
     today = today or datetime.now(page_common.TORONTO).date()
 
     team_events, password = load_team_events()
-    TEAM_LOCK_ENABLED[0] = team_events is not None
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -509,6 +500,7 @@ def generate_html(today=None):
             # ciphertext can never close the tag.
             payload = json.dumps(sealed).replace("</", "<\\/")
             html += f'            <script type="application/json" id="team-events">{payload}</script>\n'
+            html += LOGIN_DIALOG
 
     html += f"""        </div>
 
