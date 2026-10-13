@@ -738,6 +738,19 @@ _SCHEDULE_CSS = """
             outline-offset: 2px;
         }
 
+        /* The filters hide rows and weeks with the hidden attribute; rows
+           and weeks set their own display, so it has to be made to win. */
+        .sched-weeks [hidden] {
+            display: none !important;
+        }
+
+        /* Games / Practices / All, logged in: its own row, right-aligned
+           under the Eagles / All toggle. */
+        .type-filter {
+            justify-self: end;
+            margin-top: -8px;
+        }
+
         .sched-filter-count {
             font-size: 0.68rem;
             opacity: 0.7;
@@ -1207,6 +1220,7 @@ SCHEDULE_JS = """
     (function () {
       var FILTER_KEY = 'eagles-schedule-filter';
       var PASS_KEY = 'eagles-team-password';
+      var TYPE_KEY = 'eagles-type-filter';
       var block = document.querySelector('[data-schedule-block]');
       var payloadEl = document.getElementById('team-events');
       var publicHtml = block ? block.innerHTML : '';
@@ -1257,26 +1271,57 @@ SCHEDULE_JS = """
           });
         });
 
+        // Two filters: whose games (Eagles / All) and, logged in, what kind
+        // (Games / Practices / All). The Eagles / All choice also works
+        // without scripting, through the filter-ours class; the kind filter
+        // only exists logged in, which needs scripting anyway. A week shows
+        // only while something in it passes both.
         var view = document.querySelector('[data-schedule-view]');
-        var buttons = document.querySelectorAll('.sched-filter-btn');
-        if (view && buttons.length) {
-          var apply = function (mode, remember) {
-            view.classList.toggle('filter-ours', mode === 'ours');
-            buttons.forEach(function (b) {
-              b.setAttribute('aria-pressed', String(b.dataset.filter === mode));
+        var whoButtons = document.querySelectorAll('[data-filter]');
+        var typeButtons = document.querySelectorAll('[data-type-filter]');
+        if (view && whoButtons.length) {
+          var who = view.classList.contains('filter-ours') ? 'ours' : 'all';
+          var kind = 'all';
+          var render = function () {
+            view.classList.toggle('filter-ours', who === 'ours');
+            whoButtons.forEach(function (b) {
+              b.setAttribute('aria-pressed', String(b.dataset.filter === who));
             });
-            if (remember) store(FILTER_KEY, mode);
+            typeButtons.forEach(function (b) {
+              b.setAttribute('aria-pressed', String(b.dataset.typeFilter === kind));
+            });
+            view.querySelectorAll('.week').forEach(function (week) {
+              var any = false;
+              week.querySelectorAll('.game').forEach(function (row) {
+                var show = (who === 'all' || row.classList.contains('is-ours')) &&
+                           (kind === 'all' || row.dataset.type === kind);
+                row.hidden = !show;
+                any = any || show;
+              });
+              week.hidden = !any;
+            });
           };
-          var saved = stored(FILTER_KEY);
+          var savedWho = stored(FILTER_KEY);
           // Only honour a stored choice the page can actually show.
-          if (saved === 'all' || (saved === 'ours' && view.dataset.hasOurs === '1')) {
-            apply(saved, false);
+          if (savedWho === 'all' || (savedWho === 'ours' && view.dataset.hasOurs === '1')) {
+            who = savedWho;
           }
-          buttons.forEach(function (b) {
-            b.addEventListener('click', function () { apply(b.dataset.filter, true); });
+          var savedKind = stored(TYPE_KEY);
+          if (typeButtons.length && (savedKind === 'game' || savedKind === 'practice')) {
+            kind = savedKind;
+          }
+          render();
+          whoButtons.forEach(function (b) {
+            b.addEventListener('click', function () {
+              who = b.dataset.filter; store(FILTER_KEY, who); render();
+            });
+          });
+          typeButtons.forEach(function (b) {
+            b.addEventListener('click', function () {
+              kind = b.dataset.typeFilter; store(TYPE_KEY, kind); render();
+            });
           });
         }
-
       }
 
       // The log-in box. Log in decrypts the team version and swaps it in;
