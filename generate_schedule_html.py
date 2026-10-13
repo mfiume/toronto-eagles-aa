@@ -79,6 +79,22 @@ def plural(n, word):
     return f"{n} {word}{'' if n == 1 else 's'}"
 
 
+# How a week's team events are counted in its heading, in this order. Dryland
+# reads as a mass noun ("2 dryland"), so it is never pluralised.
+EVENT_COUNTS = [
+    ("practice", lambda n: plural(n, "practice")),
+    ("dryland", lambda n: f"{n} dryland"),
+    ("tournament", lambda n: plural(n, "tournament")),
+    ("event", lambda n: plural(n, "team event")),
+]
+
+
+def event_counts(week):
+    """['2 practices', '1 dryland'] for the team events in a week's items."""
+    return [text(n) for kind, text in EVENT_COUNTS
+            if (n := sum(1 for it in week if it[4] == kind))]
+
+
 def clock(t):
     """time(19, 10) -> '7:10 PM'."""
     return t.strftime("%I:%M %p").lstrip("0")
@@ -364,7 +380,7 @@ def build_block(schedule, today, our_team, team_events=None):
         if e["kind"] == "game":
             items.append((start, start.date(), team_game_row(e, start), True, "game"))
         else:
-            items.append((start, start.date(), team_event_row(e, start), True, "event"))
+            items.append((start, start.date(), team_event_row(e, start), True, e["kind"]))
     items.sort(key=lambda it: it[0])
 
     # The next game, from the league schedule or, unlocked, any of ours.
@@ -427,15 +443,19 @@ def build_block(schedule, today, our_team, team_events=None):
     for monday, week in weeks:
         g_ours = sum(1 for it in week if it[3] and it[4] == "game")
         g_all = sum(1 for it in week if it[4] == "game")
-        n_events = sum(1 for it in week if it[4] == "event")
-        events_note = f" · {plural(n_events, 'team event')}" if n_events else ""
+        events = event_counts(week)
+
+        def heading_count(games):
+            # "0 games" only when there is nothing else to say about the week.
+            parts = ([plural(games, 'game')] if games or not events else []) + events
+            return " · ".join(parts)
         label = week_label(monday, this_monday) if monday else "Date to be confirmed"
         now = ' now' if monday == this_monday else ''
         has_ours = any(it[3] for it in week)
         html += f"""                <section class="week" data-ours="{int(has_ours)}">
                     <div class="week-head"><h3 class="week-label{now}">{label}</h3>
-                        <span class="week-count"><span class="count-ours">{plural(g_ours, 'game')}{events_note}</span><span
-                            class="count-all">{plural(g_all, 'game')}{events_note}</span></span></div>
+                        <span class="week-count"><span class="count-ours">{heading_count(g_ours)}</span><span
+                            class="count-all">{heading_count(g_all)}</span></span></div>
                     <div class="week-games">
 """
         for it in week:
