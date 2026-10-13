@@ -746,6 +746,10 @@ _SCHEDULE_CSS = """
             box-shadow: inset 3px 0 0 var(--brand);
         }
 
+        .game.is-final {
+            grid-template-columns: 62px minmax(0, 1fr);
+        }
+
         .game-when {
             line-height: 1.15;
         }
@@ -823,8 +827,7 @@ _SCHEDULE_CSS = """
             text-decoration-color: var(--ink-3);
         }
 
-        a.game-rink::before,
-        .next-directions::before {
+        a.game-rink::before {
             content: "";
             display: inline-block;
             width: 0.62em;
@@ -840,26 +843,94 @@ _SCHEDULE_CSS = """
             color: var(--ink);
         }
 
-        a.game-rink:focus-visible,
-        .next-directions:focus-visible {
+        a.game-rink:focus-visible {
             outline: 2px solid var(--brand);
             outline-offset: 2px;
         }
 
-        .next-directions {
-            margin-left: auto;
-            font-family: var(--display);
-            font-weight: 600;
-            font-size: 0.74rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: var(--ink);
-            text-decoration: none;
-            white-space: nowrap;
+        /* In the next-game card the rink itself is the directions link. */
+        .next-rink {
+            color: inherit;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            text-decoration-color: var(--ink-3);
         }
 
-        .next-directions:hover {
-            color: var(--brand);
+        .next-rink:hover {
+            color: var(--ink);
+        }
+
+        .next-rink:focus-visible {
+            outline: 2px solid var(--brand);
+            outline-offset: 2px;
+        }
+
+        /* --- A played game ---
+           "Final" in the time's place, each team's goals at the end of its
+           line, the winner bold and the loser quieter. */
+        .game-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-width: 0;
+        }
+
+        .game-goals {
+            margin-left: auto;
+            padding-left: 10px;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 1rem;
+            font-variant-numeric: tabular-nums;
+            min-width: 1.4em;
+            text-align: right;
+        }
+
+        .game-team.won {
+            font-weight: 600;
+        }
+
+        .game-team.lost {
+            color: var(--ink-2);
+        }
+
+        .game-team.lost .game-goals {
+            font-weight: 500;
+        }
+
+        .game-final {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.7rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ink-2);
+        }
+
+        .game-result {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 1px 5px;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.66rem;
+            letter-spacing: 0.06em;
+            vertical-align: 1px;
+        }
+
+        .result-w {
+            background: var(--ink);
+            color: #ffffff;
+        }
+
+        .result-l {
+            color: var(--ink-2);
+            box-shadow: inset 0 0 0 1px var(--line);
+        }
+
+        .result-t {
+            background: #ececf0;
+            color: var(--ink);
         }
 
         @media (max-width: 519px) {
