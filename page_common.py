@@ -475,7 +475,11 @@ _TABLE_CSS = """
 
         table {
             width: 100%;
-            border-collapse: collapse;
+            /* Separate, not collapsed: Safari leaves collapsed borders
+               behind when a pinned (sticky) cell moves. Each cell draws its
+               own lines instead. */
+            border-collapse: separate;
+            border-spacing: 0;
             background: var(--surface);
         }
 
@@ -497,7 +501,7 @@ _TABLE_CSS = """
             border-bottom: 3px solid var(--crest);
         }
 
-        tbody tr {
+        tbody tr + tr td {
             border-top: 1px solid var(--line-soft);
         }
 
@@ -617,11 +621,12 @@ _TABLE_CSS = """
             left: 2.2em;
             z-index: 1;
             background: var(--surface);
-            box-shadow: 1px 0 0 var(--line-soft);
+            box-shadow: inset -1px 0 0 var(--line-soft);
         }
 
         .table-wrapper th.team-col {
             background: #16181c;
+            box-shadow: none;
         }
 
         tbody tr:hover td.rank,
