@@ -499,8 +499,9 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
     games_all = sum(1 for it in items if it[4] == "game")
     default_ours = games_ours > 0
     short_name = config.TEAM_NAME.split()[-1]
+    logged_in = team_events is not None
     html += f"""
-                <div class="sched-head">
+                <div class="sched-head{' has-type' if logged_in else ''}">
                     <h2>Schedule</h2>
                     <div class="sched-filter" role="group" aria-label="Which games to show">
                         <button type="button" class="sched-filter-btn" data-filter="ours"
@@ -510,18 +511,21 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
                                 aria-pressed="{str(not default_ours).lower()}">All
                             <span class="sched-filter-count">{games_all}</span></button>
                     </div>
-                </div>
 """
-    if team_events is not None:
+    if logged_in:
         # Logged in only: there is nothing but games without the team events.
+        # It shares the heading's line with the Eagles / All toggle.
         html += """
-                <div class="type-filter sched-filter" role="group" aria-label="What to show">
+                    <div class="type-filter sched-filter" role="group" aria-label="What to show">
                     <button type="button" class="sched-filter-btn sched-type-btn" data-type-filter="game"
                             aria-pressed="false">Games</button>
                     <button type="button" class="sched-filter-btn sched-type-btn" data-type-filter="practice"
                             aria-pressed="false">Practices</button>
                     <button type="button" class="sched-filter-btn sched-type-btn" data-type-filter="all"
                             aria-pressed="true">All</button>
+                    </div>
+"""
+    html += """
                 </div>
 """
 
