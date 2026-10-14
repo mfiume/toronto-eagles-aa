@@ -744,11 +744,28 @@ _SCHEDULE_CSS = """
             display: none !important;
         }
 
-        /* Games / Practices / All, logged in: its own row, right-aligned
-           under the Eagles / All toggle. */
-        .type-filter {
-            justify-self: end;
-            margin-top: -8px;
+        /* Logged in, Games / Practices / All joins the Eagles / All toggle on
+           the heading's line, one at each end. The two toggles say what the
+           list is, so the "Schedule" label steps aside to make room. */
+        .sched-head.has-type {
+            flex-wrap: nowrap;
+            gap: 8px;
+        }
+
+        .sched-head.has-type h2 {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
+
+        @media (max-width: 519px) {
+            .sched-head.has-type .sched-filter-btn {
+                padding: 8px 9px;
+                gap: 4px;
+            }
         }
 
         .sched-filter-count {
