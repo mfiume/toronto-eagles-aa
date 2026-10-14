@@ -917,13 +917,9 @@ _SCHEDULE_CSS = """
 
         @media (max-width: 519px) {
             /* Tight enough that Eagles / West and the period picker share
-               the first line on a phone; the counts make way. */
+               the first line on a phone. */
             .sched-head .sched-filter-btn {
                 padding: 6px 9px;
-            }
-
-            .sched-head .sched-filter-count {
-                display: none;
             }
 
             .period-today {
@@ -964,13 +960,6 @@ _SCHEDULE_CSS = """
             .type-filter {
                 display: none;
             }
-        }
-
-        .sched-filter-count {
-            font-size: 0.74rem;
-            font-weight: 500;
-            color: var(--ink-3);
-            font-variant-numeric: tabular-nums;
         }
 
         /* --- Weeks --- */
