@@ -246,10 +246,15 @@ def row_attrs(classes, details, row_type="game"):
 
     `row_type` is what the Games / Practices filter goes by: "game",
     "practice" (ice and dryland) or "other".
+
+    Our own rows start open, since their details are the ones a family
+    needs; a tap still closes them.
     """
-    attrs = f'class="{classes}{" has-details" if details else ""}" data-type="{row_type}"'
+    is_open = bool(details) and "is-ours" in classes.split()
+    attrs = (f'class="{classes}{" has-details" if details else ""}{" is-open" if is_open else ""}" '
+             f'data-type="{row_type}"')
     if details:
-        attrs += ' tabindex="0" role="button" aria-expanded="false"'
+        attrs += f' tabindex="0" role="button" aria-expanded="{str(is_open).lower()}"'
     return attrs
 
 
