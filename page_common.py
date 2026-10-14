@@ -327,6 +327,45 @@ def season_label():
 LOGO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos")
 
 
+def win_pct(row):
+    """
+    A team's win percentage, ties counting half: the GTHL's WIN% when it gives
+    one, otherwise worked out from W-L-T. None before a team has played.
+    """
+    value = str(row.get("WIN%", "")).strip()
+    try:
+        return float(value)
+    except ValueError:
+        pass
+    try:
+        w, l, t = (int(n) for n in str(row.get("W-L-T", "")).split("-"))
+    except ValueError:
+        return None
+    played = w + l + t
+    return (w + t / 2) / played if played else None
+
+
+def rank_standings(standings):
+    """
+    The standings in our order: points, then win percentage as the tie
+    breaker, with Position renumbered to match. A team yet to play ranks above
+    one that has only lost; teams level on both keep the GTHL's order.
+    """
+    def points(row):
+        try:
+            return int(row.get("PTS") or 0)
+        except ValueError:
+            return 0
+
+    def key(row):
+        pct = win_pct(row)
+        return (-points(row), -(0.25 if pct is None and points(row) == 0 else pct or 0),
+                row.get("Position", 0))
+
+    ranked = sorted(standings, key=key)
+    return [dict(row, Position=n) for n, row in enumerate(ranked, 1)]
+
+
 def team_logo(team, fallback_url=None):
     """
     A team's logo, served from our own cache.
@@ -552,23 +591,57 @@ _TABLE_CSS = """
             color: var(--ink);
         }
 
-        /* Secondary columns appear only once the screen is wide enough to earn
-           them, which is what keeps the standings inside a phone. */
-        .col-md,
-        .col-lg {
-            display: none;
+        /* Every column shows on every screen; a table wider than the screen
+           scrolls sideways, with the rank and the team pinned on the left so
+           a row can still be read mid-scroll. */
+        th,
+        td {
+            white-space: nowrap;
         }
 
-        @media (min-width: 620px) {
-            .col-md {
-                display: table-cell;
-            }
+        .rank {
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            min-width: 2.2em;
+            background: var(--surface);
         }
 
-        @media (min-width: 1000px) {
-            .col-lg {
-                display: table-cell;
-            }
+        th.rank {
+            background: #16181c;
+        }
+
+        .table-wrapper td.team-name,
+        .table-wrapper th.team-col {
+            position: sticky;
+            left: 2.2em;
+            z-index: 1;
+            background: var(--surface);
+            box-shadow: 1px 0 0 var(--line-soft);
+        }
+
+        .table-wrapper th.team-col {
+            background: #16181c;
+        }
+
+        tbody tr:hover td.rank,
+        tbody tr:hover td.team-name {
+            background: #fafafb;
+        }
+
+        tbody tr.highlight td.rank,
+        tbody tr.highlight td.team-name {
+            background: var(--crest-wash);
+        }
+
+        tbody tr.highlight:hover td.rank,
+        tbody tr.highlight:hover td.team-name {
+            background: #fbeced;
+        }
+
+        /* The red bar on our row belongs to the pinned rank cell. */
+        tbody tr.highlight td.rank {
+            box-shadow: inset 3px 0 0 var(--crest);
         }
 
         .positive {

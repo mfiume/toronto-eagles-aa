@@ -8,23 +8,6 @@ import json
 import config
 import page_common
 
-# Which standings columns survive a narrow screen. A phone shows the five that
-# answer "where are we and how did we get there"; the rest come back as the
-# screen widens, so nothing has to scroll sideways to be read.
-#   (no class) always visible
-#   col-md     from 620px
-#   col-lg     from 1000px
-COLUMN_TIER = {
-    "WIN%": "col-md",
-    "Streak": "col-md",
-    "GFA": "col-lg",
-    "GAA": "col-lg",
-    "Home": "col-lg",
-    "Away": "col-lg",
-    "P10": "col-lg",
-}
-
-
 # Before a team has played, the GTHL leaves its record columns blank. With no
 # games played a record is 0-0-0 by definition, so say so; the averages and the
 # streak have no value yet and get a dash rather than a made-up zero.
@@ -47,11 +30,8 @@ def before_first_game(row):
 
 
 def column_classes(header, *extra):
-    """The class attribute for a standings column, tier included."""
+    """The class attribute for a standings column."""
     names = [c for c in extra if c]
-    tier = COLUMN_TIER.get(header)
-    if tier:
-        names.append(tier)
     return f' class="{" ".join(names)}"' if names else ""
 
 
@@ -67,7 +47,7 @@ def generate_html():
         return
 
     # Extract data
-    standings = data.get("standings", [])
+    standings = page_common.rank_standings(data.get("standings", []))
     timestamp = data.get("timestamp", "")
     filters = data.get("filters", {})
     error = data.get("error")
@@ -120,7 +100,7 @@ def generate_html():
                     # Unlabelled rank column.
                     html += '                            <th class="stat rank"></th>\n'
                 elif header == 'Team':
-                    html += f"                            <th>{header}</th>\n"
+                    html += f'                            <th class="team-col">{header}</th>\n'
                 else:
                     # Every other standings column is a number.
                     attrs = column_classes(header, 'stat')

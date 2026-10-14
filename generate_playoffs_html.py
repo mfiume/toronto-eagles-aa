@@ -31,11 +31,11 @@ def render_team_table(teams, radius=None):
                         <thead>
                             <tr>
                                 <th class="rank">#</th>
-                                <th>Team</th>
+                                <th class="team-col">Team</th>
                                 <th class="stat">GP</th>
                                 <th class="stat">W-L-T</th>
                                 <th class="stat">PTS</th>
-                                <th class="stat col-md">WIN%</th>
+                                <th class="stat">WIN%</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -50,7 +50,7 @@ def render_team_table(teams, radius=None):
                                 <td class="stat">{team.get('GP', '')}</td>
                                 <td class="stat">{team.get('W-L-T', '')}</td>
                                 <td class="stat">{team.get('PTS', '')}</td>
-                                <td class="stat col-md">{team.get('WIN%', '')}</td>
+                                <td class="stat">{team.get('WIN%', '')}</td>
                             </tr>
 """
 
@@ -73,7 +73,7 @@ def generate_html():
         return
 
     # Extract data
-    standings = data.get("standings", [])
+    standings = page_common.rank_standings(data.get("standings", []))
     timestamp = data.get("timestamp", "")
     filters = data.get("filters", {})
 
