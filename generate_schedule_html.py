@@ -612,9 +612,9 @@ def period_bar(today):
                     </div>
                     <div class="period-nav">
                         <button type="button" class="period-today" data-period-today hidden>Today</button>
-                        <button type="button" class="period-step" data-period-step="-1" aria-label="Previous">&#8249;</button>
+                        <button type="button" class="period-step" data-period-step="-1" aria-label="Previous"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M8.5 3 4.5 7l4 4"/></svg></button>
                         <span class="period-label" data-period-label aria-live="polite"></span>
-                        <button type="button" class="period-step" data-period-step="1" aria-label="Next">&#8250;</button>
+                        <button type="button" class="period-step" data-period-step="1" aria-label="Next"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M5.5 3l4 4-4 4"/></svg></button>
                     </div>
                 </div>
 """
