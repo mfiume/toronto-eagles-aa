@@ -695,19 +695,31 @@
         }
 
         /* --- LiveBarn ---
-           Watch (or Replay once played) under the rink, quiet like the rink,
-           with a small play triangle. */
+           The stream link always sits bottom-right, level with the second
+           team: under the rink on a game still to finish, alone in the same
+           spot once the rink is dropped. Nothing before puck drop, a red LIVE
+           for the first hour, Rewatch after. */
         .game-side {
+            align-self: stretch;
             display: grid;
+            grid-template-rows: 1fr auto;
             justify-items: end;
             gap: 3px;
             min-width: 0;
         }
 
+        .game-side > .game-rink {
+            align-self: center;
+        }
+
+        .game-side > .game-watch {
+            grid-row: 2;
+        }
+
         .game-watch {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
             font-family: var(--display);
             font-weight: 600;
             font-size: 0.7rem;
@@ -718,7 +730,12 @@
             white-space: nowrap;
         }
 
-        .game-watch::before {
+        .game-watch[hidden] {
+            display: none;
+        }
+
+        .game-watch.is-rewatch::before,
+        .game-watch.is-upcoming::before {
             content: "";
             width: 0;
             height: 0;
@@ -727,8 +744,37 @@
             border-bottom: 4px solid transparent;
         }
 
+        .game-watch.is-live {
+            color: var(--brand);
+        }
+
+        .game-watch.is-live::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: live-pulse 1.6s ease-in-out infinite;
+        }
+
+        @keyframes live-pulse {
+            50% {
+                opacity: 0.25;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .game-watch.is-live::before {
+                animation: none;
+            }
+        }
+
         .game-watch:hover {
             color: var(--ink);
+        }
+
+        .game-watch.is-live:hover {
+            color: var(--brand-dark);
         }
 
         .game-watch:focus-visible {
@@ -1560,7 +1606,7 @@
                     </tbody>
                 </table>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-14T00:41:55.085016+00:00" title="Oct 13, 08:41 PM ET · Refreshes hourly">just now</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-14T00:47:33.123704+00:00" title="Oct 13, 08:47 PM ET · Refreshes hourly">1 minute ago</time></p>
         </div>
 
     </div>
