@@ -526,20 +526,21 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
     short_name = config.TEAM_NAME.split()[-1]
     logged_in = team_events is not None
     html += f"""
-                <div class="sched-head{' has-type' if logged_in else ''}">
+                <div class="sched-head" data-period-bar data-today="{today.isoformat()}"
+                     data-season="{escape(page_common.season_label().replace('-', '–'))}">
                     <h2>Schedule</h2>
                     <div class="sched-filter" role="group" aria-label="Which games to show">
                         <button type="button" class="sched-filter-btn" data-filter="ours"
                                 aria-pressed="{str(default_ours).lower()}">{short_name}
                             <span class="sched-filter-count">{games_ours}</span></button>
                         <button type="button" class="sched-filter-btn" data-filter="all"
-                                aria-pressed="{str(not default_ours).lower()}">All
+                                aria-pressed="{str(not default_ours).lower()}">{escape(config.REGION)}
                             <span class="sched-filter-count">{games_all}</span></button>
                     </div>
 """
     if logged_in:
         # Logged in only: there is nothing but games without the team events.
-        # It shares the heading's line with the Eagles / All toggle.
+        # It sits between the Eagles / West toggle and the period picker.
         html += """
                     <div class="type-filter sched-filter" role="group" aria-label="What to show">
                     <button type="button" class="sched-filter-btn sched-type-btn" data-type-filter="game"
@@ -550,10 +551,9 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
                             aria-pressed="true">All</button>
                     </div>
 """
-    html += """
+    html += period_controls() + """
                 </div>
 """
-    html += period_bar(today)
 
     html += f"""
                 <div class="sched-weeks{' filter-ours' if default_ours else ''}"
@@ -598,18 +598,18 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
     return html
 
 
-def period_bar(today):
+def period_controls():
     """
-    Week / Month / Season, with arrows to step back and forward and a way back
-    to today. The page's script does the work; without it the bar is hidden
-    and every week shows, as before.
+    Day / Week / Month / Season, with arrows to step back and forward and a
+    way back to today. They share the line with the other filters; on a phone
+    the arrows wrap onto the next. The page's script does the work; without
+    it they are hidden and every week shows.
     """
-    return f"""
-                <div class="period-bar" data-period-bar data-today="{today.isoformat()}"
-                     data-season="{escape(page_common.season_label().replace('-', '–'))}">
+    return """
                     <div class="sched-filter period-pick" role="group" aria-label="How much to show">
-                        <button type="button" class="sched-filter-btn" data-period="week" aria-pressed="false">Week</button>
-                        <button type="button" class="sched-filter-btn" data-period="month" aria-pressed="true">Month</button>
+                        <button type="button" class="sched-filter-btn" data-period="day" aria-pressed="false">Day</button>
+                        <button type="button" class="sched-filter-btn" data-period="week" aria-pressed="true">Week</button>
+                        <button type="button" class="sched-filter-btn" data-period="month" aria-pressed="false">Month</button>
                         <button type="button" class="sched-filter-btn" data-period="season" aria-pressed="false">Season</button>
                     </div>
                     <div class="period-nav">
@@ -618,7 +618,6 @@ def period_bar(today):
                         <span class="period-label" data-period-label aria-live="polite"></span>
                         <button type="button" class="period-step" data-period-step="1" aria-label="Next"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M5.5 3l4 4-4 4"/></svg></button>
                     </div>
-                </div>
 """
 
 

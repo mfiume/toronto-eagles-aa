@@ -773,21 +773,26 @@ _SCHEDULE_CSS = """
 
         /* --- Heading and the Eagles / all games toggle --- */
 
+        /* One row of controls, left-aligned: Eagles / West, (logged in, on
+           a wide screen) Games / Practices / All, Day / Week / Month /
+           Season, and the arrows at the far end. On a phone the arrows wrap
+           onto a second line. The controls say what the list is, so the
+           "Schedule" heading is there for screen readers only. */
         .sched-head {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
             flex-wrap: wrap;
             gap: 10px;
         }
 
         .sched-head h2 {
-            font-family: var(--display);
-            font-weight: 600;
-            font-size: 0.82rem;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--ink-2);
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
         }
 
         /* Segmented controls: a soft grey track, the chosen option on a
@@ -834,16 +839,7 @@ _SCHEDULE_CSS = """
             outline-offset: 1px;
         }
 
-        /* --- Week / Month / Season, and the arrows that page through it --- */
-        .period-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: -8px;
-        }
-
+        /* --- Day / Week / Month / Season, and the arrows --- */
         .period-nav {
             display: flex;
             align-items: center;
@@ -920,10 +916,14 @@ _SCHEDULE_CSS = """
         }
 
         @media (max-width: 519px) {
-            /* Tight enough that the picker, Today and the arrows share one
-               line on a phone, even for a week that spans two months. */
-            .period-pick .sched-filter-btn {
-                padding: 6px 8px;
+            /* Tight enough that Eagles / West and the period picker share
+               the first line on a phone; the counts make way. */
+            .sched-head .sched-filter-btn {
+                padding: 6px 9px;
+            }
+
+            .sched-head .sched-filter-count {
+                display: none;
             }
 
             .period-today {
@@ -956,24 +956,6 @@ _SCHEDULE_CSS = """
            and weeks set their own display, so it has to be made to win. */
         .sched-weeks [hidden] {
             display: none !important;
-        }
-
-        /* Logged in, Games / Practices / All joins the Eagles / All toggle on
-           the heading's line, one at each end. The two toggles say what the
-           list is, so the "Schedule" label steps aside to make room. */
-        .sched-head.has-type {
-            flex-wrap: nowrap;
-            justify-content: flex-start;
-            gap: 10px;
-        }
-
-        .sched-head.has-type h2 {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            overflow: hidden;
-            clip: rect(0 0 0 0);
-            white-space: nowrap;
         }
 
         /* A phone has no room for Games / Practices / All; it shows
@@ -1668,7 +1650,7 @@ SCHEDULE_JS = """
       var PASS_KEY = 'eagles-team-password';
       var TYPE_KEY = 'eagles-type-filter';
       var PERIOD_KEY = 'eagles-schedule-period';
-      var period = null;   // 'week', 'month' or 'season'
+      var period = null;   // 'day', 'week', 'month' or 'season'
       var anchor = null;   // a day inside the period shown, 'YYYY-MM-DD'
 
       // Dates as 'YYYY-MM-DD' strings, which sort and compare as dates.
@@ -1682,11 +1664,23 @@ SCHEDULE_JS = """
       }
       var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
                     'August', 'September', 'October', 'November', 'December'];
+      var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      // A day's heading: Today, Tomorrow, Yesterday, or "Thursday, Oct 15".
+      function dayTitle(s, today) {
+        var gap = Math.round((day(s) - day(today)) / 86400000);
+        if (gap === 0) return 'Today';
+        if (gap === 1) return 'Tomorrow';
+        if (gap === -1) return 'Yesterday';
+        return DAYS[day(s).getDay()] + ', ' + short(day(s));
+      }
       function short(d) { return MONTHS[d.getMonth()].slice(0, 3) + ' ' + d.getDate(); }
 
       // [first day, day after the last] of the period around a day.
       function range(p, s) {
         var d = day(s);
+        if (p === 'day') {
+          return [s, iso(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1))];
+        }
         if (p === 'week') {
           var mon = new Date(d.getFullYear(), d.getMonth(), d.getDate() - (d.getDay() + 6) % 7);
           return [iso(mon), iso(new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + 7))];
@@ -1699,6 +1693,7 @@ SCHEDULE_JS = """
       }
       function step(p, s, n) {
         var d = day(s);
+        if (p === 'day') return iso(new Date(d.getFullYear(), d.getMonth(), d.getDate() + n));
         if (p === 'week') return iso(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7 * n));
         return iso(new Date(d.getFullYear(), d.getMonth() + n, 1));
       }
@@ -1706,6 +1701,7 @@ SCHEDULE_JS = """
         var r = range(p, s);
         if (p === 'season') return season;
         var a = day(r[0]);
+        if (p === 'day') return DAYS[a.getDay()].slice(0, 3) + ', ' + short(a);
         if (p === 'month') return MONTHS[a.getMonth()].slice(0, 3) + ' ' + a.getFullYear();
         var b = day(r[1]);
         b.setDate(b.getDate() - 1);
@@ -1823,7 +1819,7 @@ SCHEDULE_JS = """
           var first = allDates[0] || today, last = allDates[allDates.length - 1] || today;
           if (!period) {
             var savedPeriod = stored(PERIOD_KEY);
-            period = /^(week|month|season)$/.test(savedPeriod || '') ? savedPeriod : 'month';
+            period = /^(day|week|month|season)$/.test(savedPeriod || '') ? savedPeriod : 'week';
           }
           if (!anchor) anchor = today;
           var empty = view.querySelector('[data-sched-empty]');
@@ -1859,17 +1855,20 @@ SCHEDULE_JS = """
             var head = view.querySelector('[data-period-head]');
             view.classList.toggle('by-period', period !== 'week');
             if (head) {
-              head.hidden = period === 'week' || !shown;
+              // A day keeps its heading ("Today") even when nothing is on.
+              head.hidden = period === 'week' || (!shown && period !== 'day');
               var title = head.querySelector('.week-label');
-              title.textContent = period === 'season' ? 'Season' : MONTHS[day(r[0]).getMonth()];
-              title.classList.toggle('now', period === 'month' && today >= r[0] && today < r[1]);
+              title.textContent = period === 'season' ? 'Season'
+                : period === 'day' ? dayTitle(r[0], today) : MONTHS[day(r[0]).getMonth()];
+              title.classList.toggle('now', period !== 'season' && today >= r[0] && today < r[1]);
               var all = [];
               view.querySelectorAll('.week .game').forEach(function (row) { if (!row.hidden) all.push(row); });
               head.querySelector('.week-count').textContent = countText(all);
             }
             if (empty) {
               empty.hidden = shown > 0;
-              empty.textContent = period === 'week' ? 'Nothing scheduled this week.'
+              empty.textContent = period === 'day' ? 'Nothing scheduled.'
+                : period === 'week' ? 'Nothing scheduled this week.'
                 : period === 'month' ? 'Nothing scheduled this month.' : 'Nothing scheduled yet.';
             }
             if (bar) {
@@ -2039,7 +2038,7 @@ SCHEDULE_NOSCRIPT = """    <noscript>
                they cannot leave. Same specificity as the rules that hide, and
                later, so these win without !important. */
             .sched-filter { display: none; }
-            .period-bar { display: none; }
+            .period-pick, .period-nav { display: none; }
 
             .filter-ours .game:not(.is-ours),
             .filter-ours .week[data-ours="0"] {
