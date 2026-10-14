@@ -800,7 +800,7 @@ _SCHEDULE_CSS = """
 
         .game {
             display: grid;
-            grid-template-columns: 62px minmax(0, 1fr) auto;
+            grid-template-columns: 62px minmax(0, 1fr);
             align-items: center;
             gap: 12px;
             padding: 8px 12px;
@@ -814,9 +814,7 @@ _SCHEDULE_CSS = """
             box-shadow: inset 3px 0 0 var(--brand);
         }
 
-        .game.is-final {
-            grid-template-columns: 62px minmax(0, 1fr) auto;
-        }
+
 
         .game-when {
             line-height: 1.15;
@@ -875,15 +873,7 @@ _SCHEDULE_CSS = """
         }
 
         .game-rink {
-            font-size: 0.78rem;
-            line-height: 1.2;
-            color: var(--ink-3);
-            text-align: right;
-            max-width: 220px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
+            color: var(--ink-2);
         }
 
         /* A rink with a known address opens directions. It keeps the quiet
@@ -934,27 +924,9 @@ _SCHEDULE_CSS = """
         }
 
         /* --- LiveBarn ---
-           The stream link always sits bottom-right, level with the second
-           team: under the rink on a game still to finish, alone in the same
-           spot once the rink is dropped. Nothing before puck drop, a red LIVE
-           for the first hour, Rewatch after. */
-        .game-side {
-            align-self: stretch;
-            display: grid;
-            grid-template-rows: 1fr auto;
-            justify-items: end;
-            gap: 3px;
-            min-width: 0;
-        }
-
-        .game-side > .game-rink {
-            align-self: center;
-        }
-
-        .game-side > .game-watch {
-            grid-row: 2;
-        }
-
+           The link lives in the row's drawer: nothing before puck drop, a
+           red LIVE for the first hour, Rewatch after. While a game is live,
+           "LIVE" also stands in for its start time, so it shows unopened. */
         .game-watch {
             display: inline-flex;
             align-items: center;
@@ -1093,11 +1065,6 @@ _SCHEDULE_CSS = """
             color: var(--ink);
         }
 
-        @media (max-width: 519px) {
-            .game-rink {
-                max-width: 96px;
-            }
-        }
 
         /* --- Team events (unlocked) ---
            Same row as a game. A team event has a grey bar where our games
@@ -1111,19 +1078,6 @@ _SCHEDULE_CSS = """
 
         .game.team-event.is-ours {
             box-shadow: inset 3px 0 0 #cfcdd3;
-        }
-
-        /* A team event's title is one short word ("Practice"), so the venue
-           takes the rest of the row instead of the narrow column a game row
-           keeps for it, and wraps far less. Selected this specifically to win
-           over the phone rule that narrows .game-rink. */
-        .game.team-event {
-            grid-template-columns: 62px auto minmax(0, 1fr);
-        }
-
-        .game.team-event .game-rink {
-            max-width: none;
-            justify-self: end;
         }
 
         .game.team-event.kind-tournament {
@@ -1172,7 +1126,52 @@ _SCHEDULE_CSS = """
         }
 
         .game.has-details.is-open .game-details {
-            display: block;
+            display: flex;
+        }
+
+        .game-details {
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px 14px;
+            margin-top: 6px;
+            font-size: 0.8rem;
+        }
+
+        /* The live flag in the time's place. */
+        .game-live {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 2px;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.76rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--brand);
+        }
+
+        .game-live::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: live-pulse 1.6s ease-in-out infinite;
+        }
+
+        .game-live[hidden] {
+            display: none;
+        }
+
+        .game.is-live .game-time {
+            display: none;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .game-live::before {
+                animation: none;
+            }
         }
 
         .game.has-details:focus-visible {
@@ -1362,6 +1361,13 @@ SCHEDULE_JS = """
           a.classList.add('is-' + state);
           a.textContent = text;
           a.setAttribute('aria-label', text + ': ' + (a.dataset.label || 'LiveBarn'));
+        });
+        document.querySelectorAll('[data-live-start]').forEach(function (flag) {
+          var minutes = (now - Date.parse(flag.dataset.liveStart)) / 60000;
+          var live = minutes >= 0 && minutes < 60;
+          flag.hidden = !live;
+          var row = flag.closest('.game');
+          if (row) row.classList.toggle('is-live', live);
         });
       }
       setInterval(updateStreams, 60000);

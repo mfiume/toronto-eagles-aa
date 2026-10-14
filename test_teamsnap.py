@@ -114,7 +114,7 @@ class MatchLeagueGames(unittest.TestCase):
     def test_league_game_takes_teamsnap_details_once(self):
         events = teamsnap.events_from_ics(SAMPLE_ICS)
         html = gen.build_block([LEAGUE_GAME], date(2026, 10, 13), "toronto eagles", events)
-        self.assertIn("Arrive 12:20 PM · White jersey", html)
+        self.assertIn('<span class="detail">Arrive 12:20 PM</span><span class="detail">White jersey</span>', html)
         # The TeamSnap copy of the league game is not listed again.
         self.assertNotIn("Westmall", html)
         # The exhibition game is ours only in TeamSnap, so it is listed.
