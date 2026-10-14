@@ -1116,6 +1116,9 @@ _SCHEDULE_CSS = """
             color: var(--ink-2);
             margin-top: 2px;
             white-space: nowrap;
+            /* One fixed line, whether it holds a time or "Final". */
+            line-height: 1.15rem;
+            height: 1.15rem;
         }
 
         /* Names, then the row's icons, then the goals. The two team lines
@@ -1357,8 +1360,11 @@ _SCHEDULE_CSS = """
             min-width: 0;
         }
 
+        /* The same line height as a team's name, so a played game's row is
+           no taller than an upcoming one. */
         .game-goals {
             align-self: center;
+            line-height: 1.15;
             font-family: var(--display);
             font-weight: 600;
             font-size: 1rem;
