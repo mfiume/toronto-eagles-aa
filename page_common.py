@@ -1014,6 +1014,21 @@ _SCHEDULE_CSS = """
             color: var(--ink-3);
         }
 
+        /* Month and Season: one heading for the period ("October",
+           "Season") instead of one per week, and the weeks run together as
+           a single list. */
+        .period-head {
+            margin-bottom: 8px;
+        }
+
+        .by-period .week > .week-head {
+            display: none;
+        }
+
+        .by-period .week:not([hidden]) ~ .week .week-games {
+            border-top: 0;
+        }
+
         /* --- One game ---
            Every game is the same compact row: day and time, both teams
            stacked, the rink. Ours differ only by the red bar on the left. */
@@ -1828,6 +1843,17 @@ SCHEDULE_JS = """
               if (count && visible.length) count.textContent = countText(visible);
               shown += visible.length;
             });
+            var head = view.querySelector('[data-period-head]');
+            view.classList.toggle('by-period', period !== 'week');
+            if (head) {
+              head.hidden = period === 'week' || !shown;
+              var title = head.querySelector('.week-label');
+              title.textContent = period === 'season' ? 'Season' : MONTHS[day(r[0]).getMonth()];
+              title.classList.toggle('now', period === 'month' && today >= r[0] && today < r[1]);
+              var all = [];
+              view.querySelectorAll('.week .game').forEach(function (row) { if (!row.hidden) all.push(row); });
+              head.querySelector('.week-count').textContent = countText(all);
+            }
             if (empty) {
               empty.hidden = shown > 0;
               empty.textContent = period === 'week' ? 'Nothing scheduled this week.'

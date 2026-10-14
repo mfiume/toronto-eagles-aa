@@ -558,6 +558,8 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
     html += f"""
                 <div class="sched-weeks{' filter-ours' if default_ours else ''}"
                      data-schedule-view data-has-ours="{int(bool(games_ours))}">
+                <div class="week-head period-head" data-period-head hidden><h3 class="week-label"></h3>
+                    <span class="week-count"></span></div>
 """
     weeks = []
     for it in items:
