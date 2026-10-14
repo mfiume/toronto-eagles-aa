@@ -123,8 +123,9 @@ def directions_link(rink, css_class, text, body=None):
                      f"Directions to {arena['name']}, {arenas.address(arena)}", body)
 
 
-# The row's play icon, drawn in currentColor so the stylesheet sets their colour.
-PLAY_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5v9l7.5-4.5z"/></svg>'
+# The row's LiveBarn link.
+# LiveBarn's own mark, so the link reads as "watch on LiveBarn" at a glance.
+PLAY_ICON = '<img src="assets/livebarn.png" alt="" width="15" height="17">'
 
 
 LIVE_MINUTES = 60
@@ -144,7 +145,7 @@ STREAM_TEXT = {'upcoming': 'Watch', 'live': 'Live', 'rewatch': 'Rewatch'}
 def watch_link(game, start, now, css_class="game-watch", icon=False):
     """
     The GTHL's LiveBarn link for a game: nothing before puck drop, LIVE for the
-    first hour, Rewatch after; in a row, a play icon. The link goes to the rink's camera at the game's
+    first hour, Rewatch after; in a row, LiveBarn's mark. The link goes to the rink's camera at the game's
     date and start time, so it serves for both; LiveBarn needs its own
     subscription.
 
