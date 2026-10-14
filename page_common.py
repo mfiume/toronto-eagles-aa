@@ -603,11 +603,16 @@ _TABLE_CSS = """
             white-space: nowrap;
         }
 
-        .rank {
+        /* Pixels, not ems: the header's smaller type would otherwise pin
+           its cells at a different offset from the rows beneath. */
+        .table-wrapper .rank {
             position: sticky;
             left: 0;
             z-index: 1;
-            min-width: 2.2em;
+            box-sizing: border-box;
+            width: 40px;
+            min-width: 40px;
+            max-width: 40px;
             background: var(--surface);
         }
 
@@ -618,7 +623,7 @@ _TABLE_CSS = """
         .table-wrapper td.team-name,
         .table-wrapper th.team-col {
             position: sticky;
-            left: 2.2em;
+            left: 40px;
             z-index: 1;
             background: var(--surface);
             box-shadow: inset -1px 0 0 var(--line-soft);
