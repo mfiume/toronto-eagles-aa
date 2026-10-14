@@ -521,7 +521,6 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
         html += next_game_card(*min(candidates, key=lambda c: c[0])[1])
 
     games_ours = sum(1 for it in items if it[3] and it[4] == "game")
-    games_all = sum(1 for it in items if it[4] == "game")
     default_ours = games_ours > 0
     short_name = config.TEAM_NAME.split()[-1]
     logged_in = team_events is not None
@@ -531,11 +530,9 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
                     <h2>Schedule</h2>
                     <div class="sched-filter" role="group" aria-label="Which games to show">
                         <button type="button" class="sched-filter-btn" data-filter="ours"
-                                aria-pressed="{str(default_ours).lower()}">{short_name}
-                            <span class="sched-filter-count">{games_ours}</span></button>
+                                aria-pressed="{str(default_ours).lower()}">{short_name}</button>
                         <button type="button" class="sched-filter-btn" data-filter="all"
-                                aria-pressed="{str(not default_ours).lower()}">{escape(config.REGION)}
-                            <span class="sched-filter-count">{games_all}</span></button>
+                                aria-pressed="{str(not default_ours).lower()}">{escape(config.REGION)}</button>
                     </div>
 """
     if logged_in:
