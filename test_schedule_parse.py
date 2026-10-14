@@ -7,6 +7,7 @@ served on 2026-10-11: away, score and home merged into one cell spanning three
 columns, every other cell carrying a data-label.
 """
 
+import re
 import unittest
 
 import scrape_schedule as sc
@@ -35,6 +36,10 @@ class El:
 
     def _matches(self, selector):
         selector = selector.strip()
+        contains = re.match(r"^(\w+)\[(\w+)\*='([^']*)'\]$", selector)
+        if contains:  # tag[attr*='text']
+            tag, attr, text = contains.groups()
+            return self.tag == tag and text in (self.attrs.get(attr) or "")
         if "." in selector:
             tag, cls = selector.split(".", 1)
             return (not tag or tag == self.tag) and cls in (self.attrs.get("class") or "").split()
@@ -42,6 +47,9 @@ class El:
 
     def find_elements(self, by, selector):
         return [e for e in self._all() if any(e._matches(s) for s in selector.split(","))]
+
+    def find_element(self, by, selector):
+        return self.find_elements(by, selector)[0]
 
 
 def td(text, label=None, **attrs):
@@ -73,7 +81,10 @@ def merged_row(away="Vaughan Panthers", score=":", home="Humber Valley Sharks"):
         td("12-Oct-2026 Mon", "Date"), td("7:10 PM", "Time"),
         match_cell(away, score, home),
         td("Scotiabank Pond 2", "Arena"), td("West", "Region"),
-        td("Under 11 / AA", "Div/Cat"), td("LG", "Type"), td(""),
+        td("Under 11 / AA", "Div/Cat"), td("LG", "Type"),
+        El("td", attrs={"class": "align-middle text-right"}, children=[
+            El("a", attrs={"href": "https://livebarn.com/en/video/4088/2026-10-12/19:10"},
+               children=[El("img", attrs={"class": "stream-img"})])]),
     ])
 
 
@@ -92,6 +103,10 @@ class ParseRows(unittest.TestCase):
         self.assertEqual(game["Div/Cat"], "Under 11 / AA")
         self.assertEqual(game["Type"], "LG")
         self.assertEqual(sc.wrong_division([game]), [])
+
+    def test_livebarn_link(self):
+        [game] = sc.parse_rows(table(merged_row()), HEADERS)
+        self.assertEqual(game["Stream"], "https://livebarn.com/en/video/4088/2026-10-12/19:10")
 
     def test_played_score_loses_its_spaces(self):
         [game] = sc.parse_rows(table(merged_row(score="3 : 2")), HEADERS)

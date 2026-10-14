@@ -165,6 +165,12 @@ def parse_rows(table, headers):
             for cell in cells:
                 if cell.find_elements(By.CSS_SELECTOR, ".cell-away"):
                     game.update(read_match(cell))
+                elif cell.find_elements(By.CSS_SELECTOR, "a[href*='livebarn.com']"):
+                    # The unlabelled last cell carries the GTHL's "Game on
+                    # stream" button, a LiveBarn link to the rink's camera at
+                    # the game's date and start time.
+                    link = cell.find_element(By.CSS_SELECTOR, "a[href*='livebarn.com']")
+                    game["Stream"] = link.get_attribute("href") or ""
                 else:
                     label = (cell.get_attribute("data-label") or "").strip()
                     if not label and column < len(headers):

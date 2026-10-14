@@ -118,6 +118,33 @@ def directions_link(rink, css_class, text):
                      f"Directions to {arena['name']}, {arenas.address(arena)}")
 
 
+def watch_link(game, played, css_class="game-watch"):
+    """
+    The GTHL's LiveBarn link for a game, as Watch, or Replay once played.
+    LiveBarn needs its own subscription; the link goes to the rink's camera at
+    the game's date and start time, so it serves for both.
+    """
+    url = (game.get('Stream') or '').strip()
+    if not url.startswith('https://livebarn.com/'):
+        return ''
+    text = 'Replay' if played else 'Watch'
+    label = f"{text} on LiveBarn: {game.get('Away', '')} at {game.get('Home', '')}"
+    return (f'<a class="{css_class}" href="{escape(url)}" target="_blank" rel="noopener noreferrer" '
+            f'aria-label="{escape(label)}">{text}</a>')
+
+
+def side_cell(game, score):
+    """
+    A league game's right-hand column: the rink, with LiveBarn's Watch under it
+    when the game streams. A played game drops the rink and keeps Replay.
+    """
+    watch = watch_link(game, played=score is not None)
+    if score is not None:
+        return f'<div class="game-side">{watch}</div>' if watch else ''
+    rink = rink_cell(game.get('Arena', ''))
+    return f'<div class="game-side">{rink}{watch}</div>' if watch else rink
+
+
 def rink_cell(rink):
     """The rink, as a directions link when its address is known."""
     linked = directions_link(rink, "game-rink", rink)
@@ -239,7 +266,7 @@ def game_row(game, day, our_team, team=None):
                         <div class="game-when"><span class="game-day">{day_text}</span>
                             {when}</div>
                         <div class="game-teams">{teams}{extra}</div>
-                        {'' if score else rink_cell(game.get('Arena', ''))}
+                        {side_cell(game, score)}
                     </div>
 """
 
@@ -397,7 +424,8 @@ def build_block(schedule, today, our_team, team_events=None):
         if is_ours(g) and day and day >= today and not format_score(g.get('Score')):
             team = matches.get(i)
             rink = g.get('Arena', '')
-            rink_html = directions_link(rink, 'next-rink', rink) or f"<span>{escape(rink)}</span>"
+            rink_html = (directions_link(rink, 'next-rink', rink) or f"<span>{escape(rink)}</span>") \
+                + watch_link(g, played=False, css_class="game-watch next-watch")
             extra = extra_line(arrival(team), wear_text(team.get("wear"), True) if team else "")
             candidates.append((start or datetime.combine(day, datetime.min.time()),
                                (g.get('Away', ''), g.get('Home', ''), day, g.get('Time', ''), rink_html, today,
