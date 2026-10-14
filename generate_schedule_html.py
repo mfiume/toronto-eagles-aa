@@ -122,9 +122,7 @@ def directions_link(rink, css_class, text, body=None):
                      f"Directions to {arena['name']}, {arenas.address(arena)}", body)
 
 
-# Row icons, drawn in currentColor so the stylesheet sets their colour.
-PIN_ICON = ('<svg viewBox="0 0 10 13" aria-hidden="true"><path d="M5 0a5 5 0 0 0-5 5c0 3.6 5 8 5 8'
-            's5-4.4 5-8a5 5 0 0 0-5-5Zm0 7a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z"/></svg>')
+# The row's play icon, drawn in currentColor so the stylesheet sets their colour.
 PLAY_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5v9l7.5-4.5z"/></svg>'
 
 
@@ -167,9 +165,9 @@ def watch_link(game, start, now, css_class="game-watch", icon=False):
 
 def drawer(*parts):
     """
-    The row's tap-to-open drawer: logged in, arrival time and what to wear,
-    and the rink's name when there is no address to give directions to. Parts
-    are HTML; empty ones are dropped. Returns '' when there is nothing in it.
+    The row's tap-to-open drawer: where (with directions) and, logged in,
+    arrival time and what to wear. Parts are HTML; empty ones are dropped.
+    Returns '' when there is nothing in it.
     """
     parts = [p for p in parts if p]
     if not parts:
@@ -192,31 +190,15 @@ def live_flag(start, now):
     return f'<span class="game-live" data-live-start="{start.isoformat()}"{hidden}>Live</span>'
 
 
-def row_icons(pin, watch=''):
-    """
-    The row's icons, between the teams and the score: LiveBarn, then
-    directions. The pin goes last so that pins line up down the page.
-    """
-    return f'<div class="game-icons">{watch}{pin}</div>' if pin or watch else ''
+def row_icons(watch):
+    """The LiveBarn play icon, between the teams and the score."""
+    return f'<div class="game-icons">{watch}</div>' if watch else ''
 
 
-def rink_pin(rink):
-    """
-    A pin icon with directions to a GTHL rink, and, when its address is not
-    known, the rink's name for the drawer instead.
-    """
-    pin = directions_link(rink, "icon-btn icon-pin", rink, PIN_ICON)
-    return pin, ('' if pin or not rink else f'<span class="game-rink">{escape(rink)}</span>')
-
-
-def venue_pin(venue, address):
-    """The same for a TeamSnap venue, with directions to TeamSnap's own address."""
-    text = short_venue(venue) or (address or "")
-    google, apple = arenas.address_urls(address)
-    if google and text:
-        return maps_link(google, apple, "icon-btn icon-pin", text,
-                         f"Directions to {text}, {address}", PIN_ICON), ''
-    return '', (f'<span class="game-rink">{escape(text)}</span>' if text else '')
+def rink_cell(rink):
+    """The rink for the drawer, as a directions link when its address is known."""
+    linked = directions_link(rink, "game-rink", rink)
+    return linked or (f'<span class="game-rink">{escape(rink)}</span>' if rink else '')
 
 
 def venue_cell(venue, address, css_class="game-rink"):
@@ -286,9 +268,10 @@ def arrival(event):
 def game_row(game, day, our_team, team=None, start=None, now=None):
     """
     One league game as a compact row: day and time, then both teams stacked,
-    then icons for directions and LiveBarn, then each team's goals once
-    played. Ours look the same as everyone else's apart from the red bar.
-    Logged in, arrival time and jersey are in the drawer a tap opens. During
+    then the LiveBarn play icon, then each team's goals once played. Ours look
+    the same as everyone else's apart from the red bar. Where it is (with
+    directions) and, logged in, arrival time and jersey are in the drawer a
+    tap opens. During
     the first hour "LIVE" stands in for the start time.
 
     Once played, "Final" takes the time's place and the winner is in bold, so a
@@ -316,8 +299,8 @@ def game_row(game, day, our_team, team=None, start=None, now=None):
         return (f'<div class="{" ".join(classes)}">{page_common.team_logo(name)}'
                 f'<span class="game-name">{escape(name)}</span></div>{goals_html}')
 
-    pin, rink_text = rink_pin(game.get('Arena', ''))
-    icons = row_icons(pin, watch_link(game, start, now, "icon-btn game-watch", icon=True))
+    rink_text = rink_cell(game.get('Arena', ''))
+    icons = row_icons(watch_link(game, start, now, "icon-btn game-watch", icon=True))
 
     if score is not None:
         a, h = score['away'], score['home']
@@ -358,8 +341,7 @@ def team_game_row(event, start, now=None):
                 f'<span class="game-name">{escape(name)}</span></div>')
 
     time_text = clock(start.time()) if event.get("timed") else "Time TBA"
-    pin, venue_text = venue_pin(event.get("venue"), event.get("address"))
-    details = drawer(venue_text, detail_text(arrival(event)),
+    details = drawer(venue_cell(event.get("venue"), event.get("address")), detail_text(arrival(event)),
                      detail_text(wear_text(event.get("wear"), True)))
     begins = aware(start) if event.get("timed") else None
     flag = live_flag(begins, now) if now else ''
@@ -367,7 +349,7 @@ def team_game_row(event, start, now=None):
     return f"""                    <div {row_attrs(f"game is-ours team-game{' is-live' if live else ''}", details)}>
                         <div class="game-when"><span class="game-day">{start.strftime('%a')} {start.day}</span>
                             <span class="game-time">{time_text}</span>{flag}</div>
-                        <div class="game-teams">{team_line(away, 1)}{team_line(home, 2)}{row_icons(pin)}{extra_line(event.get("label"))}{details}</div>
+                        <div class="game-teams">{team_line(away, 1)}{team_line(home, 2)}{extra_line(event.get("label"))}{details}</div>
                     </div>
 """
 
@@ -382,13 +364,13 @@ def team_event_row(event, start):
     time_text = clock(start.time()) if event.get("timed") else "All day"
     tag = '<span class="event-tag">Tournament</span>' if kind == "tournament" else ''
     wear = wear_text(event.get("wear"), False) if kind != "practice" else ""
-    pin, venue_text = venue_pin(event.get("venue"), event.get("address"))
-    details = drawer(venue_text, detail_text(arrival(event) if event.get("timed") else ""),
+    details = drawer(venue_cell(event.get("venue"), event.get("address")),
+                     detail_text(arrival(event) if event.get("timed") else ""),
                      detail_text(wear))
     return f"""                    <div {row_attrs(f"game is-ours team-event kind-{kind}", details, ROW_TYPES.get(kind, "other"))}>
                         <div class="game-when"><span class="game-day">{start.strftime('%a')} {start.day}</span>
                             <span class="game-time">{time_text}</span></div>
-                        <div class="game-teams"><div class="event-title r1">{tag}<span>{escape(title)}</span></div>{row_icons(pin)}{details}</div>
+                        <div class="game-teams"><div class="event-title r1">{tag}<span>{escape(title)}</span></div>{details}</div>
                     </div>
 """
 
