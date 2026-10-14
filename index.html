@@ -318,23 +318,57 @@
             color: var(--ink);
         }
 
-        /* Secondary columns appear only once the screen is wide enough to earn
-           them, which is what keeps the standings inside a phone. */
-        .col-md,
-        .col-lg {
-            display: none;
+        /* Every column shows on every screen; a table wider than the screen
+           scrolls sideways, with the rank and the team pinned on the left so
+           a row can still be read mid-scroll. */
+        th,
+        td {
+            white-space: nowrap;
         }
 
-        @media (min-width: 620px) {
-            .col-md {
-                display: table-cell;
-            }
+        .rank {
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            min-width: 2.2em;
+            background: var(--surface);
         }
 
-        @media (min-width: 1000px) {
-            .col-lg {
-                display: table-cell;
-            }
+        th.rank {
+            background: #16181c;
+        }
+
+        .table-wrapper td.team-name,
+        .table-wrapper th.team-col {
+            position: sticky;
+            left: 2.2em;
+            z-index: 1;
+            background: var(--surface);
+            box-shadow: 1px 0 0 var(--line-soft);
+        }
+
+        .table-wrapper th.team-col {
+            background: #16181c;
+        }
+
+        tbody tr:hover td.rank,
+        tbody tr:hover td.team-name {
+            background: #fafafb;
+        }
+
+        tbody tr.highlight td.rank,
+        tbody tr.highlight td.team-name {
+            background: var(--crest-wash);
+        }
+
+        tbody tr.highlight:hover td.rank,
+        tbody tr.highlight:hover td.team-name {
+            background: #fbeced;
+        }
+
+        /* The red bar on our row belongs to the pinned rank cell. */
+        tbody tr.highlight td.rank {
+            box-shadow: inset 3px 0 0 var(--crest);
         }
 
         .positive {
@@ -1516,17 +1550,17 @@
                     <thead>
                         <tr>
                             <th class="stat rank"></th>
-                            <th>Team</th>
+                            <th class="team-col">Team</th>
                             <th class="stat">GP</th>
                             <th class="stat">W-L-T</th>
                             <th class="stat">PTS</th>
-                            <th class="stat col-md">WIN%</th>
-                            <th class="stat col-lg">GFA</th>
-                            <th class="stat col-lg">GAA</th>
-                            <th class="stat col-lg">Home</th>
-                            <th class="stat col-lg">Away</th>
-                            <th class="stat col-lg">P10</th>
-                            <th class="stat col-md">Streak</th>
+                            <th class="stat">WIN%</th>
+                            <th class="stat">GFA</th>
+                            <th class="stat">GAA</th>
+                            <th class="stat">Home</th>
+                            <th class="stat">Away</th>
+                            <th class="stat">P10</th>
+                            <th class="stat">Streak</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1536,13 +1570,13 @@
                             <td class="stat">1</td>
                             <td class="stat">1-0-0</td>
                             <td class="stat">2</td>
-                            <td class="stat col-md">1.000</td>
-                            <td class="stat col-lg">6.00</td>
-                            <td class="stat col-lg">1.00</td>
-                            <td class="stat col-lg">1-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">1-0-0</td>
-                            <td class="stat col-md">Won 1</td>
+                            <td class="stat">1.000</td>
+                            <td class="stat">6.00</td>
+                            <td class="stat">1.00</td>
+                            <td class="stat">1-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">1-0-0</td>
+                            <td class="stat">Won 1</td>
                         </tr>
                         <tr>
                             <td class="stat rank">2</td>
@@ -1550,13 +1584,13 @@
                             <td class="stat">1</td>
                             <td class="stat">0-0-1</td>
                             <td class="stat">1</td>
-                            <td class="stat col-md">.500</td>
-                            <td class="stat col-lg">4.00</td>
-                            <td class="stat col-lg">4.00</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-1</td>
-                            <td class="stat col-lg">0-0-1</td>
-                            <td class="stat col-md">Tied 1</td>
+                            <td class="stat">.500</td>
+                            <td class="stat">4.00</td>
+                            <td class="stat">4.00</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-1</td>
+                            <td class="stat">0-0-1</td>
+                            <td class="stat">Tied 1</td>
                         </tr>
                         <tr>
                             <td class="stat rank">3</td>
@@ -1564,158 +1598,158 @@
                             <td class="stat">1</td>
                             <td class="stat">0-0-1</td>
                             <td class="stat">1</td>
-                            <td class="stat col-md">.500</td>
-                            <td class="stat col-lg">4.00</td>
-                            <td class="stat col-lg">4.00</td>
-                            <td class="stat col-lg">0-0-1</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-1</td>
-                            <td class="stat col-md">Tied 1</td>
-                        </tr>
-                        <tr>
-                            <td class="stat rank">4</td>
-                            <td class="team-name"><span class="team-cell"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></span></td>
-                            <td class="stat">1</td>
-                            <td class="stat">0-1-0</td>
-                            <td class="stat">0</td>
-                            <td class="stat col-md">.000</td>
-                            <td class="stat col-lg">1.00</td>
-                            <td class="stat col-lg">6.00</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-1-0</td>
-                            <td class="stat col-lg">0-1-0</td>
-                            <td class="stat col-md">Lost 1</td>
+                            <td class="stat">.500</td>
+                            <td class="stat">4.00</td>
+                            <td class="stat">4.00</td>
+                            <td class="stat">0-0-1</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-1</td>
+                            <td class="stat">Tied 1</td>
                         </tr>
                         <tr class="highlight">
-                            <td class="stat rank">5</td>
+                            <td class="stat rank">4</td>
                             <td class="team-name"><span class="team-cell"><img class="team-logo" src="assets/logos/toronto-eagles.png" alt="" loading="lazy"><span>Toronto Eagles</span></span></td>
                             <td class="stat">0</td>
                             <td class="stat">0-0-0</td>
                             <td class="stat">0</td>
-                            <td class="stat col-md">–</td>
-                            <td class="stat col-lg">–</td>
-                            <td class="stat col-lg">–</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-md">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">–</td>
                         </tr>
                         <tr>
-                            <td class="stat rank">6</td>
+                            <td class="stat rank">5</td>
                             <td class="team-name"><span class="team-cell"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span>Vaughan Rangers</span></span></td>
                             <td class="stat">0</td>
                             <td class="stat">0-0-0</td>
                             <td class="stat">0</td>
-                            <td class="stat col-md">–</td>
-                            <td class="stat col-lg">–</td>
-                            <td class="stat col-lg">–</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-md">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">–</td>
                         </tr>
                         <tr>
-                            <td class="stat rank">7</td>
+                            <td class="stat rank">6</td>
                             <td class="team-name"><span class="team-cell"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span>West Mall Lightning</span></span></td>
                             <td class="stat">0</td>
                             <td class="stat">0-0-0</td>
                             <td class="stat">0</td>
-                            <td class="stat col-md">–</td>
-                            <td class="stat col-lg">–</td>
-                            <td class="stat col-lg">–</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-md">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">–</td>
                         </tr>
                         <tr>
-                            <td class="stat rank">8</td>
+                            <td class="stat rank">7</td>
                             <td class="team-name"><span class="team-cell"><img class="team-logo" src="assets/logos/duffield-devils.png" alt="" loading="lazy"><span>Duffield Devils</span></span></td>
                             <td class="stat">0</td>
                             <td class="stat">0-0-0</td>
                             <td class="stat">0</td>
-                            <td class="stat col-md">–</td>
-                            <td class="stat col-lg">–</td>
-                            <td class="stat col-lg">–</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-md">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">–</td>
                         </tr>
                         <tr>
-                            <td class="stat rank">9</td>
+                            <td class="stat rank">8</td>
                             <td class="team-name"><span class="team-cell"><img class="team-logo" src="assets/logos/the-attack.png" alt="" loading="lazy"><span>The Attack</span></span></td>
                             <td class="stat">0</td>
                             <td class="stat">0-0-0</td>
                             <td class="stat">0</td>
-                            <td class="stat col-md">–</td>
-                            <td class="stat col-lg">–</td>
-                            <td class="stat col-lg">–</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-md">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">–</td>
                         </tr>
                         <tr>
-                            <td class="stat rank">10</td>
+                            <td class="stat rank">9</td>
                             <td class="team-name"><span class="team-cell"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy"><span>Mississauga Rattlers</span></span></td>
                             <td class="stat">0</td>
                             <td class="stat">0-0-0</td>
                             <td class="stat">0</td>
-                            <td class="stat col-md">–</td>
-                            <td class="stat col-lg">–</td>
-                            <td class="stat col-lg">–</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-md">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">–</td>
                         </tr>
                         <tr>
-                            <td class="stat rank">11</td>
+                            <td class="stat rank">10</td>
                             <td class="team-name"><span class="team-cell"><img class="team-logo" src="assets/logos/streetsville-tigers.png" alt="" loading="lazy"><span>Streetsville Tigers</span></span></td>
                             <td class="stat">0</td>
                             <td class="stat">0-0-0</td>
                             <td class="stat">0</td>
-                            <td class="stat col-md">–</td>
-                            <td class="stat col-lg">–</td>
-                            <td class="stat col-lg">–</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-md">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">–</td>
                         </tr>
                         <tr>
-                            <td class="stat rank">12</td>
+                            <td class="stat rank">11</td>
                             <td class="team-name"><span class="team-cell"><img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy"><span>Mississauga Jets</span></span></td>
                             <td class="stat">0</td>
                             <td class="stat">0-0-0</td>
                             <td class="stat">0</td>
-                            <td class="stat col-md">–</td>
-                            <td class="stat col-lg">–</td>
-                            <td class="stat col-lg">–</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-md">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">–</td>
                         </tr>
                         <tr>
-                            <td class="stat rank">13</td>
+                            <td class="stat rank">12</td>
                             <td class="team-name"><span class="team-cell"><img class="team-logo" src="assets/logos/mississauga-north-stars.png" alt="" loading="lazy"><span>Mississauga North Stars</span></span></td>
                             <td class="stat">0</td>
                             <td class="stat">0-0-0</td>
                             <td class="stat">0</td>
-                            <td class="stat col-md">–</td>
-                            <td class="stat col-lg">–</td>
-                            <td class="stat col-lg">–</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-lg">0-0-0</td>
-                            <td class="stat col-md">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">–</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">–</td>
+                        </tr>
+                        <tr>
+                            <td class="stat rank">13</td>
+                            <td class="team-name"><span class="team-cell"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span>Mississauga Terriers</span></span></td>
+                            <td class="stat">1</td>
+                            <td class="stat">0-1-0</td>
+                            <td class="stat">0</td>
+                            <td class="stat">.000</td>
+                            <td class="stat">1.00</td>
+                            <td class="stat">6.00</td>
+                            <td class="stat">0-0-0</td>
+                            <td class="stat">0-1-0</td>
+                            <td class="stat">0-1-0</td>
+                            <td class="stat">Lost 1</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-14T10:42:47.340181+00:00" title="Oct 14, 06:42 AM ET · Refreshes hourly">just now</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-14T12:23:36.110231+00:00" title="Oct 14, 08:23 AM ET · Refreshes hourly">just now</time></p>
         </div>
 
     </div>
