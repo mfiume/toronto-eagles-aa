@@ -934,19 +934,31 @@ _SCHEDULE_CSS = """
         }
 
         /* --- LiveBarn ---
-           Watch (or Replay once played) under the rink, quiet like the rink,
-           with a small play triangle. */
+           The stream link always sits bottom-right, level with the second
+           team: under the rink on a game still to finish, alone in the same
+           spot once the rink is dropped. Nothing before puck drop, a red LIVE
+           for the first hour, Rewatch after. */
         .game-side {
+            align-self: stretch;
             display: grid;
+            grid-template-rows: 1fr auto;
             justify-items: end;
             gap: 3px;
             min-width: 0;
         }
 
+        .game-side > .game-rink {
+            align-self: center;
+        }
+
+        .game-side > .game-watch {
+            grid-row: 2;
+        }
+
         .game-watch {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
             font-family: var(--display);
             font-weight: 600;
             font-size: 0.7rem;
@@ -957,7 +969,12 @@ _SCHEDULE_CSS = """
             white-space: nowrap;
         }
 
-        .game-watch::before {
+        .game-watch[hidden] {
+            display: none;
+        }
+
+        .game-watch.is-rewatch::before,
+        .game-watch.is-upcoming::before {
             content: "";
             width: 0;
             height: 0;
@@ -966,8 +983,37 @@ _SCHEDULE_CSS = """
             border-bottom: 4px solid transparent;
         }
 
+        .game-watch.is-live {
+            color: var(--brand);
+        }
+
+        .game-watch.is-live::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: live-pulse 1.6s ease-in-out infinite;
+        }
+
+        @keyframes live-pulse {
+            50% {
+                opacity: 0.25;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .game-watch.is-live::before {
+                animation: none;
+            }
+        }
+
         .game-watch:hover {
             color: var(--ink);
+        }
+
+        .game-watch.is-live:hover {
+            color: var(--brand-dark);
         }
 
         .game-watch:focus-visible {
@@ -1302,7 +1348,26 @@ SCHEDULE_JS = """
       var apple = /iPhone|iPad|iPod/.test(ua) ||
                   (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
 
+      // LiveBarn links: nothing before puck drop, LIVE for the first hour,
+      // Rewatch after. The page is rebuilt hourly, so the state is worked out
+      // here, from each link's start time, and refreshed every minute.
+      function updateStreams() {
+        var now = Date.now();
+        document.querySelectorAll('.game-watch[data-start]').forEach(function (a) {
+          var minutes = (now - Date.parse(a.dataset.start)) / 60000;
+          var state = minutes < 0 ? 'upcoming' : minutes < 60 ? 'live' : 'rewatch';
+          var text = { upcoming: 'Watch', live: 'Live', rewatch: 'Rewatch' }[state];
+          a.hidden = state === 'upcoming';
+          a.classList.remove('is-upcoming', 'is-live', 'is-rewatch');
+          a.classList.add('is-' + state);
+          a.textContent = text;
+          a.setAttribute('aria-label', text + ': ' + (a.dataset.label || 'LiveBarn'));
+        });
+      }
+      setInterval(updateStreams, 60000);
+
       function enhance() {
+        updateStreams();
         if (apple) {
           document.querySelectorAll('a[data-apple-maps]').forEach(function (a) {
             a.href = a.dataset.appleMaps;

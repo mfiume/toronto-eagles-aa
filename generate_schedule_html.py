@@ -118,27 +118,50 @@ def directions_link(rink, css_class, text):
                      f"Directions to {arena['name']}, {arenas.address(arena)}")
 
 
-def watch_link(game, played, css_class="game-watch"):
+LIVE_MINUTES = 60
+
+
+def stream_state(start, now):
+    """'upcoming', 'live' (the first hour from puck drop) or 'rewatch'."""
+    minutes = (now - start).total_seconds() / 60
+    if minutes < 0:
+        return 'upcoming'
+    return 'live' if minutes < LIVE_MINUTES else 'rewatch'
+
+
+STREAM_TEXT = {'upcoming': 'Watch', 'live': 'Live', 'rewatch': 'Rewatch'}
+
+
+def watch_link(game, start, now, css_class="game-watch"):
     """
-    The GTHL's LiveBarn link for a game, as Watch, or Replay once played.
-    LiveBarn needs its own subscription; the link goes to the rink's camera at
-    the game's date and start time, so it serves for both.
+    The GTHL's LiveBarn link for a game: nothing before puck drop, LIVE for the
+    first hour, Rewatch after. The link goes to the rink's camera at the game's
+    date and start time, so it serves for both; LiveBarn needs its own
+    subscription.
+
+    The state written here is right when the page is built. The page's script
+    recomputes it from data-start every minute, so LIVE switches on and off on
+    time between the hourly rebuilds.
     """
     url = (game.get('Stream') or '').strip()
-    if not url.startswith('https://livebarn.com/'):
+    if not url.startswith('https://livebarn.com/') or start is None:
         return ''
-    text = 'Replay' if played else 'Watch'
-    label = f"{text} on LiveBarn: {game.get('Away', '')} at {game.get('Home', '')}"
-    return (f'<a class="{css_class}" href="{escape(url)}" target="_blank" rel="noopener noreferrer" '
-            f'aria-label="{escape(label)}">{text}</a>')
+    state = stream_state(start, now)
+    hidden = ' hidden' if state == 'upcoming' else ''
+    label = f"{game.get('Away', '')} at {game.get('Home', '')} on LiveBarn"
+    return (f'<a class="{css_class} is-{state}" href="{escape(url)}" target="_blank" '
+            f'rel="noopener noreferrer" data-start="{start.isoformat()}" '
+            f'data-label="{escape(label)}" aria-label="{STREAM_TEXT[state]}: {escape(label)}"{hidden}>'
+            f'{STREAM_TEXT[state]}</a>')
 
 
-def side_cell(game, score):
+def side_cell(game, score, start, now):
     """
-    A league game's right-hand column: the rink, with LiveBarn's Watch under it
-    when the game streams. A played game drops the rink and keeps Replay.
+    A league game's right-hand column: the rink on top and the LiveBarn link
+    at the bottom, level with the second team, in every state. A played game
+    drops the rink, so its link sits alone in the same bottom spot.
     """
-    watch = watch_link(game, played=score is not None)
+    watch = watch_link(game, start, now)
     if score is not None:
         return f'<div class="game-side">{watch}</div>' if watch else ''
     rink = rink_cell(game.get('Arena', ''))
@@ -215,7 +238,7 @@ def arrival(event):
 
 # --- Rows ---------------------------------------------------------------------
 
-def game_row(game, day, our_team, team=None):
+def game_row(game, day, our_team, team=None, start=None, now=None):
     """
     One league game as a compact row: day and time, both teams stacked, the
     rink. Ours look the same as everyone else's apart from the red bar.
@@ -266,7 +289,7 @@ def game_row(game, day, our_team, team=None):
                         <div class="game-when"><span class="game-day">{day_text}</span>
                             {when}</div>
                         <div class="game-teams">{teams}{extra}</div>
-                        {side_cell(game, score)}
+                        {side_cell(game, score, start, now)}
                     </div>
 """
 
@@ -378,12 +401,18 @@ def match_team_games(league, team_events, our_team):
     return matches, used
 
 
-def build_block(schedule, today, our_team, team_events=None):
+def aware(start):
+    """A naive Toronto wall-clock datetime made timezone-aware, or None."""
+    return start.replace(tzinfo=page_common.TORONTO) if start else None
+
+
+def build_block(schedule, today, our_team, team_events=None, now=None):
     """
     The schedule itself: next-game card, heading with the filter, and the
     weeks. Without team_events this is the public version.
     """
     this_monday = today - timedelta(days=today.weekday())
+    now = now or datetime.now(page_common.TORONTO)
 
     def is_ours(game):
         return our_team in (game.get('Away', '').lower(), game.get('Home', '').lower())
@@ -400,7 +429,8 @@ def build_block(schedule, today, our_team, team_events=None):
     items = []
     for i, (g, day, start) in enumerate(league):
         key = start or (datetime.combine(day, datetime.min.time()) if day else datetime.max)
-        items.append((key, day, game_row(g, day, our_team, matches.get(i)), is_ours(g), "game"))
+        items.append((key, day, game_row(g, day, our_team, matches.get(i), aware(start), now),
+                      is_ours(g), "game"))
 
     first_day = min((d for _, d, _ in league if d), default=today)
     last_day = max((d for _, d, _ in league if d), default=today)
@@ -425,7 +455,7 @@ def build_block(schedule, today, our_team, team_events=None):
             team = matches.get(i)
             rink = g.get('Arena', '')
             rink_html = (directions_link(rink, 'next-rink', rink) or f"<span>{escape(rink)}</span>") \
-                + watch_link(g, played=False, css_class="game-watch next-watch")
+                + watch_link(g, aware(start), now, css_class="game-watch next-watch")
             extra = extra_line(arrival(team), wear_text(team.get("wear"), True) if team else "")
             candidates.append((start or datetime.combine(day, datetime.min.time()),
                                (g.get('Away', ''), g.get('Home', ''), day, g.get('Time', ''), rink_html, today,
