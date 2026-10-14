@@ -245,7 +245,7 @@ def row_attrs(classes, details, row_type="game", day=None, kind="game"):
     There is deliberately no visual cue; it stays focusable and announces
     itself as a toggle, so keyboards and screen readers still find it.
 
-    `row_type` is what the Games / Practices filter goes by: "game",
+    `row_type` is what the Games / All filter goes by: "game",
     "practice" (ice and dryland) or "other".
 
     Our own rows start open, since their details are the ones a family
@@ -263,7 +263,7 @@ def row_attrs(classes, details, row_type="game", day=None, kind="game"):
     return attrs
 
 
-# The Games / Practices filter's grouping of team events.
+# How team events group for the Games / All filter.
 ROW_TYPES = {"practice": "practice", "dryland": "practice", "tournament": "game"}
 
 
@@ -542,8 +542,6 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
                     <div class="type-filter sched-filter" role="group" aria-label="What to show">
                     <button type="button" class="sched-filter-btn sched-type-btn" data-type-filter="game"
                             aria-pressed="false">Games</button>
-                    <button type="button" class="sched-filter-btn sched-type-btn" data-type-filter="practice"
-                            aria-pressed="false">Practices</button>
                     <button type="button" class="sched-filter-btn sched-type-btn" data-type-filter="all"
                             aria-pressed="true">All</button>
                     </div>
