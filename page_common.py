@@ -956,7 +956,8 @@ _SCHEDULE_CSS = """
            list is, so the "Schedule" label steps aside to make room. */
         .sched-head.has-type {
             flex-wrap: nowrap;
-            gap: 8px;
+            justify-content: flex-start;
+            gap: 10px;
         }
 
         .sched-head.has-type h2 {
@@ -968,10 +969,11 @@ _SCHEDULE_CSS = """
             white-space: nowrap;
         }
 
+        /* A phone has no room for Games / Practices / All; it shows
+           everything, and the page's script ignores a remembered choice. */
         @media (max-width: 519px) {
-            .sched-head.has-type .sched-filter-btn {
-                padding: 6px 9px;
-                gap: 4px;
+            .type-filter {
+                display: none;
             }
         }
 
@@ -1818,6 +1820,8 @@ SCHEDULE_JS = """
           }
           if (!anchor) anchor = today;
           var empty = view.querySelector('[data-sched-empty]');
+          var narrow = window.matchMedia('(max-width: 519px)');
+          if (narrow.addEventListener) narrow.addEventListener('change', function () { render(); });
           var render = function () {
             var r = range(period, anchor);
             view.classList.toggle('filter-ours', who === 'ours');
@@ -1827,13 +1831,15 @@ SCHEDULE_JS = """
             typeButtons.forEach(function (b) {
               b.setAttribute('aria-pressed', String(b.dataset.typeFilter === kind));
             });
+            // The kind filter is hidden on a phone, so it must not filter there.
+            var k = narrow.matches ? 'all' : kind;
             var shown = 0;
             view.querySelectorAll('.week').forEach(function (week) {
               var visible = [];
               week.querySelectorAll('.game').forEach(function (row) {
                 var d = row.dataset.date;
                 var show = (who === 'all' || row.classList.contains('is-ours')) &&
-                           (kind === 'all' || row.dataset.type === kind) &&
+                           (k === 'all' || row.dataset.type === k) &&
                            (!d || (d >= r[0] && d < r[1]));
                 row.hidden = !show;
                 if (show) visible.push(row);
