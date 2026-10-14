@@ -1048,6 +1048,16 @@ _SCHEDULE_CSS = """
 
         /* With scripting, the period's heading replaces the weeks' own, and
            the weeks run together as a single list. */
+        /* Today's rows, in a week, month or season: the day reads TODAY in
+           red and the row has a faint red tint. */
+        .game.is-today {
+            background: #fdf5f6;
+        }
+
+        .game.is-today .game-day {
+            color: var(--brand);
+        }
+
         .by-period .week > .week-head {
             display: none;
         }
@@ -1178,36 +1188,14 @@ _SCHEDULE_CSS = """
             content: none !important;
         }
 
-        /* LiveBarn's mark. Live, a pulsing red dot sits on its corner,
-           beside the LIVE flag in the time's place. */
-        .icon-btn.game-watch {
-            position: relative;
-        }
-
+        /* LiveBarn's mark. A live game says so with the LIVE flag in the
+           time's place. */
         .icon-btn.game-watch img {
             width: 15px;
             height: 17px;
             display: block;
         }
 
-        .icon-btn.game-watch.is-live::after {
-            content: "";
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--brand);
-            box-shadow: 0 0 0 2px var(--surface);
-            animation: live-pulse 1.6s ease-in-out infinite;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .icon-btn.game-watch.is-live::after {
-                animation: none;
-            }
-        }
 
         .game-team {
             display: flex;
@@ -1897,6 +1885,15 @@ SCHEDULE_JS = """
               var count = week.querySelector('.week-count');
               if (count && visible.length) count.textContent = countText(visible);
               shown += visible.length;
+            });
+            // Today's rows stand out, except in the day view, which is all today.
+            view.querySelectorAll('.game[data-date]').forEach(function (row) {
+              var mark = row.dataset.date === today && period !== 'day';
+              row.classList.toggle('is-today', mark);
+              var dayEl = row.querySelector('.game-day');
+              if (!dayEl) return;
+              if (!dayEl.dataset.day) dayEl.dataset.day = dayEl.textContent;
+              dayEl.textContent = mark ? 'Today' : dayEl.dataset.day;
             });
             var head = view.querySelector('[data-period-head]');
             view.classList.add('by-period');
