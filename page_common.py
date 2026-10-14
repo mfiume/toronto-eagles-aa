@@ -616,7 +616,7 @@ _TABLE_CSS = """
             background: var(--surface);
         }
 
-        th.rank {
+        .table-wrapper th.rank {
             background: #16181c;
         }
 
