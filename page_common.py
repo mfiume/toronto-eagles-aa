@@ -773,11 +773,10 @@ _SCHEDULE_CSS = """
 
         /* --- Heading and the Eagles / all games toggle --- */
 
-        /* One row of controls, left-aligned: Eagles / West, (logged in, on
-           a wide screen) Games / Practices / All, Day / Week / Month /
-           Season, and the arrows at the far end. On a phone the arrows wrap
-           onto a second line. The controls say what the list is, so the
-           "Schedule" heading is there for screen readers only. */
+        /* The controls, left-aligned and wrapping: Eagles / West, (logged
+           in) Games / All, and Day / Week / Month / Season. The controls say
+           what the list is, so the "Schedule" heading is there for screen
+           readers only. */
         .sched-head {
             display: flex;
             justify-content: flex-start;
@@ -994,13 +993,6 @@ _SCHEDULE_CSS = """
             display: none !important;
         }
 
-        /* A phone has no room for Games / Practices / All; it shows
-           everything, and the page's script ignores a remembered choice. */
-        @media (max-width: 519px) {
-            .type-filter {
-                display: none;
-            }
-        }
 
         /* --- Weeks --- */
 
@@ -1831,7 +1823,7 @@ SCHEDULE_JS = """
         });
 
         // Two filters: whose games (Eagles / All) and, logged in, what kind
-        // (Games / Practices / All). The Eagles / All choice also works
+        // (Games / All). The Eagles / West choice also works
         // without scripting, through the filter-ours class; the kind filter
         // only exists logged in, which needs scripting anyway. A week shows
         // only while something in it passes both.
@@ -1855,8 +1847,6 @@ SCHEDULE_JS = """
           }
           if (!anchor) anchor = today;
           var empty = view.querySelector('[data-sched-empty]');
-          var narrow = window.matchMedia('(max-width: 519px)');
-          if (narrow.addEventListener) narrow.addEventListener('change', function () { render(); });
           var render = function () {
             var r = range(period, anchor);
             view.classList.toggle('filter-ours', who === 'ours');
@@ -1866,15 +1856,13 @@ SCHEDULE_JS = """
             typeButtons.forEach(function (b) {
               b.setAttribute('aria-pressed', String(b.dataset.typeFilter === kind));
             });
-            // The kind filter is hidden on a phone, so it must not filter there.
-            var k = narrow.matches ? 'all' : kind;
             var shown = 0;
             view.querySelectorAll('.week').forEach(function (week) {
               var visible = [];
               week.querySelectorAll('.game').forEach(function (row) {
                 var d = row.dataset.date;
                 var show = (who === 'all' || row.classList.contains('is-ours')) &&
-                           (k === 'all' || row.dataset.type === k) &&
+                           (kind === 'all' || row.dataset.type === kind) &&
                            (!d || (d >= r[0] && d < r[1]));
                 row.hidden = !show;
                 if (show) visible.push(row);
@@ -1952,7 +1940,7 @@ SCHEDULE_JS = """
             who = savedWho;
           }
           var savedKind = stored(TYPE_KEY);
-          if (typeButtons.length && (savedKind === 'game' || savedKind === 'practice')) {
+          if (typeButtons.length && savedKind === 'game') {
             kind = savedKind;
           }
           render();
