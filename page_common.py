@@ -1174,31 +1174,37 @@ _SCHEDULE_CSS = """
             outline-offset: -2px;
         }
 
-        /* Rewatch: a grey play icon. Live: the same in red, pulsing, beside
-           the LIVE flag in the time's place. */
         .icon-btn.game-watch::before {
             content: none !important;
         }
 
+        /* LiveBarn's mark. Live, a pulsing red dot sits on its corner,
+           beside the LIVE flag in the time's place. */
         .icon-btn.game-watch {
-            color: var(--ink-2);
+            position: relative;
         }
 
-        .icon-btn.game-watch svg {
-            width: 14px;
-            height: 14px;
+        .icon-btn.game-watch img {
+            width: 15px;
+            height: 17px;
+            display: block;
         }
 
-        .icon-btn.game-watch.is-live {
-            color: var(--brand);
-        }
-
-        .icon-btn.game-watch.is-live svg {
+        .icon-btn.game-watch.is-live::after {
+            content: "";
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--brand);
+            box-shadow: 0 0 0 2px var(--surface);
             animation: live-pulse 1.6s ease-in-out infinite;
         }
 
         @media (prefers-reduced-motion: reduce) {
-            .icon-btn.game-watch.is-live svg {
+            .icon-btn.game-watch.is-live::after {
                 animation: none;
             }
         }
