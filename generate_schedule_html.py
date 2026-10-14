@@ -555,9 +555,7 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
     html += f"""
                 <div class="sched-weeks{' filter-ours' if default_ours else ''}"
                      data-schedule-view data-has-ours="{int(bool(games_ours))}">
-                <div class="week-head period-head" data-period-head hidden><h3 class="week-label"></h3>
-                    <span class="week-count"></span></div>
-"""
+{PERIOD_HEAD}"""
     weeks = []
     for it in items:
         day = it[1]
@@ -598,9 +596,9 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
 def period_controls():
     """
     Day / Week / Month / Season, with arrows to step back and forward and a
-    way back to today. They share the line with the other filters; on a phone
-    the arrows wrap onto the next. The page's script does the work; without
-    it they are hidden and every week shows.
+    way back to today. The picker shares the line with the other filters; the
+    arrows are in the period's heading (PERIOD_HEAD). The page's script does
+    the work; without it they are hidden and every week shows.
     """
     return """
                     <div class="sched-filter period-pick" role="group" aria-label="How much to show">
@@ -609,12 +607,22 @@ def period_controls():
                         <button type="button" class="sched-filter-btn" data-period="month" aria-pressed="false">Month</button>
                         <button type="button" class="sched-filter-btn" data-period="season" aria-pressed="false">Season</button>
                     </div>
+"""
+
+
+# The heading of the period on show, which is also how to page through it:
+# "October 2026", its counts underneath, and Today and the arrows at the end.
+PERIOD_HEAD = """
+                <div class="period-head" data-period-head hidden>
+                    <div class="period-title"><h3 class="period-name" aria-live="polite"></h3>
+                        <span class="period-sub"></span></div>
+                    <span class="period-count"></span>
                     <div class="period-nav">
                         <button type="button" class="period-today" data-period-today hidden>Today</button>
                         <button type="button" class="period-step" data-period-step="-1" aria-label="Previous"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M8.5 3 4.5 7l4 4"/></svg></button>
-                        <span class="period-label" data-period-label aria-live="polite"></span>
                         <button type="button" class="period-step" data-period-step="1" aria-label="Next"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M5.5 3l4 4-4 4"/></svg></button>
                     </div>
+                </div>
 """
 
 
