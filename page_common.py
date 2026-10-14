@@ -439,13 +439,20 @@ _BASE_CSS = """
             -webkit-font-smoothing: antialiased;
         }
 
+        /* The page fills the screen even when there is little on it: the
+           grey content area stretches down to the bottom. */
         .container {
             background: var(--surface);
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
         }
 
         /* A faint grey behind the content only, so the white tables and game
            cards read as objects on it. The masthead and sponsors stay white. */
         .content {
+            flex: 1 0 auto;
             background: var(--wash);
             padding: clamp(12px, 2.6vw, 24px) clamp(10px, 2.6vw, 24px)
                      clamp(26px, 5vw, 44px);
