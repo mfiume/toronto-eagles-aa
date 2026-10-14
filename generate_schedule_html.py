@@ -20,6 +20,7 @@ from html import escape
 import arenas
 import config
 import page_common
+import season_schedule
 from season_schedule import parse_score
 
 TEAM_EVENTS_FILE = "team_events.json"
@@ -238,7 +239,7 @@ def extra_line(*parts, details=False):
     return f'<div class="{cls}">' + " · ".join(escape(p) for p in parts) + "</div>"
 
 
-def row_attrs(classes, details, row_type="game"):
+def row_attrs(classes, details, row_type="game", day=None, kind="game"):
     """
     The opening tag's attributes for a row. A row with details opens on tap.
     There is deliberately no visual cue; it stays focusable and announces
@@ -249,10 +250,14 @@ def row_attrs(classes, details, row_type="game"):
 
     Our own rows start open, since their details are the ones a family
     needs; a tap still closes them.
+
+    `day` and `kind` are for the page's script: the Week / Month / Season
+    view goes by the date, and the week headings count by kind.
     """
     is_open = bool(details) and "is-ours" in classes.split()
     attrs = (f'class="{classes}{" has-details" if details else ""}{" is-open" if is_open else ""}" '
-             f'data-type="{row_type}"')
+             f'data-type="{row_type}" data-kind="{kind}"'
+             + (f' data-date="{day.isoformat()}"' if day else ''))
     if details:
         attrs += f' tabindex="0" role="button" aria-expanded="{str(is_open).lower()}"'
     return attrs
@@ -327,7 +332,7 @@ def game_row(game, day, our_team, team=None, start=None, now=None):
 
     live = score is None and start is not None and stream_state(start, now) == 'live'
     classes = f"game{' is-ours' if ours else ''}{' is-final' if score else ''}{' is-live' if live else ''}"
-    return f"""                    <div {row_attrs(classes, details)}>
+    return f"""                    <div {row_attrs(classes, details, day=day)}>
                         <div class="game-when"><span class="game-day">{day_text}</span>
                             {when}</div>
                         <div class="game-teams">{teams}{icons}{details}</div>
@@ -351,7 +356,7 @@ def team_game_row(event, start, now=None):
     begins = aware(start) if event.get("timed") else None
     flag = live_flag(begins, now) if now else ''
     live = bool(begins and now and stream_state(begins, now) == 'live')
-    return f"""                    <div {row_attrs(f"game is-ours team-game{' is-live' if live else ''}", details)}>
+    return f"""                    <div {row_attrs(f"game is-ours team-game{' is-live' if live else ''}", details, day=start.date())}>
                         <div class="game-when"><span class="game-day">{start.strftime('%a')} {start.day}</span>
                             <span class="game-time">{time_text}</span>{flag}</div>
                         <div class="game-teams">{team_line(away, 1)}{team_line(home, 2)}{extra_line(event.get("label"))}{details}</div>
@@ -372,7 +377,7 @@ def team_event_row(event, start):
     details = drawer(venue_cell(event.get("venue"), event.get("address")),
                      detail_text(arrival(event) if event.get("timed") else ""),
                      detail_text(wear))
-    return f"""                    <div {row_attrs(f"game is-ours team-event kind-{kind}", details, ROW_TYPES.get(kind, "other"))}>
+    return f"""                    <div {row_attrs(f"game is-ours team-event kind-{kind}", details, ROW_TYPES.get(kind, "other"), start.date(), kind)}>
                         <div class="game-when"><span class="game-day">{start.strftime('%a')} {start.day}</span>
                             <span class="game-time">{time_text}</span></div>
                         <div class="game-teams"><div class="event-title r1">{tag}<span>{escape(title)}</span></div>{details}</div>
@@ -477,16 +482,11 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
         items.append((key, day, game_row(g, day, our_team, matches.get(i), aware(start), now),
                       is_ours(g), "game"))
 
-    first_day = min((d for _, d, _ in league if d), default=today)
-    last_day = max((d for _, d, _ in league if d), default=today)
-    window_start = min(first_day, today)
-    window_end = max(last_day, today + timedelta(days=config.SCHEDULE_DAYS_AHEAD))
+    # Every team event: the page pages through the whole season.
     for e in team_events or []:
         if e["uid"] in used:
             continue
         start = datetime.fromisoformat(e["start"])
-        if not (window_start <= start.date() <= window_end):
-            continue
         if e["kind"] == "game":
             items.append((start, start.date(), team_game_row(e, start, now), True, "game"))
         else:
@@ -553,6 +553,7 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
     html += """
                 </div>
 """
+    html += period_bar(today)
 
     html += f"""
                 <div class="sched-weeks{' filter-ours' if default_ours else ''}"
@@ -579,7 +580,8 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
         label = week_label(monday, this_monday) if monday else "Date to be confirmed"
         now = ' now' if monday == this_monday else ''
         has_ours = any(it[3] for it in week)
-        html += f"""                <section class="week" data-ours="{int(has_ours)}">
+        week_attr = f' data-week="{monday.isoformat()}"' if monday else ''
+        html += f"""                <section class="week" data-ours="{int(has_ours)}"{week_attr}>
                     <div class="week-head"><h3 class="week-label{now}">{label}</h3>
                         <span class="week-count"><span class="count-ours">{heading_count(g_ours)}</span><span
                             class="count-all">{heading_count(g_all)}</span></span></div>
@@ -589,8 +591,63 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
             html += it[2]
         html += "                    </div>\n                </section>\n"
 
-    html += "                </div>\n"
+    html += ('                <p class="sched-empty" data-sched-empty hidden></p>\n'
+             "                </div>\n")
     return html
+
+
+def period_bar(today):
+    """
+    Week / Month / Season, with arrows to step back and forward and a way back
+    to today. The page's script does the work; without it the bar is hidden
+    and every week shows, as before.
+    """
+    return f"""
+                <div class="period-bar" data-period-bar data-today="{today.isoformat()}"
+                     data-season="{escape(page_common.season_label().replace('-', '–'))}">
+                    <div class="sched-filter period-pick" role="group" aria-label="How much to show">
+                        <button type="button" class="sched-filter-btn" data-period="week" aria-pressed="false">Week</button>
+                        <button type="button" class="sched-filter-btn" data-period="month" aria-pressed="true">Month</button>
+                        <button type="button" class="sched-filter-btn" data-period="season" aria-pressed="false">Season</button>
+                    </div>
+                    <div class="period-nav">
+                        <button type="button" class="period-today" data-period-today hidden>Today</button>
+                        <button type="button" class="period-step" data-period-step="-1" aria-label="Previous">&#8249;</button>
+                        <span class="period-label" data-period-label aria-live="polite"></span>
+                        <button type="button" class="period-step" data-period-step="1" aria-label="Next">&#8250;</button>
+                    </div>
+                </div>
+"""
+
+
+def season_rows(schedule):
+    """
+    Games the season accumulator remembers that the current scrape no longer
+    lists, as schedule rows. The GTHL is scraped a week back at most, so this
+    is what lets the page page back through the season. A game the GTHL
+    stopped listing inside the scrape window may be cancelled and is left out.
+    """
+    if not os.path.exists(season_schedule.SEASON_FILE):
+        return []
+    with open(season_schedule.SEASON_FILE, encoding="utf-8") as f:
+        games = json.load(f).get("games", [])
+    listed = {season_schedule.game_id(g) for g in schedule}
+    rows = []
+    for g in games:
+        if g.get("id") in listed or g.get("status") == "not_listed" or not g.get("date"):
+            continue
+        day = datetime.strptime(g["date"], "%Y-%m-%d")
+        when = datetime.strptime(g["time"], "%H:%M") if g.get("time") else None
+        rows.append({
+            "Date": f"{day.strftime('%d-%b-%Y')} {day.strftime('%a')}",
+            "Time": clock(when.time()) if when else "",
+            "Away": g.get("away", ""),
+            "Home": g.get("home", ""),
+            "Score": g.get("score_raw", ""),
+            "Arena": g.get("arena", ""),
+            "Stream": g.get("stream", ""),
+        })
+    return rows
 
 
 
@@ -611,6 +668,7 @@ def generate_html(today=None):
         data = json.load(f)
 
     schedule = data.get('schedule', [])
+    schedule = schedule + season_rows(schedule)
     timestamp = data.get('timestamp', '')
     filters = data.get('filters', {})
     error = data.get('error')

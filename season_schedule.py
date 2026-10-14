@@ -122,6 +122,7 @@ def enrich(game):
         "away": away,
         "home": home,
         "arena": game.get("Arena", ""),
+        "stream": game.get("Stream", ""),
         "type": game.get("Type", ""),
         "division": game.get("Div/Cat", ""),
         "score": score,

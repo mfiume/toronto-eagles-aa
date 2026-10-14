@@ -821,6 +821,93 @@ _SCHEDULE_CSS = """
             outline-offset: 2px;
         }
 
+        /* --- Week / Month / Season, and the arrows that page through it --- */
+        .period-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: -8px;
+        }
+
+        .period-nav {
+            display: flex;
+            align-items: center;
+            margin-left: auto;
+        }
+
+        .period-label {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.82rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--ink);
+            padding: 0 4px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .period-step {
+            appearance: none;
+            border: 1px solid var(--line);
+            background: var(--surface);
+            color: var(--ink);
+            width: 30px;
+            height: 34px;
+            font-size: 1.3rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .period-step:disabled {
+            color: var(--line);
+            cursor: default;
+        }
+
+        .period-today {
+            appearance: none;
+            border: 0;
+            background: none;
+            color: var(--brand);
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.74rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 8px 4px;
+            cursor: pointer;
+        }
+
+        .period-today[hidden] {
+            display: none;
+        }
+
+        .period-step:focus-visible,
+        .period-today:focus-visible {
+            outline: 2px solid var(--brand);
+            outline-offset: 2px;
+        }
+
+        @media (max-width: 519px) {
+            .period-pick .sched-filter-btn {
+                padding: 8px 7px;
+            }
+        }
+
+        .sched-empty {
+            padding: 28px 12px;
+            text-align: center;
+            color: var(--ink-3);
+            background: var(--surface);
+            border: 1px solid var(--line);
+        }
+
+        .sched-empty[hidden] {
+            display: none;
+        }
+
         /* The filters hide rows and weeks with the hidden attribute; rows
            and weeks set their own display, so it has to be made to win. */
         .sched-weeks [hidden] {
@@ -1518,6 +1605,65 @@ SCHEDULE_JS = """
       var FILTER_KEY = 'eagles-schedule-filter';
       var PASS_KEY = 'eagles-team-password';
       var TYPE_KEY = 'eagles-type-filter';
+      var PERIOD_KEY = 'eagles-schedule-period';
+      var period = null;   // 'week', 'month' or 'season'
+      var anchor = null;   // a day inside the period shown, 'YYYY-MM-DD'
+
+      // Dates as 'YYYY-MM-DD' strings, which sort and compare as dates.
+      function iso(d) {
+        return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' +
+               ('0' + d.getDate()).slice(-2);
+      }
+      function day(s) {
+        var p = s.split('-');
+        return new Date(+p[0], +p[1] - 1, +p[2]);
+      }
+      var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                    'August', 'September', 'October', 'November', 'December'];
+      function short(d) { return MONTHS[d.getMonth()].slice(0, 3) + ' ' + d.getDate(); }
+
+      // [first day, day after the last] of the period around a day.
+      function range(p, s) {
+        var d = day(s);
+        if (p === 'week') {
+          var mon = new Date(d.getFullYear(), d.getMonth(), d.getDate() - (d.getDay() + 6) % 7);
+          return [iso(mon), iso(new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + 7))];
+        }
+        if (p === 'month') {
+          return [iso(new Date(d.getFullYear(), d.getMonth(), 1)),
+                  iso(new Date(d.getFullYear(), d.getMonth() + 1, 1))];
+        }
+        return ['0000-00-00', '9999-99-99'];
+      }
+      function step(p, s, n) {
+        var d = day(s);
+        if (p === 'week') return iso(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7 * n));
+        return iso(new Date(d.getFullYear(), d.getMonth() + n, 1));
+      }
+      function label(p, s, season) {
+        var r = range(p, s);
+        if (p === 'season') return season;
+        var a = day(r[0]);
+        if (p === 'month') return MONTHS[a.getMonth()].slice(0, 3) + ' ' + a.getFullYear();
+        var b = day(r[1]);
+        b.setDate(b.getDate() - 1);
+        return short(a) + '\u2013' + (a.getMonth() === b.getMonth() ? b.getDate() : short(b));
+      }
+
+      // A week heading's count of what is showing in it, e.g. "2 games · 1 practice".
+      var KINDS = [['practice', 'practice', 'practices'], ['dryland', 'dryland', 'dryland'],
+                   ['tournament', 'tournament', 'tournaments'], ['event', 'team event', 'team events']];
+      function countText(rows) {
+        var n = {};
+        rows.forEach(function (r) { n[r.dataset.kind] = (n[r.dataset.kind] || 0) + 1; });
+        var events = [];
+        KINDS.forEach(function (k) {
+          if (n[k[0]]) events.push(n[k[0]] + ' ' + (n[k[0]] === 1 ? k[1] : k[2]));
+        });
+        var games = n.game || 0;
+        var parts = games || !events.length ? [games + (games === 1 ? ' game' : ' games')] : [];
+        return parts.concat(events).join(' \u00b7 ');
+      }
       var block = document.querySelector('[data-schedule-block]');
       var payloadEl = document.getElementById('team-events');
       var publicHtml = block ? block.innerHTML : '';
@@ -1605,7 +1751,22 @@ SCHEDULE_JS = """
         if (view && whoButtons.length) {
           var who = view.classList.contains('filter-ours') ? 'ours' : 'all';
           var kind = 'all';
+          var bar = document.querySelector('[data-period-bar]');
+          var today = bar ? bar.dataset.today : iso(new Date());
+          // The device's own date, if the page is older than today.
+          if (iso(new Date()) > today) today = iso(new Date());
+          var allDates = [];
+          view.querySelectorAll('.game[data-date]').forEach(function (r) { allDates.push(r.dataset.date); });
+          allDates.sort();
+          var first = allDates[0] || today, last = allDates[allDates.length - 1] || today;
+          if (!period) {
+            var savedPeriod = stored(PERIOD_KEY);
+            period = /^(week|month|season)$/.test(savedPeriod || '') ? savedPeriod : 'month';
+          }
+          if (!anchor) anchor = today;
+          var empty = view.querySelector('[data-sched-empty]');
           var render = function () {
+            var r = range(period, anchor);
             view.classList.toggle('filter-ours', who === 'ours');
             whoButtons.forEach(function (b) {
               b.setAttribute('aria-pressed', String(b.dataset.filter === who));
@@ -1613,17 +1774,55 @@ SCHEDULE_JS = """
             typeButtons.forEach(function (b) {
               b.setAttribute('aria-pressed', String(b.dataset.typeFilter === kind));
             });
+            var shown = 0;
             view.querySelectorAll('.week').forEach(function (week) {
-              var any = false;
+              var visible = [];
               week.querySelectorAll('.game').forEach(function (row) {
+                var d = row.dataset.date;
                 var show = (who === 'all' || row.classList.contains('is-ours')) &&
-                           (kind === 'all' || row.dataset.type === kind);
+                           (kind === 'all' || row.dataset.type === kind) &&
+                           (!d || (d >= r[0] && d < r[1]));
                 row.hidden = !show;
-                any = any || show;
+                if (show) visible.push(row);
               });
-              week.hidden = !any;
+              week.hidden = !visible.length;
+              var count = week.querySelector('.week-count');
+              if (count && visible.length) count.textContent = countText(visible);
+              shown += visible.length;
             });
+            if (empty) {
+              empty.hidden = shown > 0;
+              empty.textContent = period === 'week' ? 'Nothing scheduled this week.'
+                : period === 'month' ? 'Nothing scheduled this month.' : 'Nothing scheduled yet.';
+            }
+            if (bar) {
+              bar.querySelectorAll('[data-period]').forEach(function (b) {
+                b.setAttribute('aria-pressed', String(b.dataset.period === period));
+              });
+              bar.querySelector('[data-period-label]').textContent = label(period, anchor, bar.dataset.season);
+              var prev = bar.querySelector('[data-period-step="-1"]');
+              var next = bar.querySelector('[data-period-step="1"]');
+              prev.disabled = period === 'season' || r[0] <= first;
+              next.disabled = period === 'season' || r[1] > last;
+              bar.querySelector('[data-period-today]').hidden =
+                period === 'season' || (today >= r[0] && today < r[1]);
+            }
           };
+          if (bar) {
+            bar.querySelectorAll('[data-period]').forEach(function (b) {
+              b.addEventListener('click', function () {
+                period = b.dataset.period; store(PERIOD_KEY, period); render();
+              });
+            });
+            bar.querySelectorAll('[data-period-step]').forEach(function (b) {
+              b.addEventListener('click', function () {
+                anchor = step(period, anchor, +b.dataset.periodStep); render();
+              });
+            });
+            bar.querySelector('[data-period-today]').addEventListener('click', function () {
+              anchor = today; render();
+            });
+          }
           var savedWho = stored(FILTER_KEY);
           // Only honour a stored choice the page can actually show.
           if (savedWho === 'all' || (savedWho === 'ours' && view.dataset.hasOurs === '1')) {
@@ -1763,6 +1962,7 @@ SCHEDULE_NOSCRIPT = """    <noscript>
                they cannot leave. Same specificity as the rules that hide, and
                later, so these win without !important. */
             .sched-filter { display: none; }
+            .period-bar { display: none; }
 
             .filter-ours .game:not(.is-ours),
             .filter-ours .week[data-ours="0"] {
