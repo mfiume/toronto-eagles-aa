@@ -840,20 +840,64 @@ _SCHEDULE_CSS = """
         }
 
         /* --- Day / Week / Month / Season, and the arrows --- */
-        .period-nav {
-            display: flex;
+        /* The period's heading doubles as its navigation: the name in the
+           display face (red while it contains today), the dates or year in
+           grey beside it, the counts underneath, and Today and the round
+           arrows at the right. */
+        .period-head {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
             align-items: center;
-            margin-left: auto;
+            column-gap: 10px;
+            padding: 6px 2px 10px;
         }
 
-        .period-label {
-            font-family: var(--body);
+        .period-title {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            column-gap: 8px;
+            min-width: 0;
+        }
+
+        .period-name {
+            font-family: var(--display);
             font-weight: 600;
-            font-size: 0.88rem;
+            font-size: 1.3rem;
+            line-height: 1.15;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
             color: var(--ink);
-            padding: 0 6px;
-            text-align: center;
+        }
+
+        .period-name.now {
+            color: var(--brand);
+        }
+
+        .period-sub {
+            font-size: 0.84rem;
+            font-weight: 500;
+            color: var(--ink-3);
             white-space: nowrap;
+        }
+
+        .period-count {
+            grid-column: 1;
+            font-size: 0.8rem;
+            color: var(--ink-3);
+            margin-top: 2px;
+        }
+
+        .period-step[hidden] {
+            display: none;
+        }
+
+        .period-nav {
+            grid-column: 2;
+            grid-row: 1 / span 2;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         /* Round arrow buttons. */
@@ -926,10 +970,6 @@ _SCHEDULE_CSS = """
                 padding: 6px 4px;
             }
 
-            .period-label {
-                padding: 0 4px;
-            }
-
             .period-step {
                 width: 30px;
                 height: 30px;
@@ -994,13 +1034,8 @@ _SCHEDULE_CSS = """
             color: var(--ink-3);
         }
 
-        /* Month and Season: one heading for the period ("October",
-           "Season") instead of one per week, and the weeks run together as
-           a single list. */
-        .period-head {
-            margin-bottom: 8px;
-        }
-
+        /* With scripting, the period's heading replaces the weeks' own, and
+           the weeks run together as a single list. */
         .by-period .week > .week-head {
             display: none;
         }
@@ -1654,6 +1689,14 @@ SCHEDULE_JS = """
       var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
                     'August', 'September', 'October', 'November', 'December'];
       var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      // A week's heading: This week, Next week, Last week, or "Week of Oct 26".
+      function weekTitle(s, today) {
+        var gap = Math.round((day(s) - day(range('week', today)[0])) / (7 * 86400000));
+        if (gap === 0) return 'This week';
+        if (gap === 1) return 'Next week';
+        if (gap === -1) return 'Last week';
+        return 'Week of ' + short(day(s));
+      }
       // A day's heading: Today, Tomorrow, Yesterday, or "Thursday, Oct 15".
       function dayTitle(s, today) {
         var gap = Math.round((day(s) - day(today)) / 86400000);
@@ -1842,35 +1885,47 @@ SCHEDULE_JS = """
               shown += visible.length;
             });
             var head = view.querySelector('[data-period-head]');
-            view.classList.toggle('by-period', period !== 'week');
+            view.classList.add('by-period');
             if (head) {
-              // A day keeps its heading ("Today") even when nothing is on.
-              head.hidden = period === 'week' || (!shown && period !== 'day');
-              var title = head.querySelector('.week-label');
-              title.textContent = period === 'season' ? 'Season'
-                : period === 'day' ? dayTitle(r[0], today) : MONTHS[day(r[0]).getMonth()];
+              head.hidden = false;
+              var r0 = day(r[0]), name, sub;
+              if (period === 'day') {
+                name = dayTitle(r[0], today);
+                // The date beside Today / Tomorrow / Yesterday; a named day has it already.
+                sub = name.indexOf(',') < 0 ? label('day', anchor) : '';
+              } else if (period === 'week') {
+                name = weekTitle(r[0], today);
+                sub = label('week', anchor);
+              } else if (period === 'month') {
+                name = MONTHS[r0.getMonth()];
+                sub = String(r0.getFullYear());
+              } else {
+                name = 'Season';
+                sub = (bar ? bar.dataset.season : '').replace(/ Season$/, '');
+              }
+              var title = head.querySelector('.period-name');
+              title.textContent = name;
               title.classList.toggle('now', period !== 'season' && today >= r[0] && today < r[1]);
+              head.querySelector('.period-sub').textContent = sub;
               var all = [];
               view.querySelectorAll('.week .game').forEach(function (row) { if (!row.hidden) all.push(row); });
-              head.querySelector('.week-count').textContent = countText(all);
+              head.querySelector('.period-count').textContent = all.length ? countText(all) : '';
+              var prev = head.querySelector('[data-period-step="-1"]');
+              var next = head.querySelector('[data-period-step="1"]');
+              prev.hidden = next.hidden = period === 'season';
+              prev.disabled = r[0] <= first;
+              next.disabled = r[1] > last;
+              head.querySelector('[data-period-today]').hidden =
+                period === 'season' || (today >= r[0] && today < r[1]);
             }
             if (empty) {
               empty.hidden = shown > 0;
-              empty.textContent = period === 'day' ? 'Nothing scheduled.'
-                : period === 'week' ? 'Nothing scheduled this week.'
-                : period === 'month' ? 'Nothing scheduled this month.' : 'Nothing scheduled yet.';
+              empty.textContent = 'Nothing scheduled.';
             }
             if (bar) {
               bar.querySelectorAll('[data-period]').forEach(function (b) {
                 b.setAttribute('aria-pressed', String(b.dataset.period === period));
               });
-              bar.querySelector('[data-period-label]').textContent = label(period, anchor, bar.dataset.season);
-              var prev = bar.querySelector('[data-period-step="-1"]');
-              var next = bar.querySelector('[data-period-step="1"]');
-              prev.disabled = period === 'season' || r[0] <= first;
-              next.disabled = period === 'season' || r[1] > last;
-              bar.querySelector('[data-period-today]').hidden =
-                period === 'season' || (today >= r[0] && today < r[1]);
             }
           };
           if (bar) {
@@ -1879,12 +1934,15 @@ SCHEDULE_JS = """
                 period = b.dataset.period; store(PERIOD_KEY, period); render();
               });
             });
-            bar.querySelectorAll('[data-period-step]').forEach(function (b) {
-              b.addEventListener('click', function () {
-                anchor = step(period, anchor, +b.dataset.periodStep); render();
-              });
+          }
+          view.querySelectorAll('[data-period-step]').forEach(function (b) {
+            b.addEventListener('click', function () {
+              anchor = step(period, anchor, +b.dataset.periodStep); render();
             });
-            bar.querySelector('[data-period-today]').addEventListener('click', function () {
+          });
+          var todayButton = view.querySelector('[data-period-today]');
+          if (todayButton) {
+            todayButton.addEventListener('click', function () {
               anchor = today; render();
             });
           }
@@ -2027,7 +2085,7 @@ SCHEDULE_NOSCRIPT = """    <noscript>
                they cannot leave. Same specificity as the rules that hide, and
                later, so these win without !important. */
             .sched-filter { display: none; }
-            .period-pick, .period-nav { display: none; }
+            .period-pick { display: none; }
 
             .filter-ours .game:not(.is-ours),
             .filter-ours .week[data-ours="0"] {
