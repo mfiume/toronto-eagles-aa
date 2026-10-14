@@ -427,8 +427,17 @@ _BASE_CSS = """
             box-sizing: border-box;
         }
 
+        /* No double-tap zoom: a quick second tap (say, a near miss on an
+           arrow) must not zoom the page. Pinch zoom still works. */
         html {
             -webkit-text-size-adjust: 100%;
+            touch-action: manipulation;
+        }
+
+        a,
+        button,
+        [role="button"] {
+            touch-action: manipulation;
         }
 
         body {
@@ -924,6 +933,17 @@ _SCHEDULE_CSS = """
             stroke-width: 2.2;
             stroke-linecap: round;
             stroke-linejoin: round;
+        }
+
+        /* A bigger target than the circle, so a near miss still counts. */
+        .period-step {
+            position: relative;
+        }
+
+        .period-step::after {
+            content: "";
+            position: absolute;
+            inset: -7px -4px;
         }
 
         .period-step:hover {
