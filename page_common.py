@@ -858,10 +858,113 @@ _SCHEDULE_CSS = """
             white-space: nowrap;
         }
 
+        /* Names, then the row's icons, then the goals. The two team lines
+           and their goals take rows 1 and 2; the icons span both, and
+           anything else (a game's label, the drawer) runs full width below. */
         .game-teams {
             display: grid;
-            gap: 3px;
+            /* The goals column is kept on every row, so the icons line up. */
+            grid-template-columns: minmax(0, 1fr) auto 1.8rem;
+            row-gap: 3px;
             min-width: 0;
+        }
+
+        .game-teams > * {
+            grid-column: 1 / -1;
+        }
+
+        .game-teams > .r1,
+        .game-teams > .r2 {
+            grid-column: 1;
+        }
+
+        .game-teams > .r1 {
+            grid-row: 1;
+        }
+
+        .game-teams > .r2 {
+            grid-row: 2;
+        }
+
+        .game-teams > .game-goals {
+            grid-column: 3;
+        }
+
+        .game-teams > .game-icons {
+            grid-column: 2;
+            grid-row: 1 / span 2;
+            display: flex;
+            align-items: center;
+            padding-left: 6px;
+        }
+
+        .team-event .game-teams > .game-icons {
+            grid-row: 1;
+        }
+
+        /* Icon links: a 32px target around a small glyph. */
+        .icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            margin: -6px 0;
+            color: var(--ink-3);
+        }
+
+        .icon-btn svg {
+            width: 13px;
+            height: 13px;
+            fill: currentColor;
+        }
+
+        .icon-btn:hover {
+            color: var(--ink);
+        }
+
+        .icon-btn:focus-visible {
+            outline: 2px solid var(--brand);
+            outline-offset: -2px;
+        }
+
+        /* Rewatch: a play icon in a ring. Live: the same in red, the ring
+           pulsing, beside the LIVE flag in the time's place. */
+        .icon-btn.game-watch {
+            position: relative;
+            color: var(--ink-2);
+        }
+
+        .icon-btn.game-watch::before {
+            content: none !important;
+        }
+
+        .icon-btn.game-watch::after {
+            content: "";
+            position: absolute;
+            inset: 5px;
+            border: 1.5px solid currentColor;
+            border-radius: 50%;
+        }
+
+        .icon-btn.game-watch svg {
+            width: 10px;
+            height: 10px;
+            margin-left: 2px;
+        }
+
+        .icon-btn.game-watch.is-live {
+            color: var(--brand);
+        }
+
+        .icon-btn.game-watch.is-live::after {
+            animation: live-pulse 1.6s ease-in-out infinite;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .icon-btn.game-watch.is-live::after {
+                animation: none;
+            }
         }
 
         .game-team {
@@ -1025,8 +1128,7 @@ _SCHEDULE_CSS = """
         }
 
         .game-goals {
-            margin-left: auto;
-            padding-left: 10px;
+            align-self: center;
             font-family: var(--display);
             font-weight: 600;
             font-size: 1rem;
@@ -1043,8 +1145,13 @@ _SCHEDULE_CSS = """
             color: var(--ink-2);
         }
 
-        .game-team.lost .game-goals {
+        .game-goals.won {
+            font-weight: 600;
+        }
+
+        .game-goals.lost {
             font-weight: 500;
+            color: var(--ink-2);
         }
 
         .game-final {
@@ -1376,7 +1483,7 @@ SCHEDULE_JS = """
           a.hidden = state === 'upcoming';
           a.classList.remove('is-upcoming', 'is-live', 'is-rewatch');
           a.classList.add('is-' + state);
-          a.textContent = text;
+          if (!a.classList.contains('icon-btn')) a.textContent = text;
           a.setAttribute('aria-label', text + ': ' + (a.dataset.label || 'LiveBarn'));
         });
         document.querySelectorAll('[data-live-start]').forEach(function (flag) {
