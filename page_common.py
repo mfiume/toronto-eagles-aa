@@ -2187,6 +2187,14 @@ _CHROME_CSS = """
             text-align: right;
             margin-top: 10px;
         }
+
+        /* Under the schedule, on the schedule's own measure, so it lines up
+           with the right edge of the games on a wide screen. */
+        .schedule + .content-meta {
+            max-width: 860px;
+            margin-left: auto;
+            margin-right: auto;
+        }
 """
 
 _RESPONSIVE_CSS = """
