@@ -783,28 +783,33 @@ _SCHEDULE_CSS = """
             color: var(--ink-2);
         }
 
+        /* Segmented controls: a soft grey track, the chosen option on a
+           raised white chip. Quiet enough to sit above the schedule without
+           competing with it. */
         .sched-filter {
             display: inline-flex;
-            border: 1px solid var(--line);
-            background: var(--surface);
+            gap: 2px;
+            padding: 3px;
+            background: #ebebee;
+            border-radius: 999px;
         }
 
         .sched-filter-btn {
             appearance: none;
             border: 0;
+            border-radius: 999px;
             background: transparent;
             cursor: pointer;
-            font-family: var(--display);
+            font-family: var(--body);
             font-weight: 600;
-            font-size: 0.74rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
+            font-size: 0.82rem;
             color: var(--ink-2);
-            padding: 8px 14px;
+            padding: 6px 13px;
             display: inline-flex;
             align-items: baseline;
-            gap: 6px;
-            transition: background 0.15s ease, color 0.15s ease;
+            gap: 5px;
+            white-space: nowrap;
+            transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
         }
 
         .sched-filter-btn:hover {
@@ -812,13 +817,14 @@ _SCHEDULE_CSS = """
         }
 
         .sched-filter-btn[aria-pressed="true"] {
-            background: var(--ink);
-            color: #ffffff;
+            background: var(--surface);
+            color: var(--ink);
+            box-shadow: 0 1px 2px rgba(20, 22, 26, 0.14), 0 0 0 0.5px rgba(20, 22, 26, 0.06);
         }
 
         .sched-filter-btn:focus-visible {
             outline: 2px solid var(--brand);
-            outline-offset: 2px;
+            outline-offset: 1px;
         }
 
         /* --- Week / Month / Season, and the arrows that page through it --- */
@@ -838,31 +844,49 @@ _SCHEDULE_CSS = """
         }
 
         .period-label {
-            font-family: var(--display);
+            font-family: var(--body);
             font-weight: 600;
-            font-size: 0.82rem;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
+            font-size: 0.88rem;
             color: var(--ink);
-            padding: 0 4px;
+            padding: 0 6px;
             text-align: center;
             white-space: nowrap;
         }
 
+        /* Round arrow buttons. */
         .period-step {
             appearance: none;
-            border: 1px solid var(--line);
-            background: var(--surface);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: #ebebee;
             color: var(--ink);
-            width: 30px;
-            height: 34px;
-            font-size: 1.3rem;
-            line-height: 1;
             cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .period-step svg {
+            width: 14px;
+            height: 14px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .period-step:hover {
+            background: #e0e0e4;
         }
 
         .period-step:disabled {
-            color: var(--line);
+            background: #f1f1f3;
+            color: #c4c4ca;
             cursor: default;
         }
 
@@ -871,12 +895,10 @@ _SCHEDULE_CSS = """
             border: 0;
             background: none;
             color: var(--brand);
-            font-family: var(--display);
+            font-family: var(--body);
             font-weight: 600;
-            font-size: 0.74rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            padding: 8px 4px;
+            font-size: 0.82rem;
+            padding: 6px 8px;
             cursor: pointer;
         }
 
@@ -891,8 +913,23 @@ _SCHEDULE_CSS = """
         }
 
         @media (max-width: 519px) {
+            /* Tight enough that the picker, Today and the arrows share one
+               line on a phone, even for a week that spans two months. */
             .period-pick .sched-filter-btn {
-                padding: 8px 7px;
+                padding: 6px 8px;
+            }
+
+            .period-today {
+                padding: 6px 4px;
+            }
+
+            .period-label {
+                padding: 0 4px;
+            }
+
+            .period-step {
+                width: 30px;
+                height: 30px;
             }
         }
 
@@ -933,14 +970,15 @@ _SCHEDULE_CSS = """
 
         @media (max-width: 519px) {
             .sched-head.has-type .sched-filter-btn {
-                padding: 8px 9px;
+                padding: 6px 9px;
                 gap: 4px;
             }
         }
 
         .sched-filter-count {
-            font-size: 0.68rem;
-            opacity: 0.7;
+            font-size: 0.74rem;
+            font-weight: 500;
+            color: var(--ink-3);
             font-variant-numeric: tabular-nums;
         }
 
