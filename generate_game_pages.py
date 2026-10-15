@@ -174,7 +174,7 @@ def tale_of_the_tape(g, standings, games):
     fh = [x for x in team_games(games, home) if x["score"] and x["day"] < g["day"]]
     if fa or fh:
         lines.append(f'<div class="tape-row"><span class="tape-val form">{form_chips(fa, away) or "–"}</span>'
-                     f'<span class="tape-label">Form before</span>'
+                     f'<span class="tape-label">Last 5 before</span>'
                      f'<span class="tape-val right form">{form_chips(fh, home) or "–"}</span></div>')
     return f"""
                 <section class="team-block">

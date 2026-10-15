@@ -42,10 +42,16 @@ class Sections(unittest.TestCase):
         played = [g for g in tp.team_games(GAMES, "Mississauga Beast") if g["score"]]
         html = tp.form(played, "Mississauga Beast")
         self.assertLess(html.index("form-w"), html.index("form-l"))
+        self.assertIn("Last 3 games", html)
         self.assertIn("form-t", html)
 
     def test_no_points_path_before_two_games(self):
         self.assertEqual(tp.points_path(GAMES[:1], "Toronto Eagles"), "")
+
+    def test_streak_reads_as_a_streak(self):
+        self.assertEqual(tp.streak_text("Tied 1"), "Tied last game")
+        self.assertEqual(tp.streak_text("Won 3"), "Won last 3")
+        self.assertEqual(tp.streak_text("–"), "")
 
     def test_page_name(self):
         self.assertEqual(tp.page_name("The Attack"), "team-the-attack.html")
