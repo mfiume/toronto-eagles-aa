@@ -30,7 +30,7 @@ import config
 import page_common
 from generate_schedule_html import (aware, clock, countdown, directions_link, format_score,
                                     game_row, parse_game_date, parse_game_time, season_rows,
-                                    watch_link, next_game_card)
+                                    watch_link, next_game_card, game_page)
 from season_schedule import parse_score, slug
 
 
@@ -120,17 +120,23 @@ def hero(row, place, total):
 """
 
 
-def form(played, team):
-    """The last five results as chips, oldest on the left."""
-    last = played[-5:]
-    if not last:
-        return ""
+def form_chips(played, team):
+    """The last five results as W / L / T chips, oldest on the left."""
     chips = ""
-    for g in last:
+    for g in played[-5:]:
         s = side_of(g, team)
         tip = (f"{s['result']} {s['gf']}–{s['ga']} {'vs' if s['home'] else 'at'} {s['opponent']}, "
                f"{g['day'].strftime('%b')} {g['day'].day}")
         chips += f'<span class="form-chip form-{s["result"].lower()}" title="{escape(tip)}">{s["result"]}</span>'
+    return chips
+
+
+def form(played, team):
+    """The form block: the last five results."""
+    last = played[-5:]
+    if not last:
+        return ""
+    chips = form_chips(played, team)
     return f"""
                 <section class="team-block">
                     <div class="block-head"><h3>Form</h3><span>Last {len(last)}, newest on the right</span></div>
@@ -307,7 +313,7 @@ def next_game(upcoming, today, now):
     rink_html = (directions_link(rink, "next-rink", rink) or f"<span>{escape(rink)}</span>") \
         + watch_link(g["row"], aware(g["start"]), now, css_class="game-watch next-watch")
     return next_game_card(g["row"].get("Away", ""), g["row"].get("Home", ""), g["day"],
-                          g["row"].get("Time", ""), rink_html, today)
+                          g["row"].get("Time", ""), rink_html, today, href=game_page(g["row"]))
 
 
 def games_section(title, games, now, note=""):

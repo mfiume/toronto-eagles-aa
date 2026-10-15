@@ -1501,6 +1501,20 @@ _SCHEDULE_CSS = """
             display: none;
         }
 
+        /* A league game's row leads to its page; what details it has show. */
+        .game.is-link,
+        .next.is-link {
+            cursor: pointer;
+        }
+
+        .game.is-link:hover {
+            background: #fafafb;
+        }
+
+        .game.is-link .game-details {
+            display: flex;
+        }
+
         .game.has-details.is-open .game-details {
             display: flex;
         }
@@ -1837,6 +1851,19 @@ SCHEDULE_JS = """
             a.removeAttribute('target');
           });
         }
+
+        // A league game's row, or the next-game card, opens the game's own
+        // page on tap (or Enter), except when the tap is on a link or button
+        // inside it, such as a team's name or LiveBarn.
+        document.querySelectorAll('[data-href]').forEach(function (el) {
+          el.addEventListener('click', function (event) {
+            if (event.target.closest('a, button')) return;
+            location.href = el.dataset.href;
+          });
+          el.addEventListener('keydown', function (event) {
+            if (event.target === el && event.key === 'Enter') location.href = el.dataset.href;
+          });
+        });
 
         // A row with details opens on tap (or Enter / Space), except when
         // the tap is on a link inside it, such as the rink's directions.
@@ -2855,4 +2882,328 @@ TEAM_CSS = """
             border: 1px solid var(--line);
         }
 
+"""
+
+
+# The game pages (generate_game_pages.py), on top of TEAM_CSS.
+GAME_CSS = """
+        /* --- The matchup --- */
+        .match-hero {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-top: 4px solid var(--ink);
+            padding: clamp(14px, 4vw, 22px);
+            display: grid;
+            gap: 16px;
+        }
+
+        .match-hero.is-ours {
+            border-top-color: var(--brand);
+        }
+
+        .match-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 10px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+        }
+
+        .match-status {
+            font-family: var(--display);
+            font-size: 0.82rem;
+            letter-spacing: 0.1em;
+            color: var(--ink);
+        }
+
+        .match-status.upcoming {
+            color: var(--brand);
+        }
+
+        .match-face {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            align-items: center;
+            gap: 10px;
+        }
+
+        .match-team {
+            display: grid;
+            justify-items: center;
+            text-align: center;
+            gap: 3px;
+            min-width: 0;
+        }
+
+        .match-team .team-logo {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 6px;
+        }
+
+        .match-team .team-mono {
+            font-size: 1.15rem;
+        }
+
+        .match-name {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: clamp(0.95rem, 3.6vw, 1.2rem);
+            line-height: 1.1;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .match-team.us .match-name {
+            color: var(--brand);
+        }
+
+        .match-role {
+            font-size: 0.66rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+        }
+
+        .match-record {
+            font-size: 0.78rem;
+            color: var(--ink-3);
+        }
+
+        .match-middle {
+            display: grid;
+            justify-items: center;
+            gap: 6px;
+        }
+
+        .match-score {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: clamp(2.4rem, 11vw, 3.2rem);
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+            display: flex;
+            gap: 8px;
+        }
+
+        .match-score .dash {
+            color: var(--ink-3);
+        }
+
+        .match-score.decided span:not(.win):not(.dash) {
+            color: var(--ink-3);
+        }
+
+        .match-time {
+            display: grid;
+            justify-items: center;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: clamp(1.4rem, 6vw, 1.8rem);
+            line-height: 1.1;
+        }
+
+        .match-date {
+            font-family: var(--body);
+            font-weight: 500;
+            font-size: 0.8rem;
+            color: var(--ink-3);
+        }
+
+        .match-result {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 3px 9px;
+            border-radius: 999px;
+        }
+
+        .match-result.result-w {
+            background: #e5f4ea;
+            color: #0a7a33;
+        }
+
+        .match-result.result-l {
+            background: #fbe9eb;
+            color: var(--brand);
+        }
+
+        .match-result.result-t {
+            background: #ebebee;
+            color: var(--ink-2);
+        }
+
+        .match-hero .game-live {
+            margin: 0;
+        }
+
+        /* --- Watch and go --- */
+        .match-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: -8px;
+        }
+
+        .match-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            font-weight: 600;
+            font-size: 0.88rem;
+            color: var(--ink);
+            text-decoration: none;
+        }
+
+        .match-btn:hover {
+            border-color: var(--ink-3);
+        }
+
+        .match-btn img {
+            width: 15px;
+            height: 17px;
+        }
+
+        .match-btn.watch.is-live {
+            border-color: var(--brand);
+            color: var(--brand);
+        }
+
+        /* --- When and where --- */
+        .facts {
+            background: var(--surface);
+            border: 1px solid var(--line);
+        }
+
+        .fact {
+            display: grid;
+            grid-template-columns: 70px minmax(0, 1fr);
+            gap: 12px;
+            padding: 12px 14px;
+            align-items: baseline;
+        }
+
+        .fact + .fact {
+            border-top: 1px solid var(--line);
+        }
+
+        .fact-label {
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+        }
+
+        .fact-value {
+            font-size: 0.94rem;
+            color: var(--ink);
+        }
+
+        .match-place {
+            color: inherit;
+            text-decoration: underline dotted;
+            text-decoration-color: var(--ink-3);
+            text-underline-offset: 3px;
+        }
+
+        .match-sub {
+            display: block;
+            margin-top: 2px;
+            font-size: 0.8rem;
+            color: var(--ink-3);
+        }
+
+        /* --- Tale of the tape: the two teams side by side --- */
+        .tape {
+            background: var(--surface);
+            border: 1px solid var(--line);
+        }
+
+        .tape-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+        }
+
+        .tape-row + .tape-row {
+            border-top: 1px solid var(--line);
+        }
+
+        .tape-label {
+            font-size: 0.66rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+            text-align: center;
+        }
+
+        .tape-val {
+            font-family: var(--display);
+            font-weight: 500;
+            font-size: 1.05rem;
+            color: var(--ink-2);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .tape-val.right {
+            text-align: right;
+        }
+
+        .tape-val.better {
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .tape-head .tape-val {
+            font-family: var(--body);
+            font-weight: 600;
+            font-size: 0.86rem;
+            color: var(--ink);
+        }
+
+        .tape-val.form {
+            display: flex;
+            gap: 4px;
+        }
+
+        .tape-val.form.right {
+            justify-content: flex-end;
+        }
+
+        .tape .form-chip {
+            width: 22px;
+            height: 22px;
+            font-size: 0.72rem;
+        }
+
+        /* The game this page is about, in its season series. */
+        .game.is-current {
+            background: #eeeef1;
+            cursor: default;
+        }
+
+        .game.is-current .game-when::after {
+            content: "This game";
+            display: block;
+            margin-top: 3px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+        }
 """
