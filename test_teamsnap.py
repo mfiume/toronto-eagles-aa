@@ -113,8 +113,10 @@ class ParseCalendar(unittest.TestCase):
 class MatchLeagueGames(unittest.TestCase):
     def test_league_game_takes_teamsnap_details_once(self):
         events = teamsnap.events_from_ics(SAMPLE_ICS)
-        html = gen.build_block([LEAGUE_GAME], date(2026, 10, 13), "toronto eagles", events)
-        self.assertIn('<span class="detail">Arrive 12:20 PM</span><span class="detail">White jersey</span>', html)
+        # On the 16th the league game is the next one, so its card carries
+        # TeamSnap's arrival time and jersey; its row does not.
+        html = gen.build_block([LEAGUE_GAME], date(2026, 10, 16), "toronto eagles", events)
+        self.assertEqual(html.count("Arrive 12:20 PM · White jersey"), 1)
         # The TeamSnap copy of the league game is not listed again.
         self.assertNotIn("Westmall", html)
         # The exhibition game is ours only in TeamSnap, so it is listed.
