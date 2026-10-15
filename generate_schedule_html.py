@@ -276,6 +276,26 @@ def arrival(event):
 
 # --- Rows ---------------------------------------------------------------------
 
+_TEAMS_WITH_PAGES = None
+
+
+def team_name_html(name):
+    """
+    A team's name, linked to its page (generate_team_pages.py) when it has
+    one: every team in the standings does, a TeamSnap-only opponent does not.
+    """
+    global _TEAMS_WITH_PAGES
+    if _TEAMS_WITH_PAGES is None:
+        try:
+            with open("standings.json", encoding="utf-8") as f:
+                _TEAMS_WITH_PAGES = {r.get("Team") for r in json.load(f).get("standings", [])}
+        except (OSError, ValueError):
+            _TEAMS_WITH_PAGES = set()
+    if name in _TEAMS_WITH_PAGES:
+        return f'<a class="team-link" href="team-{season_schedule.slug(name)}.html">{escape(name)}</a>'
+    return escape(name)
+
+
 def game_row(game, day, our_team, team=None, start=None, now=None):
     """
     One league game as a compact row: day and time, then both teams stacked,
@@ -308,7 +328,7 @@ def game_row(game, day, our_team, team=None, start=None, now=None):
         goals_html = (f'<span class="game-goals r{row} {result}">{goals}</span>'
                       if score is not None else '')
         return (f'<div class="{" ".join(classes)}">{page_common.team_logo(name)}'
-                f'<span class="game-name">{escape(name)}</span></div>{goals_html}')
+                f'<span class="game-name">{team_name_html(name)}</span></div>{goals_html}')
 
     rink_text = rink_cell(game.get('Arena', ''))
     icons = row_icons(watch_link(game, start, now, "icon-btn game-watch", icon=True))
@@ -349,7 +369,7 @@ def team_game_row(event, start, now=None):
     def team_line(name, row):
         cls = f'game-team r{row} us' if name == us else f'game-team r{row}'
         return (f'<div class="{cls}">{page_common.team_logo(name)}'
-                f'<span class="game-name">{escape(name)}</span></div>')
+                f'<span class="game-name">{team_name_html(name)}</span></div>')
 
     time_text = clock(start.time()) if event.get("timed") else "Time TBA"
     details = drawer(venue_cell(event.get("venue"), event.get("address")), detail_text(arrival(event)),
@@ -396,10 +416,10 @@ def next_game_card(away, home, day, time_text, rink_html, today, extra=""):
                         <span class="next-when">{countdown(day, today)}</span></div>
                     <div class="face">
                         <div class="face-team">{page_common.team_logo(away)}
-                            <span>{escape(away)}<span class="face-role">Away</span></span></div>
+                            <span>{team_name_html(away)}<span class="face-role">Away</span></span></div>
                         <div class="face-vs">VS</div>
                         <div class="face-team home">{page_common.team_logo(home)}
-                            <span>{escape(home)}<span class="face-role">Home</span></span></div>
+                            <span>{team_name_html(home)}<span class="face-role">Home</span></span></div>
                     </div>
                     <div class="next-foot">
                         <span><strong>{day.strftime('%A, %B')} {day.day}</strong></span>

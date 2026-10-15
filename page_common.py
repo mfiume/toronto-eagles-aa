@@ -481,6 +481,22 @@ _BASE_CSS = """
         }
 """
 
+_LINK_CSS = """
+        /* A team's name, wherever it is listed, leads to its page. */
+        .team-link {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .team-link:hover .team-cell > span,
+        .team-link:focus-visible .team-cell > span,
+        a.team-link:hover:not(:has(.team-cell)),
+        a.team-link:focus-visible:not(:has(.team-cell)) {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+"""
+
 _TABLE_CSS = """
         .table-wrapper {
             background: var(--surface);
@@ -2406,7 +2422,7 @@ def page_end():
     return ""
 
 
-PAGE_CSS = (_TOKENS_CSS + _BASE_CSS + _MASTHEAD_CSS + _TABLE_CSS
+PAGE_CSS = (_TOKENS_CSS + _BASE_CSS + _LINK_CSS + _MASTHEAD_CSS + _TABLE_CSS
             + _SCHEDULE_CSS + _CHROME_CSS + _SPONSOR_CSS + _RESPONSIVE_CSS)
 
 # Playoff-page extras: the round headers and the format box.
@@ -2839,15 +2855,4 @@ TEAM_CSS = """
             border: 1px solid var(--line);
         }
 
-        /* A team's name, wherever it is listed, leads to its page. */
-        .team-link {
-            color: inherit;
-            text-decoration: none;
-        }
-
-        .team-link:hover .team-cell > span,
-        .team-link:focus-visible .team-cell > span {
-            text-decoration: underline;
-            text-underline-offset: 3px;
-        }
 """
