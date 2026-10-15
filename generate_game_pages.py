@@ -61,7 +61,7 @@ def matchup(g, standings, today, now):
         record = ""
         if st:
             played = str(st.get("GP", "0")).strip() not in ("", "0")
-            record = f'{ordinal(st["Position"])} · {st.get("W-L-T") if played else "0-0-0"}'
+            record = f'{page_common.place_label(st)} · {st.get("W-L-T") if played else "0-0-0"}'
         return f"""<div class="match-team{' us' if team == config.TEAM_NAME else ''}">
                         {page_common.team_logo(team, st.get('Logo') if st else None)}
                         <span class="match-name">{team_name_html(team)}</span>
@@ -160,7 +160,7 @@ def tale_of_the_tape(g, standings, games):
         lines.append(f'<div class="tape-row"><span class="tape-val{cls_a}">{a}</span>'
                      f'<span class="tape-label">{label}</span><span class="tape-val right{cls_h}">{h}</span></div>')
 
-    line("Place", ordinal(sa["Position"]), ordinal(sh["Position"]))
+    line("Place", page_common.place_label(sa), page_common.place_label(sh))
     line("Record", sa.get("W-L-T") if played(sa) else "0-0-0", sh.get("W-L-T") if played(sh) else "0-0-0")
     line("Points", sa.get("PTS") or "0", sh.get("PTS") or "0", "high")
     if played(sa) or played(sh):

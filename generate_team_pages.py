@@ -89,7 +89,7 @@ def team_games(games, team):
 
 # --- Sections -------------------------------------------------------------------
 
-def hero(row, place, total):
+def hero(row, total):
     team = row["Team"]
     ours = team == config.TEAM_NAME
     streak = str(row.get("Streak", "")).strip()
@@ -99,7 +99,7 @@ def hero(row, place, total):
              ("GP", row.get("GP") or "0")]
     stat_html = "".join(f'<div class="hero-stat"><span class="hero-stat-num">{escape(str(v))}</span>'
                         f'<span class="hero-stat-label">{k}</span></div>' for k, v in stats)
-    line = f"{ordinal(place)} of {total} in {page_common.division_label()}"
+    line = f"{page_common.place_label(row)} of {total} in {page_common.division_label()}"
     if streak and streak != "–":
         line += f" · {escape(streak)}"
     return f"""
@@ -336,7 +336,7 @@ def team_page(row, standings, games, timestamp, today, now):
     played = [g for g in mine if g["score"]]
     upcoming = [g for g in mine if not g["score"] and g["day"] >= today]
     ours = team == config.TEAM_NAME
-    body = hero(row, row["Position"], len(standings))
+    body = hero(row, len(standings))
     body += next_game(upcoming, today, now)
     body += form(played, team)
     body += scouting(row, standings, played, team)

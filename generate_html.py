@@ -95,7 +95,7 @@ def generate_html():
         if standings:
             headers = list(standings[0].keys())
             for header in headers:
-                if not header or header == 'Logo':
+                if not header or header == 'Logo' or header in page_common.RANK_FIELDS:
                     continue
                 if header == 'Position':
                     # Unlabelled rank column.
@@ -120,12 +120,13 @@ def generate_html():
             html += f"                        <tr{row_class}>\n"
             for i, (key, value) in enumerate(before_first_game(row).items()):
                 # Skip empty column names
-                if key == '':
+                if key == '' or key in page_common.RANK_FIELDS:
                     continue
 
                 # Handle Position column specially
                 if key == 'Position':
-                    html += f'                            <td class="stat rank">{value}</td>\n'
+                    # The place, shared ("T5") when the tie-breakers cannot separate teams.
+                    html += f'                            <td class="stat rank">{page_common.rank_label(row)}</td>\n'
                 elif key == 'Logo':
                     continue  # Skip Logo column, it will be included with Team
                 elif key == 'Team':  # Team name
