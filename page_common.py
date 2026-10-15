@@ -2502,3 +2502,352 @@ PLAYOFF_CSS = """
             margin-top: 6px;
         }
 """
+
+
+# The team pages (generate_team_pages.py): a hero for the team, then blocks
+# that share one heading style with the schedule's.
+TEAM_CSS = """
+        .team-page {
+            max-width: 860px;
+            margin: 0 auto;
+            display: grid;
+            gap: 22px;
+        }
+
+        .team-back {
+            justify-self: start;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--ink-2);
+            text-decoration: none;
+            margin-bottom: -10px;
+        }
+
+        .team-back:hover {
+            color: var(--ink);
+        }
+
+        /* --- The team --- */
+        .team-hero {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-top: 4px solid var(--ink);
+            padding: clamp(16px, 4vw, 24px);
+            display: grid;
+            gap: 18px;
+        }
+
+        .team-hero.is-ours {
+            border-top-color: var(--brand);
+        }
+
+        .team-hero-id {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .team-hero-id .team-logo {
+            width: 68px;
+            height: 68px;
+        }
+
+        .team-hero-id .team-mono {
+            font-size: 1.3rem;
+        }
+
+        .team-hero-name {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: clamp(1.5rem, 5vw, 2.1rem);
+            line-height: 1.02;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .team-hero.is-ours .team-hero-name {
+            color: var(--brand);
+        }
+
+        .team-hero-line {
+            margin-top: 6px;
+            font-size: 0.86rem;
+            color: var(--ink-3);
+        }
+
+        .team-hero-numbers {
+            display: flex;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 14px 26px;
+            padding-top: 16px;
+            border-top: 1px solid var(--line);
+        }
+
+        .team-hero-record,
+        .hero-stat {
+            display: grid;
+            gap: 2px;
+        }
+
+        .team-hero-record > span:first-child {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: clamp(2rem, 7vw, 2.6rem);
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .hero-stat-num {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 1.35rem;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .hero-stat-label {
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+        }
+
+        /* --- Blocks --- */
+        .block-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 0 2px 8px;
+        }
+
+        .block-head h3 {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .block-head span {
+            font-size: 0.8rem;
+            color: var(--ink-3);
+        }
+
+        /* Form: the last five, as chips. */
+        .form-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .form-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+
+        .form-w {
+            background: #e5f4ea;
+            color: #0a7a33;
+        }
+
+        .form-l {
+            background: #fbe9eb;
+            color: var(--brand);
+        }
+
+        .form-t {
+            background: #ebebee;
+            color: var(--ink-2);
+        }
+
+        /* Scouting: tiles on a hairline grid. */
+        /* Two across on a phone, three on a wide screen; the last tile
+           stretches to close the row, so no empty cell shows. */
+        .scout-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1px;
+            background: var(--line);
+            border: 1px solid var(--line);
+        }
+
+        .scout-tile:last-child:nth-child(odd) {
+            grid-column: span 2;
+        }
+
+        @media (min-width: 620px) {
+            .scout-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .scout-tile:last-child:nth-child(odd) {
+                grid-column: auto;
+            }
+
+            .scout-tile:last-child:nth-child(3n + 1) {
+                grid-column: span 3;
+            }
+
+            .scout-tile:last-child:nth-child(3n + 2) {
+                grid-column: span 2;
+            }
+        }
+
+        .scout-tile {
+            background: var(--surface);
+            padding: 12px 14px;
+            display: grid;
+            gap: 3px;
+            align-content: start;
+        }
+
+        .scout-label {
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+        }
+
+        .scout-value {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 1.45rem;
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .scout-note {
+            font-size: 0.76rem;
+            color: var(--ink-3);
+        }
+
+        /* Points path: points by game against the most possible (dashed). */
+        .points-path {
+            display: block;
+            width: 100%;
+            height: 130px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .points-path .pace {
+            stroke: var(--line);
+            stroke-width: 1.5;
+            stroke-dasharray: 5 5;
+            vector-effect: non-scaling-stroke;
+        }
+
+        .points-path .path {
+            fill: none;
+            stroke: var(--ink);
+            stroke-width: 2.5;
+            stroke-linejoin: round;
+            vector-effect: non-scaling-stroke;
+        }
+
+        .points-path .dots {
+            fill: var(--ink);
+        }
+
+        .team-page.is-ours .points-path .path {
+            stroke: var(--brand);
+        }
+
+        .team-page.is-ours .points-path .dots {
+            fill: var(--brand);
+        }
+
+        /* Versus the Eagles. */
+        .series {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 6px 16px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--brand);
+            padding: 12px 14px;
+            margin-bottom: 10px;
+        }
+
+        .series-record {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+
+        .series-num {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 1.8rem;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .series-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+        }
+
+        .series-next {
+            font-size: 0.84rem;
+            color: var(--ink-2);
+        }
+
+        /* The season-series table has no rank column, so its team column
+           pins at the very left. */
+        .series-table td.team-name,
+        .series-table th.team-col {
+            left: 0;
+        }
+
+        /* Games, as the schedule shows them, a heading per month. */
+        .team-games .week-head {
+            padding: 6px 2px 6px;
+        }
+
+        .team-games .week-label {
+            font-size: 0.8rem;
+            color: var(--ink-3);
+        }
+
+        .team-games .week-games + .week-head {
+            margin-top: 8px;
+        }
+
+        .team-empty {
+            padding: 24px 12px;
+            text-align: center;
+            color: var(--ink-3);
+            background: var(--surface);
+            border: 1px solid var(--line);
+        }
+
+        /* A team's name, wherever it is listed, leads to its page. */
+        .team-link {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .team-link:hover .team-cell > span,
+        .team-link:focus-visible .team-cell > span {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+"""

@@ -7,6 +7,7 @@ import json
 
 import config
 import page_common
+from season_schedule import slug
 
 # Before a team has played, the GTHL leaves its record columns blank. With no
 # games played a record is 0-0-0 by definition, so say so; the averages and the
@@ -62,7 +63,7 @@ def generate_html():
 {page_common.FONT_LINK}
 {page_common.FAVICON_LINKS}
     <style>
-{page_common.PAGE_CSS}    </style>
+{page_common.PAGE_CSS}{page_common.TEAM_CSS}    </style>
 </head>
 <body>
     <div class="container">
@@ -129,8 +130,10 @@ def generate_html():
                     continue  # Skip Logo column, it will be included with Team
                 elif key == 'Team':  # Team name
                     logo = page_common.team_logo(value, row.get('Logo'))
+                    # The team's name leads to its own page.
                     html += (f'                            <td class="team-name">'
-                             f'<span class="team-cell">{logo}<span>{value}</span></span></td>\n')
+                             f'<a class="team-link" href="team-{slug(value)}.html">'
+                             f'<span class="team-cell">{logo}<span>{value}</span></span></a></td>\n')
                 elif key in ['DIFF', 'GD', '+/-']:  # Goal differential
                     try:
                         diff_val = int(value) if value else 0
