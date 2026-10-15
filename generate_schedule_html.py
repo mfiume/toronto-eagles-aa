@@ -310,10 +310,9 @@ def game_row(game, day, our_team, team=None, start=None, now=None):
     """
     One league game as a compact row: day and time, then both teams stacked,
     then the LiveBarn play icon, then each team's goals once played. Ours look
-    the same as everyone else's apart from the red bar, and an upcoming one of
-    ours shows where (with directions) and, logged in, arrival time and
-    jersey. A tap opens the game's own page. During the first hour "LIVE"
-    stands in for the start time.
+    the same as everyone else's apart from the red bar. A tap opens the
+    game's own page, which has where and everything else. During the first
+    hour "LIVE" stands in for the start time.
 
     Once played, "Final" takes the time's place and the winner is in bold, so a
     score never reads as a time. Our games add a W, L or T. The GTHL writes the
@@ -340,7 +339,6 @@ def game_row(game, day, our_team, team=None, start=None, now=None):
         return (f'<div class="{" ".join(classes)}">{page_common.team_logo(name)}'
                 f'<span class="game-name">{team_name_html(name)}</span></div>{goals_html}')
 
-    rink_text = rink_cell(game.get('Arena', ''))
     icons = row_icons(watch_link(game, start, now, "icon-btn game-watch", icon=True))
 
     if score is not None:
@@ -353,15 +351,12 @@ def game_row(game, day, our_team, team=None, start=None, now=None):
                        f'title="{ {"W": "Win", "L": "Loss", "T": "Tie"}[result] }">{result}</span>')
         when = f'<span class="game-time">{status}</span>'
         teams = team_line(away, a, h, 1) + team_line(home, h, a, 2)
-        details = ''   # Played: the score says it all; the game page has the rest.
+        details = ''   # The game page has the rest.
     else:
         when = (f'<span class="game-time">{escape(game.get("Time", ""))}</span>'
                 + live_flag(start, now))
         teams = team_line(away, 0, 0, 1) + team_line(home, 0, 0, 2)
-        # Ours keep where, and (logged in) arrival and jersey, on the row;
-        # everyone else's are on the game page.
-        details = drawer(rink_text, detail_text(arrival(team)),
-                         detail_text(wear_text(team.get("wear"), True) if team else "")) if ours else ""
+        details = ''   # Where it is, and the rest, are on the game page.
 
     live = score is None and start is not None and stream_state(start, now) == 'live'
     classes = f"game{' is-ours' if ours else ''}{' is-final' if score else ''}{' is-live' if live else ''}"
