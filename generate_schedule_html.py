@@ -20,6 +20,7 @@ from html import escape
 
 import arenas
 import config
+import livebarn
 import page_common
 import season_schedule
 from season_schedule import parse_score
@@ -347,6 +348,30 @@ def game_row(game, day, our_team, team=None, start=None, now=None):
 """
 
 
+_SURFACES = None
+
+
+def event_stream(event):
+    """
+    A LiveBarn link for a team-calendar game, when its venue is a pad the
+    GTHL's own links have taught us (livebarn.py); otherwise ''.
+    """
+    global _SURFACES
+    if _SURFACES is None:
+        _SURFACES = livebarn.load()
+    if event.get("kind") != "game" or not event.get("timed"):
+        return ""
+    surface = livebarn.surface_for(event.get("venue"), event.get("address"), _SURFACES)
+    return livebarn.url(surface, datetime.fromisoformat(event["start"])) if surface else ""
+
+
+def event_as_game(event):
+    """A team-calendar game in the shape watch_link reads."""
+    us, them = config.TEAM_NAME, event["opponent"]
+    away, home = (them, us) if event["home"] else (us, them)
+    return {"Away": away, "Home": home, "Stream": event_stream(event)}
+
+
 def event_page(event):
     """
     The file name of a team-calendar event's own page (generate_event_pages.py).
@@ -371,9 +396,11 @@ def team_game_row(event, start, now=None):
                 f'<span class="game-name">{team_name_html(name)}</span></div>')
 
     time_text = clock(start.time()) if event.get("timed") else "Time TBA"
-    tag = (f'<div class="game-icons"><span class="event-tag soft">{escape(event["label"])}</span></div>'
-           if event.get("label") else "")
     begins = aware(start) if event.get("timed") else None
+    watch = (watch_link(event_as_game(event), begins, now, "icon-btn game-watch", icon=True)
+             if begins and now else "")
+    label = f'<span class="event-tag soft">{escape(event["label"])}</span>' if event.get("label") else ""
+    tag = f'<div class="game-icons">{watch}{label}</div>' if watch or label else ""
     flag = live_flag(begins, now) if now else ''
     live = bool(begins and now and stream_state(begins, now) == 'live')
     return f"""                    <div {row_attrs(f"game is-ours team-game{' is-live' if live else ''}", "", day=start.date(), href=event_page(event))}>
@@ -535,7 +562,9 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
             us, them = config.TEAM_NAME, e["opponent"]
             away, home = (them, us) if e["home"] else (us, them)
             extra = extra_line(e.get("label"), arrival(e), wear_text(e.get("wear"), True))
-            rink_html = venue_cell(e.get("venue"), e.get("address"), "next-rink")
+            rink_html = venue_cell(e.get("venue"), e.get("address"), "next-rink") + watch_link(
+                event_as_game(e), aware(start) if e.get("timed") else None, now,
+                css_class="game-watch next-watch")
             candidates.append((start, (away, home, start.date(),
                                        clock(start.time()) if e.get("timed") else "Time TBA",
                                        rink_html, today,
