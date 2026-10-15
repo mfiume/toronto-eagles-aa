@@ -1490,6 +1490,22 @@ _SCHEDULE_CSS = """
             color: #ffffff;
         }
 
+        /* A team event's second line: where, as a game row's second team. */
+        .event-where {
+            font-size: 0.86rem;
+            line-height: 1.25;
+            color: var(--ink-3);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* "Exhibition", "Preseason": a quiet tag where LiveBarn would be. */
+        .event-tag.soft {
+            background: #ebebee;
+            color: var(--ink-2);
+        }
+
         /* Arrival time and what to wear stay folded away until the row is
            tapped; the next-game card shows them open. There is no marker on
            purpose: it is a quiet extra, not something to learn. */
@@ -1851,6 +1867,14 @@ SCHEDULE_JS = """
             a.removeAttribute('target');
           });
         }
+
+        // A locked team-event page's own Team Login button.
+        document.querySelectorAll('[data-open-login]').forEach(function (b) {
+          b.addEventListener('click', function (event) {
+            event.preventDefault();
+            openLogin();
+          });
+        });
 
         // A league game's row, or the next-game card, opens the game's own
         // page on tap (or Enter), except when the tap is on a link or button
@@ -3205,5 +3229,104 @@ GAME_CSS = """
             letter-spacing: 0.08em;
             text-transform: uppercase;
             color: var(--ink-3);
+        }
+"""
+
+
+# Team-event pages (generate_event_pages.py), on top of TEAM_CSS and GAME_CSS.
+# Each kind has its own accent on the top bar and label.
+EVENT_CSS = """
+        .event-body {
+            display: grid;
+            gap: 22px;
+        }
+
+        .event-hero.kind-practice {
+            border-top-color: #2f6fb3;
+        }
+
+        .event-hero.kind-dryland {
+            border-top-color: #e07b1a;
+        }
+
+        .event-hero.kind-tournament {
+            border-top-color: #c9a227;
+        }
+
+        .event-hero.kind-game {
+            border-top-color: var(--brand);
+        }
+
+        .event-hero.kind-practice .match-top > span:first-child {
+            color: #2f6fb3;
+        }
+
+        .event-hero.kind-dryland .match-top > span:first-child {
+            color: #c4650f;
+        }
+
+        .event-hero.kind-tournament .match-top > span:first-child {
+            color: #a8841a;
+        }
+
+        .event-hero.kind-game .match-top > span:first-child {
+            color: var(--brand);
+        }
+
+        .match-status.live {
+            color: var(--brand);
+        }
+
+        .event-name {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: clamp(1.8rem, 8vw, 2.6rem);
+            line-height: 1;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .event-when {
+            margin-top: 8px;
+            font-size: 0.95rem;
+            color: var(--ink-2);
+        }
+
+        .event-actions {
+            margin-top: 10px;
+        }
+
+        .swatch {
+            display: inline-block;
+            width: 0.8em;
+            height: 0.8em;
+            margin-right: 7px;
+            border-radius: 50%;
+            box-shadow: inset 0 0 0 1px rgba(20, 22, 26, 0.25);
+            vertical-align: 0.02em;
+        }
+
+        .event-locked {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-top: 4px solid var(--ink);
+            padding: 24px 18px;
+            display: grid;
+            gap: 10px;
+            justify-items: start;
+        }
+
+        .event-locked h2 {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 1.4rem;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .event-locked p {
+            color: var(--ink-2);
+            font-size: 0.92rem;
+            margin-bottom: 6px;
         }
 """
