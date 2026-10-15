@@ -30,7 +30,8 @@ import arenas
 import config
 import page_common
 import team_crypto
-from generate_schedule_html import (EVENT_TITLES, LOGIN_DIALOG, aware, clock, countdown, event_page,
+from generate_schedule_html import (EVENT_TITLES, LOGIN_DIALOG, PLAY_ICON, aware, clock, countdown,
+                                    event_page, event_stream, stream_state,
                                     load_team_events, maps_link, match_team_games, parse_game_date,
                                     parse_game_time, season_rows, short_venue, team_game_row,
                                     team_name_html)
@@ -176,6 +177,19 @@ def facts(event):
 """
 
 
+def watch(event, now):
+    """LiveBarn for a game at a pad we know (see livebarn.py)."""
+    url = event_stream(event)
+    if not url:
+        return ""
+    state = stream_state(aware(start_of(event)), now)
+    text = {"upcoming": "Watch live on LiveBarn", "live": "Live now on LiveBarn",
+            "rewatch": "Rewatch on LiveBarn"}[state]
+    return (f'\n                <div class="match-actions"><a class="match-btn watch is-{state}" '
+            f'href="{escape(url)}" target="_blank" rel="noopener noreferrer">{PLAY_ICON}'
+            f'<span>{text}</span></a></div>\n')
+
+
 def where(event):
     venue = short_venue(event.get("venue"))
     address = event.get("address")
@@ -225,7 +239,7 @@ def tournament_games(event, events, now):
 
 
 def detail(event, events, now, today):
-    html = hero(event, now, today) + facts(event) + where(event)
+    html = hero(event, now, today) + watch(event, now) + facts(event) + where(event)
     if event["kind"] == "tournament":
         html += tournament_games(event, events, now)
     return html
@@ -303,7 +317,10 @@ def generate(today=None):
         written.append(name)
     for stale in set(glob.glob("event-*.html")) - set(written):
         os.remove(stale)
-    print(f"Generated {len(written)} event pages")
+    games = [e for e in events if e["kind"] == "game" and e["uid"] not in used]
+    # Counts only: the log of a public repository is public.
+    print(f"Generated {len(written)} event pages; LiveBarn for "
+          f"{sum(1 for e in games if event_stream(e))} of {len(games)} team-calendar games")
     return written
 
 

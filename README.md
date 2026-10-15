@@ -136,7 +136,7 @@ https://raw.githubusercontent.com/mfiume/toronto-eagles-aa/main/eagles_schedule.
 
 ```bash
 pip install -r requirements.txt
-python -m unittest test_season_schedule test_schedule_parse test_arenas test_teamsnap test_team_pages test_standings_rules   # unit tests, no network
+python -m unittest test_season_schedule test_schedule_parse test_arenas test_teamsnap test_team_pages test_standings_rules test_livebarn   # unit tests, no network
 python test_scraper.py                    # live scrape
 ```
 
