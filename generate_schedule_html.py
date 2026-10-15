@@ -240,11 +240,13 @@ def extra_line(*parts, details=False):
     return f'<div class="{cls}">' + " · ".join(escape(p) for p in parts) + "</div>"
 
 
-def row_attrs(classes, details, row_type="game", day=None, kind="game"):
+def row_attrs(classes, details, row_type="game", day=None, kind="game", href=None):
     """
-    The opening tag's attributes for a row. A row with details opens on tap.
-    There is deliberately no visual cue; it stays focusable and announces
-    itself as a toggle, so keyboards and screen readers still find it.
+    The opening tag's attributes for a row. A league game's row (`href`)
+    opens the game's own page on tap, and any details it has always show.
+    Otherwise a row with details opens on tap. There is deliberately no
+    visual cue; it stays focusable and announces itself, so keyboards and
+    screen readers still find it.
 
     `row_type` is what the Games / All filter goes by: "game",
     "practice" (ice and dryland) or "other".
@@ -255,13 +257,21 @@ def row_attrs(classes, details, row_type="game", day=None, kind="game"):
     `day` and `kind` are for the page's script: the Week / Month / Season
     view goes by the date, and the week headings count by kind.
     """
+    data = (f'data-type="{row_type}" data-kind="{kind}"'
+            + (f' data-date="{day.isoformat()}"' if day else ''))
+    if href:
+        return f'class="{classes} is-link" {data} data-href="{href}" tabindex="0" role="link"'
     is_open = bool(details) and "is-ours" in classes.split()
     attrs = (f'class="{classes}{" has-details" if details else ""}{" is-open" if is_open else ""}" '
-             f'data-type="{row_type}" data-kind="{kind}"'
-             + (f' data-date="{day.isoformat()}"' if day else ''))
+             + data)
     if details:
         attrs += f' tabindex="0" role="button" aria-expanded="{str(is_open).lower()}"'
     return attrs
+
+
+def game_page(game):
+    """The file name of a league game's own page (generate_game_pages.py)."""
+    return f"game-{season_schedule.game_id(game)}.html"
 
 
 # How team events group for the Games / All filter.
@@ -300,10 +310,10 @@ def game_row(game, day, our_team, team=None, start=None, now=None):
     """
     One league game as a compact row: day and time, then both teams stacked,
     then the LiveBarn play icon, then each team's goals once played. Ours look
-    the same as everyone else's apart from the red bar. Where it is (with
-    directions) and, logged in, arrival time and jersey are in the drawer a
-    tap opens. During
-    the first hour "LIVE" stands in for the start time.
+    the same as everyone else's apart from the red bar, and an upcoming one of
+    ours shows where (with directions) and, logged in, arrival time and
+    jersey. A tap opens the game's own page. During the first hour "LIVE"
+    stands in for the start time.
 
     Once played, "Final" takes the time's place and the winner is in bold, so a
     score never reads as a time. Our games add a W, L or T. The GTHL writes the
@@ -343,17 +353,19 @@ def game_row(game, day, our_team, team=None, start=None, now=None):
                        f'title="{ {"W": "Win", "L": "Loss", "T": "Tie"}[result] }">{result}</span>')
         when = f'<span class="game-time">{status}</span>'
         teams = team_line(away, a, h, 1) + team_line(home, h, a, 2)
-        details = drawer(rink_text)
+        details = ''   # Played: the score says it all; the game page has the rest.
     else:
         when = (f'<span class="game-time">{escape(game.get("Time", ""))}</span>'
                 + live_flag(start, now))
         teams = team_line(away, 0, 0, 1) + team_line(home, 0, 0, 2)
+        # Ours keep where, and (logged in) arrival and jersey, on the row;
+        # everyone else's are on the game page.
         details = drawer(rink_text, detail_text(arrival(team)),
-                         detail_text(wear_text(team.get("wear"), True) if team else ""))
+                         detail_text(wear_text(team.get("wear"), True) if team else "")) if ours else ""
 
     live = score is None and start is not None and stream_state(start, now) == 'live'
     classes = f"game{' is-ours' if ours else ''}{' is-final' if score else ''}{' is-live' if live else ''}"
-    return f"""                    <div {row_attrs(classes, details, day=day)}>
+    return f"""                    <div {row_attrs(classes, details, day=day, href=game_page(game) if day else None)}>
                         <div class="game-when"><span class="game-day">{day_text}</span>
                             {when}</div>
                         <div class="game-teams">{teams}{icons}{details}</div>
@@ -408,10 +420,12 @@ def team_event_row(event, start):
 
 # --- Cards ----------------------------------------------------------------------
 
-def next_game_card(away, home, day, time_text, rink_html, today, extra=""):
-    """The card for the next Eagles game: both teams, when and where."""
+def next_game_card(away, home, day, time_text, rink_html, today, extra="", href=None):
+    """The card for the next Eagles game: both teams, when and where. A league
+    game's card opens its game page."""
+    link = f' data-href="{href}" tabindex="0" role="link"' if href else ''
     return f"""
-                <section class="next" aria-label="Next game">
+                <section class="next{' is-link' if href else ''}" aria-label="Next game"{link}>
                     <div class="next-top"><span>Next game</span>
                         <span class="next-when">{countdown(day, today)}</span></div>
                     <div class="face">
@@ -525,7 +539,8 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
             extra = extra_line(arrival(team), wear_text(team.get("wear"), True) if team else "")
             candidates.append((start or datetime.combine(day, datetime.min.time()),
                                (g.get('Away', ''), g.get('Home', ''), day, g.get('Time', ''), rink_html, today,
-                                f'\n                    <div class="next-extra">{extra}</div>' if extra else '')))
+                                f'\n                    <div class="next-extra">{extra}</div>' if extra else '',
+                                game_page(g))))
     for e in team_events or []:
         start = datetime.fromisoformat(e["start"])
         if e["kind"] == "game" and e["uid"] not in used and start.date() >= today:
