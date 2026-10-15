@@ -89,6 +89,16 @@ def team_games(games, team):
 
 # --- Sections -------------------------------------------------------------------
 
+def streak_text(streak):
+    """The GTHL's 'Won 3' as 'Won last 3', 'Tied 1' as 'Tied last game', so it
+    does not read as a place in the standings."""
+    parts = str(streak or "").split()
+    if len(parts) != 2 or not parts[1].isdigit():
+        return ""
+    verb, n = parts[0].capitalize(), int(parts[1])
+    return f"{verb} last game" if n == 1 else f"{verb} last {n}"
+
+
 def hero(row, total):
     team = row["Team"]
     ours = team == config.TEAM_NAME
@@ -100,8 +110,8 @@ def hero(row, total):
     stat_html = "".join(f'<div class="hero-stat"><span class="hero-stat-num">{escape(str(v))}</span>'
                         f'<span class="hero-stat-label">{k}</span></div>' for k, v in stats)
     line = f"{page_common.place_label(row)} of {total} in {page_common.division_label()}"
-    if streak and streak != "–":
-        line += f" · {escape(streak)}"
+    if streak_text(streak):
+        line += f" · {escape(streak_text(streak))}"
     return f"""
                 <section class="team-hero{' is-ours' if ours else ''}">
                     <div class="team-hero-id">
@@ -132,14 +142,14 @@ def form_chips(played, team):
 
 
 def form(played, team):
-    """The form block: the last five results."""
+    """The last five results, as W / L / T chips."""
     last = played[-5:]
     if not last:
         return ""
     chips = form_chips(played, team)
     return f"""
                 <section class="team-block">
-                    <div class="block-head"><h3>Form</h3><span>Last {len(last)}, newest on the right</span></div>
+                    <div class="block-head"><h3>Last {len(last)} game{'s' if len(last) != 1 else ''}</h3><span>Oldest to newest</span></div>
                     <div class="form-row">{chips}</div>
                 </section>
 """
