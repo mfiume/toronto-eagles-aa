@@ -327,43 +327,38 @@ def season_label():
 LOGO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logos")
 
 
-def win_pct(row):
-    """
-    A team's win percentage, ties counting half: the GTHL's WIN% when it gives
-    one, otherwise worked out from W-L-T. None before a team has played.
-    """
-    value = str(row.get("WIN%", "")).strip()
-    try:
-        return float(value)
-    except ValueError:
-        pass
-    try:
-        w, l, t = (int(n) for n in str(row.get("W-L-T", "")).split("-"))
-    except ValueError:
-        return None
-    played = w + l + t
-    return (w + t / 2) / played if played else None
-
-
 def rank_standings(standings):
     """
-    The standings in our order: points, then win percentage as the tie
-    breaker, with Position renumbered to match. A team yet to play ranks above
-    one that has only lost; teams level on both keep the GTHL's order.
+    The standings in the GTHL's order: points, then the tie-breaking rules of
+    Regulation 12.2 (standings_rules.py). Position counts 1, 2, 3...; Rank
+    is the place shown, shared by teams the rules cannot separate, which have
+    Tied set.
     """
-    def points(row):
-        try:
-            return int(row.get("PTS") or 0)
-        except ValueError:
-            return 0
+    import standings_rules
+    return standings_rules.rank(standings)
 
-    def key(row):
-        pct = win_pct(row)
-        return (-points(row), -(0.25 if pct is None and points(row) == 0 else pct or 0),
-                row.get("Position", 0))
 
-    ranked = sorted(standings, key=key)
-    return [dict(row, Position=n) for n, row in enumerate(ranked, 1)]
+# Fields rank_standings adds that are not standings columns.
+RANK_FIELDS = {"Rank", "Tied"}
+
+
+def ordinal(n):
+    """1 -> '1st', 13 -> '13th'."""
+    if 10 <= n % 100 <= 20:
+        return f"{n}th"
+    return f"{n}{ {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th') }"
+
+
+def rank_label(row):
+    """The rank column: '5', or 'T5' for a place shared with another team."""
+    rank = row.get("Rank", row.get("Position", ""))
+    return f"T{rank}" if row.get("Tied") else str(rank)
+
+
+def place_label(row):
+    """In words: '5th', or 'T-5th' for a shared place."""
+    rank = row.get("Rank", row.get("Position", 0))
+    return f"T-{ordinal(rank)}" if row.get("Tied") else ordinal(rank)
 
 
 def team_logo(team, fallback_url=None):

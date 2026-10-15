@@ -45,7 +45,7 @@ def render_team_table(teams, radius=None):
         is_our_team = team.get("Team", "").lower() == config.TEAM_NAME.lower()
         row_class = ' class="highlight"' if is_our_team else ""
         html += f"""                            <tr{row_class}>
-                                <td class="rank">{team.get('Position', '')}</td>
+                                <td class="rank">{page_common.rank_label(team)}</td>
                                 <td class="team-name"><span class="team-cell">{page_common.team_logo(team.get('Team', ''), team.get('Logo'))}<span>{team.get('Team', '')}</span></span></td>
                                 <td class="stat">{team.get('GP', '')}</td>
                                 <td class="stat">{team.get('W-L-T', '')}</td>
