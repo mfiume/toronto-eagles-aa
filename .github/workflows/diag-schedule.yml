@@ -1,0 +1,36 @@
+name: Diagnose
+on:
+  push:
+    branches: [claude/diag-schedule]
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch the GTHL rulebook's tie-breaking rules
+        run: |
+          mkdir -p diag
+          curl -sSfL -A "Mozilla/5.0" "https://gthlcanada.com/rulebook/" -o /tmp/rb.html
+          python3 - <<'PY'
+          import re, html
+          t = open('/tmp/rb.html', encoding='utf-8', errors='replace').read()
+          t = re.sub(r'(?is)<(script|style).*?</\1>', ' ', t)
+          t = re.sub(r'(?i)<br\s*/?>|</(p|li|h\d|div|tr)>', '\n', t)
+          t = html.unescape(re.sub(r'<[^>]+>', ' ', t))
+          t = re.sub(r'[ \t]+', ' ', t)
+          lines = [l.strip() for l in t.split('\n') if l.strip()]
+          open('diag/rulebook.txt', 'w').write('\n'.join(lines))
+          hits = [i for i, l in enumerate(lines) if re.search(r'\btie|tied|standing|winning percentage|coin', l, re.I)]
+          out = []
+          for i in hits:
+              out.append(f'--- {i}')
+              out.extend(lines[max(0, i-3): i+12])
+          open('diag/ties.txt', 'w').write('\n'.join(out))
+          print(len(lines), 'lines', len(hits), 'hits')
+          PY
+          ls -la /tmp/rb.html diag
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add diag && git commit -m "GTHL rulebook text (fetched)" && git push
