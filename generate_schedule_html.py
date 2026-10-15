@@ -11,6 +11,7 @@ is encrypted with the password and embedded in the page, which swaps it in once
 a parent unlocks it. Nothing about team events is written in the clear.
 """
 
+import hashlib
 import json
 import os
 import re
@@ -165,22 +166,6 @@ def watch_link(game, start, now, css_class="game-watch", icon=False):
             f'{PLAY_ICON if icon else STREAM_TEXT[state]}</a>')
 
 
-def drawer(*parts):
-    """
-    The row's tap-to-open drawer: where (with directions) and, logged in,
-    arrival time and what to wear. Parts are HTML; empty ones are dropped.
-    Returns '' when there is nothing in it.
-    """
-    parts = [p for p in parts if p]
-    if not parts:
-        return ''
-    return '<div class="game-extra game-details">' + "".join(parts) + '</div>'
-
-
-def detail_text(text):
-    return f'<span class="detail">{escape(text)}</span>' if text else ''
-
-
 def live_flag(start, now):
     """
     "● LIVE" in place of the start time during a game's first hour. Written
@@ -195,12 +180,6 @@ def live_flag(start, now):
 def row_icons(watch):
     """The LiveBarn play icon, between the teams and the score."""
     return f'<div class="game-icons">{watch}</div>' if watch else ''
-
-
-def rink_cell(rink):
-    """The rink for the drawer, as a directions link when its address is known."""
-    linked = directions_link(rink, "game-rink", rink)
-    return linked or (f'<span class="game-rink">{escape(rink)}</span>' if rink else '')
 
 
 def venue_cell(venue, address, css_class="game-rink"):
@@ -368,8 +347,21 @@ def game_row(game, day, our_team, team=None, start=None, now=None):
 """
 
 
+def event_page(event):
+    """
+    The file name of a team-calendar event's own page (generate_event_pages.py).
+    Named by a hash of TeamSnap's id, so the name says nothing about the event;
+    the page itself is encrypted with the team password.
+    """
+    return f"event-{hashlib.sha256(event['uid'].encode('utf-8')).hexdigest()[:12]}.html"
+
+
 def team_game_row(event, start, now=None):
-    """A game only TeamSnap lists: exhibition, preseason or tournament."""
+    """
+    A game only TeamSnap lists (exhibition, preseason or tournament), laid out
+    like a league game: both teams stacked, the kind of game tagged at the
+    right. A tap opens its event page.
+    """
     us, them = config.TEAM_NAME, event["opponent"]
     away, home = (them, us) if event["home"] else (us, them)
 
@@ -379,15 +371,15 @@ def team_game_row(event, start, now=None):
                 f'<span class="game-name">{team_name_html(name)}</span></div>')
 
     time_text = clock(start.time()) if event.get("timed") else "Time TBA"
-    details = drawer(venue_cell(event.get("venue"), event.get("address")), detail_text(arrival(event)),
-                     detail_text(wear_text(event.get("wear"), True)))
+    tag = (f'<div class="game-icons"><span class="event-tag soft">{escape(event["label"])}</span></div>'
+           if event.get("label") else "")
     begins = aware(start) if event.get("timed") else None
     flag = live_flag(begins, now) if now else ''
     live = bool(begins and now and stream_state(begins, now) == 'live')
-    return f"""                    <div {row_attrs(f"game is-ours team-game{' is-live' if live else ''}", details, day=start.date())}>
+    return f"""                    <div {row_attrs(f"game is-ours team-game{' is-live' if live else ''}", "", day=start.date(), href=event_page(event))}>
                         <div class="game-when"><span class="game-day">{start.strftime('%a')} {start.day}</span>
                             <span class="game-time">{time_text}</span>{flag}</div>
-                        <div class="game-teams">{team_line(away, 1)}{team_line(home, 2)}{extra_line(event.get("label"))}{details}</div>
+                        <div class="game-teams">{team_line(away, 1)}{team_line(home, 2)}{tag}</div>
                     </div>
 """
 
@@ -396,19 +388,20 @@ EVENT_TITLES = {"practice": "Practice", "dryland": "Dryland"}
 
 
 def team_event_row(event, start):
-    """A practice, dryland session, tournament or other team event."""
+    """
+    A practice, dryland session, tournament or other team event, laid out like
+    a game: what it is on the first line, where on the second. A tap opens its
+    event page.
+    """
     kind = event["kind"]
     title = EVENT_TITLES.get(kind) or event["title"]
     time_text = clock(start.time()) if event.get("timed") else "All day"
     tag = '<span class="event-tag">Tournament</span>' if kind == "tournament" else ''
-    wear = wear_text(event.get("wear"), False) if kind != "practice" else ""
-    details = drawer(venue_cell(event.get("venue"), event.get("address")),
-                     detail_text(arrival(event) if event.get("timed") else ""),
-                     detail_text(wear))
-    return f"""                    <div {row_attrs(f"game is-ours team-event kind-{kind}", details, ROW_TYPES.get(kind, "other"), start.date(), kind)}>
+    where = short_venue(event.get("venue")) or (event.get("address") or "Location to be confirmed")
+    return f"""                    <div {row_attrs(f"game is-ours team-event kind-{kind}", "", ROW_TYPES.get(kind, "other"), start.date(), kind, href=event_page(event))}>
                         <div class="game-when"><span class="game-day">{start.strftime('%a')} {start.day}</span>
                             <span class="game-time">{time_text}</span></div>
-                        <div class="game-teams"><div class="event-title r1">{tag}<span>{escape(title)}</span></div>{details}</div>
+                        <div class="game-teams"><div class="event-title r1">{tag}<span>{escape(title)}</span></div><div class="event-where r2">{escape(where)}</div></div>
                     </div>
 """
 
@@ -546,7 +539,8 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
             candidates.append((start, (away, home, start.date(),
                                        clock(start.time()) if e.get("timed") else "Time TBA",
                                        rink_html, today,
-                                       f'\n                    <div class="next-extra">{extra}</div>' if extra else '')))
+                                       f'\n                    <div class="next-extra">{extra}</div>' if extra else '',
+                                       event_page(e))))
     html = ''
     if candidates:
         html += next_game_card(*min(candidates, key=lambda c: c[0])[1])

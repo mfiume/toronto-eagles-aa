@@ -40,3 +40,25 @@ def decrypt(payload, password):
     raw = {k: base64.b64decode(payload[k]) for k in ("salt", "iv", "ct")}
     key = _key(password, raw["salt"], payload["iter"])
     return AESGCM(key).decrypt(raw["iv"], raw["ct"], None).decode("utf-8")
+
+
+class Sealer:
+    """
+    Encrypts many texts under one password with a single key derivation:
+    every event page is sealed with the same salt and key, each with its own
+    IV. The browser still derives the key from the page's own payload, so a
+    page decrypts on its own; this only spares the hourly build a PBKDF2 run
+    per page.
+    """
+
+    def __init__(self, password):
+        self.salt = os.urandom(16)
+        self.key = _key(password, self.salt, ITERATIONS)
+
+    def seal(self, text):
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+        iv = os.urandom(12)
+        sealed = AESGCM(self.key).encrypt(iv, text.encode("utf-8"), None)
+        b64 = lambda b: base64.b64encode(b).decode("ascii")
+        return {"v": 1, "iter": ITERATIONS, "salt": b64(self.salt), "iv": b64(iv), "ct": b64(sealed)}

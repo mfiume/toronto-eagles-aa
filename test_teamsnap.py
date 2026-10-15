@@ -150,10 +150,26 @@ class PublishedPage(unittest.TestCase):
                            capture_output=True)
             subprocess.run([sys.executable, "generate_schedule_html.py"], cwd=tmp, env=env,
                            check=True, capture_output=True)
+            subprocess.run([sys.executable, "generate_event_pages.py"], cwd=tmp, env=env,
+                           check=True, capture_output=True)
             page = open(os.path.join(tmp, "schedule.html"), encoding="utf-8").read()
-        for secret in ("Sample Arena", "Sample Centre", "Sample Visitors", "Arrive",
-                       "123 Sample Rd", "Sample Tournament", "Gym clothes"):
-            self.assertNotIn(secret, page)
+            event_pages = [open(os.path.join(tmp, n), encoding="utf-8").read()
+                           for n in sorted(os.listdir(tmp)) if n.startswith("event-")]
+        # One per team event. (The league game here is moved to Oct 1, so its
+        # TeamSnap entry is not matched to it and gets a page of its own.)
+        self.assertEqual(len(event_pages), 5)
+        for published in [page] + event_pages:
+            for secret in ("Sample Arena", "Sample Centre", "Sample Visitors", "Arrive",
+                           "123 Sample Rd", "Sample Tournament", "Gym clothes", "Practice",
+                           "Dryland"):
+                self.assertNotIn(secret, published.replace("Practices, dryland", ""))
+        opened = ""
+        for published in event_pages:
+            sealed = json.loads(re.search(r'id="team-events">(.*?)</script>', published, re.S)
+                                .group(1).replace("<\\/", "</"))
+            opened += team_crypto.decrypt(sealed, "four random words here")
+        for detail in ("Sample Visitors", "Sample Tournament", "Gym clothes", "6:00 PM"):
+            self.assertIn(detail, opened)
         payload = json.loads(re.search(r'id="team-events">(.*?)</script>', page, re.S)
                              .group(1).replace("<\\/", "</"))
         self.assertIn("Sample Visitors", team_crypto.decrypt(payload, "four random words here"))
