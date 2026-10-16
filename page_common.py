@@ -1844,6 +1844,21 @@ SCHEDULE_JS = """
           if (!a.classList.contains('icon-btn')) a.textContent = text;
           a.setAttribute('aria-label', text + ': ' + (a.dataset.label || 'LiveBarn'));
         });
+        // LiveBarn: the rink's live camera until the first hour is up, then
+        // the recording from puck drop. The big buttons say which.
+        var BUTTON = { upcoming: 'Watch live on LiveBarn', live: 'Live now on LiveBarn',
+                       rewatch: 'Rewatch on LiveBarn' };
+        document.querySelectorAll('[data-replay][data-start]').forEach(function (a) {
+          var minutes = (now - Date.parse(a.dataset.start)) / 60000;
+          var state = minutes < 0 ? 'upcoming' : minutes < 60 ? 'live' : 'rewatch';
+          a.href = state === 'rewatch' ? a.dataset.replay : a.dataset.live;
+          if (a.classList.contains('match-btn')) {
+            a.classList.remove('is-upcoming', 'is-live', 'is-rewatch');
+            a.classList.add('is-' + state);
+            var span = a.querySelector('span');
+            if (span) span.textContent = BUTTON[state];
+          }
+        });
         document.querySelectorAll('[data-live-start]').forEach(function (flag) {
           var minutes = (now - Date.parse(flag.dataset.liveStart)) / 60000;
           var live = minutes >= 0 && minutes < 60;
