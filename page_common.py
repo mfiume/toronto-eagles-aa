@@ -1495,10 +1495,37 @@ _SCHEDULE_CSS = """
             white-space: nowrap;
         }
 
-        /* "Exhibition", "Preseason": a quiet tag where LiveBarn would be. */
+        /* "Exhibition", "Tournament": a quiet tag left of LiveBarn, a letter on
+           a phone and the word on a wider screen. */
         .event-tag.soft {
             background: #ebebee;
             color: var(--ink-2);
+        }
+
+        .game-kind {
+            margin-right: 2px;
+        }
+
+        .game-kind .kind-long {
+            display: none;
+        }
+
+        @media (min-width: 620px) {
+            .game-kind .kind-short {
+                display: none;
+            }
+
+            .game-kind .kind-long {
+                display: inline;
+            }
+        }
+
+        /* LiveBarn's place in a row with a tag: always held, so the logo lines
+           up with the rows above and below even before there is a link. */
+        .watch-slot {
+            display: inline-flex;
+            width: 32px;
+            justify-content: center;
         }
 
         /* Arrival time and what to wear stay folded away until the row is
