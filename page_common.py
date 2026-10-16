@@ -1227,9 +1227,8 @@ _SCHEDULE_CSS = """
             white-space: nowrap;
         }
 
-        .game-team.us {
-            font-weight: 600;
-        }
+        /* Our own name is not bolded: the red bar marks our games, and bold is
+           kept for the winner of a played game. */
 
         .game-team .team-logo {
             width: 18px;
