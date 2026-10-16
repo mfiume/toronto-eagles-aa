@@ -404,8 +404,9 @@ def team_score(event):
     return (int(m.group(1)), int(m.group(2))) if m else None
 
 
-# The kind of a team-calendar game, short enough to sit beside the goals.
-GAME_TAGS = {"Exhibition": "Exh", "Preseason": "Pre", "Tournament": "Tourn"}
+# The kind of a team-calendar game, as a letter on a phone and spelled out on
+# a wider screen. Other kinds of game carry no tag.
+GAME_TAGS = {"Exhibition": "E", "Tournament": "T"}
 
 
 def event_stream(event):
@@ -467,9 +468,13 @@ def team_game_row(event, start, now=None):
     watch = (watch_link(event_as_game(event), begins, now, "icon-btn game-watch", icon=True)
              if begins and now else "")
     label = event.get("label") or ""
-    tag = (f'<span class="event-tag soft" title="{escape(label)}">{escape(GAME_TAGS.get(label, label))}</span>'
-           if label else "")
-    icons = f'<div class="game-icons">{watch}{tag}</div>' if watch or tag else ""
+    tag = (f'<span class="event-tag soft game-kind" title="{escape(label)}">'
+           f'<span class="kind-short">{GAME_TAGS[label]}</span><span class="kind-long">{escape(label)}</span></span>'
+           if label in GAME_TAGS else "")
+    # The tag sits left of LiveBarn, and LiveBarn keeps its slot (empty before
+    # puck drop) so the logo lines up with every other row's.
+    icons = (f'<div class="game-icons">{tag}<span class="watch-slot">{watch}</span></div>'
+             if tag else (f'<div class="game-icons">{watch}</div>' if watch else ""))
     if score:
         r = "W" if score[0] > score[1] else "L" if score[0] < score[1] else "T"
         when = (f'<span class="game-time"><span class="game-final">Final</span>'
