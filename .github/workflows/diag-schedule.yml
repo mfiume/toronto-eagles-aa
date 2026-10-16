@@ -9,48 +9,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip install selenium
-      - name: Follow a LiveBarn link and read the app's routes
+      - name: Read LiveBarn's routes and sign-in redirect handling
         run: |
           mkdir -p diag
-          U="https://livebarn.com/en/video/4198/2026-10-18/13:10"
-          { echo "== curl redirects"; curl -sS -L -A "Mozilla/5.0" -o /tmp/lb.html -w '%{url_effective} %{http_code}\n' -D - "$U" | grep -iE '^HTTP|^location|^[a-z]+://'; } > diag/livebarn.txt 2>&1 || true
-          python3 - <<'PY' >> diag/livebarn.txt 2>&1
-          import re, time, json
-          from selenium import webdriver
-          o = webdriver.ChromeOptions()
-          for a in ("--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--window-size=1280,900"):
-              o.add_argument(a)
-          o.set_capability("goog:loggingPrefs", {"performance": "ALL"})
-          d = webdriver.Chrome(options=o)
-          for u in ["https://livebarn.com/en/video/4198/2026-10-18/13:10",
-                    "https://watch.livebarn.com/en/video/4198/2026-10-18/13:10"]:
-              try:
-                  d.get(u); time.sleep(8)
-                  print("== chrome", u, "->", d.current_url, "|", d.title)
-                  print(d.find_element("tag name", "body").text[:600].replace("\n", " | "))
-              except Exception as e:
-                  print("== chrome", u, "ERR", e)
-          # script bundles: look for route patterns
-          srcs = [s.get_attribute("src") for s in d.find_elements("tag name", "script") if s.get_attribute("src")]
-          print("== scripts", srcs[:20])
-          d.quit()
-          import urllib.request
-          pats = set()
-          for s in srcs:
-              try:
-                  js = urllib.request.urlopen(urllib.request.Request(s, headers={"User-Agent": "Mozilla/5.0"}), timeout=20).read().decode("utf-8", "replace")
-              except Exception as e:
-                  print("fetch fail", s, e); continue
-              for m in re.findall(r'["\'`](/?[:\w/\-]*(?:video|vod|surface|watch|player)[:\w/\-?=&]*)["\'`]', js, re.I):
-                  if len(m) < 80: pats.add(m)
-          print("== route-like strings")
-          for p in sorted(pats)[:300]: print(p)
+          B=$(curl -sS -A "Mozilla/5.0" https://watch.livebarn.com/en/signin | grep -o 'https://watch.livebarn.com/js/ts-main[^"]*\.js' | head -1)
+          echo "bundle: $B" > diag/routes.txt
+          curl -sS -A "Mozilla/5.0" "$B" -o /tmp/main.js
+          python3 - <<'PY' >> diag/routes.txt
+          import re
+          js = open('/tmp/main.js', encoding='utf-8', errors='replace').read()
+          def around(pat, n=6, w=500):
+              out = []
+              for m in list(re.finditer(pat, js))[:n]:
+                  out.append(js[max(0, m.start()-w): m.end()+w].replace('\n', ' '))
+              return out
+          for pat in [r'video/:surfaceId/:date/:time', r'video/:surfaceId/live', r'returnUrl|redirectUrl|redirectTo|redirect_uri|"from"|nextPath|afterLogin',
+                      r'apple-app-site|applinks|universal', r'livebarn://']:
+              print('\n##########', pat)
+              for s in around(pat): print('---\n' + s)
           PY
-          cat diag/livebarn.txt | head -80
+          curl -sS -A "Mozilla/5.0" https://watch.livebarn.com/.well-known/apple-app-site-association >> diag/routes.txt 2>&1 || true
+          echo >> diag/routes.txt
+          curl -sS -A "Mozilla/5.0" https://www.livebarn.com/.well-known/apple-app-site-association >> diag/routes.txt 2>&1 || true
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add diag && git commit -m "LiveBarn probe (fetched)" && git push
+          git add diag && git commit -m "LiveBarn routes (fetched)" && git push
