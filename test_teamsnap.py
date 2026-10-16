@@ -16,7 +16,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from datetime import date
+from datetime import date, datetime
 
 import generate_schedule_html as gen
 import team_crypto
@@ -122,6 +122,25 @@ class MatchLeagueGames(unittest.TestCase):
         # The exhibition game is ours only in TeamSnap, so it is listed.
         self.assertIn("Sample Visitors", html)
         self.assertIn("Exhibition", html)
+
+
+class TeamScores(unittest.TestCase):
+    def test_exhibition_with_a_score_reads_like_a_final(self):
+        events = teamsnap.events_from_ics(SAMPLE_ICS)
+        x = next(e for e in events if e["uid"] == "x1")
+        gen._TEAM_SCORES = {gen.score_key(x): "3-1"}
+        try:
+            row = gen.team_game_row(x, datetime.fromisoformat(x["start"]))
+        finally:
+            gen._TEAM_SCORES = None
+        self.assertIn("Final", row)
+        self.assertIn('result-w', row)
+        self.assertIn('<span class="game-goals r2 won">3</span>', row)   # We were home.
+        self.assertIn('<span class="game-goals r1 lost">1</span>', row)
+
+    def test_score_key_hides_the_opponent(self):
+        key = gen.score_key({"start": "2026-10-15T19:00", "opponent": "Burlington Eagles"})
+        self.assertEqual(key, "2ed1dce2be0e")
 
 
 class PublishedPage(unittest.TestCase):

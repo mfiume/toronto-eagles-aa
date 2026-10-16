@@ -376,6 +376,37 @@ def game_row(game, day, our_team, team=None, start=None, now=None):
 
 _SURFACES = None
 
+# Scores for games the GTHL does not list (exhibitions and the like), which
+# only the team knows. team_scores.json holds them as "ours-theirs" under a
+# hash of the date and opponent, so the public repository does not say who
+# the team played; see score_key.
+TEAM_SCORES_FILE = "team_scores.json"
+_TEAM_SCORES = None
+
+
+def score_key(event):
+    """The key a team-calendar game's score is kept under: date and opponent, hashed."""
+    text = f"{event['start'][:10]}|{event.get('opponent', '').strip().lower()}"
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:12]
+
+
+def team_score(event):
+    """(our goals, their goals) for a team-calendar game, or None."""
+    global _TEAM_SCORES
+    if _TEAM_SCORES is None:
+        try:
+            with open(TEAM_SCORES_FILE, encoding="utf-8") as f:
+                _TEAM_SCORES = json.load(f).get("scores", {})
+        except (OSError, ValueError):
+            _TEAM_SCORES = {}
+    raw = _TEAM_SCORES.get(score_key(event)) if event.get("kind") == "game" else None
+    m = re.match(r"^\s*(\d+)\s*-\s*(\d+)\s*$", raw or "")
+    return (int(m.group(1)), int(m.group(2))) if m else None
+
+
+# The kind of a team-calendar game, short enough to sit beside the goals.
+GAME_TAGS = {"Exhibition": "Exh", "Preseason": "Pre", "Tournament": "Tourn"}
+
 
 def event_stream(event):
     """
@@ -410,29 +441,50 @@ def event_page(event):
 def team_game_row(event, start, now=None):
     """
     A game only TeamSnap lists (exhibition, preseason or tournament), laid out
-    like a league game: both teams stacked, the kind of game tagged at the
-    right. A tap opens its event page.
+    like a league game: both teams stacked, LiveBarn and a short tag for the
+    kind of game, and once its score is in (team_scores.json) "Final", our
+    W/L/T and each side's goals. A tap opens its event page.
     """
     us, them = config.TEAM_NAME, event["opponent"]
     away, home = (them, us) if event["home"] else (us, them)
+    score = team_score(event)
+    goals = {}
+    if score:
+        goals = {us: score[0], them: score[1]}
 
     def team_line(name, row):
-        cls = f'game-team r{row} us' if name == us else f'game-team r{row}'
-        return (f'<div class="{cls}">{page_common.team_logo(name)}'
-                f'<span class="game-name">{team_name_html(name)}</span></div>')
+        classes = ["game-team", f"r{row}"] + (["us"] if name == us else [])
+        goals_html = ""
+        if score:
+            mine, other = goals[name], goals[them if name == us else us]
+            result = "won" if mine > other else "lost" if mine < other else "tied"
+            classes.append(result)
+            goals_html = f'<span class="game-goals r{row} {result}">{mine}</span>'
+        return (f'<div class="{" ".join(classes)}">{page_common.team_logo(name)}'
+                f'<span class="game-name">{team_name_html(name)}</span></div>{goals_html}')
 
-    time_text = clock(start.time()) if event.get("timed") else "Time TBA"
     begins = aware(start) if event.get("timed") else None
     watch = (watch_link(event_as_game(event), begins, now, "icon-btn game-watch", icon=True)
              if begins and now else "")
-    label = f'<span class="event-tag soft">{escape(event["label"])}</span>' if event.get("label") else ""
-    tag = f'<div class="game-icons">{watch}{label}</div>' if watch or label else ""
-    flag = live_flag(begins, now) if now else ''
-    live = bool(begins and now and stream_state(begins, now) == 'live')
-    return f"""                    <div {row_attrs(f"game is-ours team-game{' is-live' if live else ''}", "", day=start.date(), href=event_page(event))}>
+    label = event.get("label") or ""
+    tag = (f'<span class="event-tag soft" title="{escape(label)}">{escape(GAME_TAGS.get(label, label))}</span>'
+           if label else "")
+    icons = f'<div class="game-icons">{watch}{tag}</div>' if watch or tag else ""
+    if score:
+        r = "W" if score[0] > score[1] else "L" if score[0] < score[1] else "T"
+        when = (f'<span class="game-time"><span class="game-final">Final</span>'
+                f'<span class="game-result result-{r.lower()}" '
+                f'title="{ {"W": "Win", "L": "Loss", "T": "Tie"}[r] }">{r}</span></span>')
+        live = False
+    else:
+        time_text = clock(start.time()) if event.get("timed") else "Time TBA"
+        when = f'<span class="game-time">{time_text}</span>' + (live_flag(begins, now) if now else '')
+        live = bool(begins and now and stream_state(begins, now) == 'live')
+    classes = f"game is-ours team-game{' is-final' if score else ''}{' is-live' if live else ''}"
+    return f"""                    <div {row_attrs(classes, "", day=start.date(), href=event_page(event))}>
                         <div class="game-when"><span class="game-day">{start.strftime('%a')} {start.day}</span>
-                            <span class="game-time">{time_text}</span>{flag}</div>
-                        <div class="game-teams">{team_line(away, 1)}{team_line(home, 2)}{tag}</div>
+                            {when}</div>
+                        <div class="game-teams">{team_line(away, 1)}{team_line(home, 2)}{icons}</div>
                     </div>
 """
 
@@ -527,6 +579,11 @@ def match_team_games(league, team_events, our_team):
     return matches, used
 
 
+def over(start, now):
+    """Whether a game that started at `start` is surely over: two hours on."""
+    return start is not None and now is not None and now >= start + timedelta(hours=2)
+
+
 def aware(start):
     """A naive Toronto wall-clock datetime made timezone-aware, or None."""
     return start.replace(tzinfo=page_common.TORONTO) if start else None
@@ -572,7 +629,8 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
     # The next game, from the league schedule or, unlocked, any of ours.
     candidates = []
     for i, (g, day, start) in enumerate(league):
-        if is_ours(g) and day and day >= today and not format_score(g.get('Score')):
+        if (is_ours(g) and day and day >= today and not format_score(g.get('Score'))
+                and not over(aware(start), now)):
             team = matches.get(i)
             rink = g.get('Arena', '')
             rink_html = (directions_link(rink, 'next-rink', rink) or f"<span>{escape(rink)}</span>") \
@@ -584,7 +642,8 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
                                 game_page(g))))
     for e in team_events or []:
         start = datetime.fromisoformat(e["start"])
-        if e["kind"] == "game" and e["uid"] not in used and start.date() >= today:
+        if (e["kind"] == "game" and e["uid"] not in used and start.date() >= today
+                and not team_score(e) and not (e.get("timed") and over(aware(start), now))):
             us, them = config.TEAM_NAME, e["opponent"]
             away, home = (them, us) if e["home"] else (us, them)
             extra = extra_line(e.get("label"), arrival(e), wear_text(e.get("wear"), True))
