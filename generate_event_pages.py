@@ -30,7 +30,7 @@ import arenas
 import config
 import page_common
 import team_crypto
-from generate_schedule_html import (EVENT_TITLES, LOGIN_DIALOG, aware, clock, countdown,
+from generate_schedule_html import (team_score, EVENT_TITLES, LOGIN_DIALOG, aware, clock, countdown,
                                     event_page, event_stream, load_team_events, maps_link,
                                     match_team_games, parse_game_date, parse_game_time,
                                     season_rows, short_venue, team_game_row, team_name_html,
@@ -138,8 +138,21 @@ def hero(event, now, today):
                         <span class="match-name">{team_name_html(team)}</span>
                         <span class="match-role">{role}</span>
                     </div>"""
-        middle = (f'<div class="match-time"><span>{escape(clock(start.time()) if event.get("timed") else "TBA")}</span>'
-                  f'<span class="match-date">{start.strftime("%a, %b")} {start.day}</span></div>')
+        score = team_score(event)
+        if score:
+            # Ours-theirs, shown away-home like any game.
+            a, h = (score[1], score[0]) if event["home"] else score
+            middle = (f'<div class="match-score{" decided" if a != h else ""}">'
+                      f'<span class="{"win" if a > h else ""}">{a}</span><span class="dash">–</span>'
+                      f'<span class="{"win" if h > a else ""}">{h}</span></div>')
+            r = "W" if score[0] > score[1] else "L" if score[0] < score[1] else "T"
+            middle += (f'<span class="match-result result-{r.lower()}">'
+                       f'{ {"W": "Eagles win", "L": "Eagles loss", "T": "Tie"}[r] }</span>')
+            top = (f'<div class="match-top"><span>{escape(label or "Game")}</span>'
+                   f'<span class="match-status">Final</span></div>')
+        else:
+            middle = (f'<div class="match-time"><span>{escape(clock(start.time()) if event.get("timed") else "TBA")}</span>'
+                      f'<span class="match-date">{start.strftime("%a, %b")} {start.day}</span></div>')
         body = (f'<div class="match-face">{side(away, "Away")}<div class="match-middle">{middle}</div>'
                 f'{side(home, "Home")}</div>')
     else:
