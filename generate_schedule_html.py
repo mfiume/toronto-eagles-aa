@@ -312,6 +312,16 @@ def team_name_html(name):
     return escape(name)
 
 
+def result_badge(ours, theirs):
+    """W or L beside "Final" on one of our games. A tie needs no badge: the
+    level score says it, and a T would read as a tournament's tag."""
+    if ours == theirs:
+        return ""
+    r = "W" if ours > theirs else "L"
+    return (f'<span class="game-result result-{r.lower()}" '
+            f'title="{"Win" if r == "W" else "Loss"}">{r}</span>')
+
+
 def game_row(game, day, our_team, team=None, start=None, now=None):
     """
     One league game as a compact row: day and time, then both teams stacked,
@@ -351,10 +361,7 @@ def game_row(game, day, our_team, team=None, start=None, now=None):
         a, h = score['away'], score['home']
         status = '<span class="game-final">Final</span>'
         if ours:
-            mine, theirs = (h, a) if home.lower() == our_team else (a, h)
-            result = 'W' if mine > theirs else 'L' if mine < theirs else 'T'
-            status += (f'<span class="game-result result-{result.lower()}" '
-                       f'title="{ {"W": "Win", "L": "Loss", "T": "Tie"}[result] }">{result}</span>')
+            status += result_badge(*((h, a) if home.lower() == our_team else (a, h)))
         when = f'<span class="game-time">{status}</span>'
         teams = team_line(away, a, h, 1) + team_line(home, h, a, 2)
         details = ''   # The game page has the rest.
@@ -476,10 +483,8 @@ def team_game_row(event, start, now=None):
     icons = (f'<div class="game-icons">{tag}<span class="watch-slot">{watch}</span></div>'
              if tag else (f'<div class="game-icons">{watch}</div>' if watch else ""))
     if score:
-        r = "W" if score[0] > score[1] else "L" if score[0] < score[1] else "T"
         when = (f'<span class="game-time"><span class="game-final">Final</span>'
-                f'<span class="game-result result-{r.lower()}" '
-                f'title="{ {"W": "Win", "L": "Loss", "T": "Tie"}[r] }">{r}</span></span>')
+                f'{result_badge(*score)}</span>')
         live = False
     else:
         time_text = clock(start.time()) if event.get("timed") else "Time TBA"
