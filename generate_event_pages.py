@@ -30,11 +30,11 @@ import arenas
 import config
 import page_common
 import team_crypto
-from generate_schedule_html import (EVENT_TITLES, LOGIN_DIALOG, PLAY_ICON, aware, clock, countdown,
-                                    event_page, event_stream, stream_state,
-                                    load_team_events, maps_link, match_team_games, parse_game_date,
-                                    parse_game_time, season_rows, short_venue, team_game_row,
-                                    team_name_html)
+from generate_schedule_html import (EVENT_TITLES, LOGIN_DIALOG, aware, clock, countdown,
+                                    event_page, event_stream, load_team_events, maps_link,
+                                    match_team_games, parse_game_date, parse_game_time,
+                                    season_rows, short_venue, team_game_row, team_name_html,
+                                    watch_button)
 
 # The label above an event's name; it says what kind of thing the name is.
 KIND_LABELS = {"practice": "On-ice practice", "dryland": "Off-ice training", "game": "Game",
@@ -179,15 +179,8 @@ def facts(event):
 
 def watch(event, now):
     """LiveBarn for a game at a pad we know (see livebarn.py)."""
-    url = event_stream(event)
-    if not url:
-        return ""
-    state = stream_state(aware(start_of(event)), now)
-    text = {"upcoming": "Watch live on LiveBarn", "live": "Live now on LiveBarn",
-            "rewatch": "Rewatch on LiveBarn"}[state]
-    return (f'\n                <div class="match-actions"><a class="match-btn watch is-{state}" '
-            f'href="{escape(url)}" target="_blank" rel="noopener noreferrer">{PLAY_ICON}'
-            f'<span>{text}</span></a></div>\n')
+    button = watch_button(event_stream(event), aware(start_of(event)), now)
+    return f'\n                <div class="match-actions">{button}</div>\n' if button else ""
 
 
 def where(event):

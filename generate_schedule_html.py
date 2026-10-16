@@ -146,25 +146,51 @@ STREAM_TEXT = {'upcoming': 'Watch', 'live': 'Live', 'rewatch': 'Rewatch'}
 
 def watch_link(game, start, now, css_class="game-watch", icon=False):
     """
-    The GTHL's LiveBarn link for a game: nothing before puck drop, LIVE for the
-    first hour, Rewatch after; in a row, LiveBarn's mark. The link goes to the rink's camera at the game's
-    date and start time, so it serves for both; LiveBarn needs its own
-    subscription.
+    The LiveBarn link for a game: nothing before puck drop, LIVE for the first
+    hour, Rewatch after; in a row, LiveBarn's mark. Live, it opens the rink's
+    camera; after, the recording from puck drop (livebarn.links). LiveBarn
+    needs its own subscription.
 
     The state written here is right when the page is built. The page's script
     recomputes it from data-start every minute, so LIVE switches on and off on
     time between the hourly rebuilds.
     """
-    url = (game.get('Stream') or '').strip()
-    if not url.startswith('https://livebarn.com/') or start is None:
+    found = livebarn.links(game.get('Stream'))
+    if not found or start is None:
         return ''
     state = stream_state(start, now)
     hidden = ' hidden' if state == 'upcoming' else ''
     label = f"{game.get('Away', '')} at {game.get('Home', '')} on LiveBarn"
-    return (f'<a class="{css_class} is-{state}" href="{escape(url)}" target="_blank" '
+    return (f'<a class="{css_class} is-{state}" {stream_href(found, state)} target="_blank" '
             f'rel="noopener noreferrer" data-start="{start.isoformat()}" '
             f'data-label="{escape(label)}" aria-label="{STREAM_TEXT[state]}: {escape(label)}"{hidden}>'
             f'{PLAY_ICON if icon else STREAM_TEXT[state]}</a>')
+
+
+WATCH_BUTTON_TEXT = {"upcoming": "Watch live on LiveBarn", "live": "Live now on LiveBarn",
+                     "rewatch": "Rewatch on LiveBarn"}
+
+
+def watch_button(stream, start, now):
+    """The big LiveBarn button on a game or event page, or ''."""
+    found = livebarn.links(stream)
+    if not found or start is None:
+        return ""
+    state = stream_state(start, now)
+    return (f'<a class="match-btn watch is-{state}" {stream_href(found, state)} target="_blank" '
+            f'rel="noopener noreferrer" data-start="{start.isoformat()}">{PLAY_ICON}'
+            f'<span>{WATCH_BUTTON_TEXT[state]}</span></a>')
+
+
+def stream_href(found, state):
+    """
+    href and its two candidates: the rink's live camera until the game's first
+    hour is up, then the recording from puck drop. The page's script switches
+    between them on the minute (data-live / data-replay).
+    """
+    live, replay = found
+    href = replay if state == "rewatch" else live
+    return f'href="{escape(href)}" data-live="{escape(live)}" data-replay="{escape(replay)}"'
 
 
 def live_flag(start, now):

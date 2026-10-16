@@ -26,8 +26,8 @@ from html import escape
 import arenas
 import config
 import page_common
-from generate_schedule_html import (PLAY_ICON, aware, countdown, game_page, game_row, live_flag,
-                                    maps_link, stream_state, team_name_html)
+from generate_schedule_html import (aware, countdown, game_page, game_row, live_flag, maps_link,
+                                    stream_state, team_name_html, watch_button)
 from generate_team_pages import (all_games, division_rank, form_chips, number, ordinal,
                                  side_of, team_games)
 
@@ -97,14 +97,9 @@ def matchup(g, standings, today, now):
 def actions(g, now):
     row = g["row"]
     buttons = ""
-    url = (row.get("Stream") or "").strip()
     start = aware(g["start"])
-    if url.startswith("https://livebarn.com/") and start is not None:
-        state = stream_state(start, now)
-        text = {"upcoming": "Watch live on LiveBarn", "live": "Live now on LiveBarn",
-                "rewatch": "Rewatch on LiveBarn"}[state]
-        buttons += (f'<a class="match-btn watch is-{state}" href="{escape(url)}" target="_blank" '
-                    f'rel="noopener noreferrer">{PLAY_ICON}<span>{text}</span></a>')
+    if start is not None:
+        buttons += watch_button(row.get("Stream"), start, now)
     rink = row.get("Arena", "")
     google = arenas.directions_url(rink)
     if google and not g["score"]:

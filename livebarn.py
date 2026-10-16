@@ -120,5 +120,30 @@ def url(surface, start):
     return f"https://livebarn.com/en/video/{surface}/{start:%Y-%m-%d}/{start:%H:%M}"
 
 
+GTHL_LINK = re.compile(r"^https://(?:www\.|watch\.)?livebarn\.com/(\w+)/video/(\d+)/"
+                       r"(\d{4}-\d\d-\d\d)/(\d\d:\d\d)$")
+WATCH = "https://watch.livebarn.com"
+
+
+def links(stream):
+    """
+    (live, replay) links for a game's LiveBarn link, or None.
+
+    The GTHL's links point at livebarn.com, which redirects twice before
+    LiveBarn's player (livebarn.com -> www -> watch.livebarn.com). A phone
+    hands a link to the LiveBarn app only when it is tapped directly, not
+    after a redirect, so these go straight to watch.livebarn.com, whose
+    /<lang>/video/... paths the app claims. LiveBarn's player has two routes
+    (read from its web app, 2026-10-16): /<lang>/video/<surface>/live for the
+    camera now, and /<lang>/video/<surface>/<date>/<time> for a recording.
+    """
+    m = GTHL_LINK.match((stream or "").strip())
+    if not m:
+        return None
+    lang, surface, date, time = m.groups()
+    base = f"{WATCH}/{lang}/video/{surface}"
+    return f"{base}/live", f"{base}/{date}/{time}"
+
+
 if __name__ == "__main__":
     update()
