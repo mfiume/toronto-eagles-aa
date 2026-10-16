@@ -2477,13 +2477,13 @@
                     <div class="game is-link" data-type="game" data-kind="game" data-date="2026-11-16" data-href="game-2026-11-16_vaughan-rangers_at_mississauga-terriers.html" tabindex="0" role="link">
                         <div class="game-when"><span class="game-day">Mon 16</span>
                             <span class="game-time">7:10 PM</span><span class="game-live" data-live-start="2026-11-16T19:10:00-05:00" hidden>Live</span></div>
-                        <div class="game-teams"><div class="game-team r1"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span class="game-name"><a class="team-link" href="team-vaughan-rangers.html">Vaughan Rangers</a></span></div><div class="game-team r2"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span class="game-name"><a class="team-link" href="team-mississauga-terriers.html">Mississauga Terriers</a></span></div><div class="game-icons"><a class="icon-btn game-watch is-upcoming" href="https://livebarn.com/en/video/3834/2026-11-16/19:10" target="_blank" rel="noopener noreferrer" data-start="2026-11-16T19:10:00-05:00" data-label="Vaughan Rangers at Mississauga Terriers on LiveBarn" aria-label="Watch: Vaughan Rangers at Mississauga Terriers on LiveBarn" hidden><img src="assets/livebarn.png" alt="" width="15" height="17"></a></div></div>
+                        <div class="game-teams"><div class="game-team r1"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span class="game-name"><a class="team-link" href="team-vaughan-rangers.html">Vaughan Rangers</a></span></div><div class="game-team r2"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span class="game-name"><a class="team-link" href="team-mississauga-terriers.html">Mississauga Terriers</a></span></div><div class="game-icons"><a class="icon-btn game-watch is-upcoming" href="https://watch.livebarn.com/en/video/3834/live" data-live="https://watch.livebarn.com/en/video/3834/live" data-replay="https://watch.livebarn.com/en/video/3834/2026-11-16/19:10" target="_blank" rel="noopener noreferrer" data-start="2026-11-16T19:10:00-05:00" data-label="Vaughan Rangers at Mississauga Terriers on LiveBarn" aria-label="Watch: Vaughan Rangers at Mississauga Terriers on LiveBarn" hidden><img src="assets/livebarn.png" alt="" width="15" height="17"></a></div></div>
                     </div>
                     </div>
                     </div>
                 </section>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-15T22:45:07.034002+00:00" title="Oct 15, 06:45 PM ET · Refreshes hourly">just now</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-16T00:25:34.010684+00:00" title="Oct 15, 08:25 PM ET · Refreshes hourly">just now</time></p>
         </div>
 
     </div>
@@ -2610,6 +2610,21 @@
           a.classList.add('is-' + state);
           if (!a.classList.contains('icon-btn')) a.textContent = text;
           a.setAttribute('aria-label', text + ': ' + (a.dataset.label || 'LiveBarn'));
+        });
+        // LiveBarn: the rink's live camera until the first hour is up, then
+        // the recording from puck drop. The big buttons say which.
+        var BUTTON = { upcoming: 'Watch live on LiveBarn', live: 'Live now on LiveBarn',
+                       rewatch: 'Rewatch on LiveBarn' };
+        document.querySelectorAll('[data-replay][data-start]').forEach(function (a) {
+          var minutes = (now - Date.parse(a.dataset.start)) / 60000;
+          var state = minutes < 0 ? 'upcoming' : minutes < 60 ? 'live' : 'rewatch';
+          a.href = state === 'rewatch' ? a.dataset.replay : a.dataset.live;
+          if (a.classList.contains('match-btn')) {
+            a.classList.remove('is-upcoming', 'is-live', 'is-rewatch');
+            a.classList.add('is-' + state);
+            var span = a.querySelector('span');
+            if (span) span.textContent = BUTTON[state];
+          }
         });
         document.querySelectorAll('[data-live-start]').forEach(function (flag) {
           var minutes = (now - Date.parse(flag.dataset.liveStart)) / 60000;

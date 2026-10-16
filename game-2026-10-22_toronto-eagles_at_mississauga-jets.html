@@ -2444,12 +2444,12 @@
                         <img class="team-logo" src="assets/logos/mississauga-jets.png" alt="" loading="lazy">
                         <span class="match-name"><a class="team-link" href="team-mississauga-jets.html">Mississauga Jets</a></span>
                         <span class="match-role">Home</span>
-                        <span class="match-record">T-5th · 0-0-0</span>
+                        <span class="match-record">T-5th · 0-1-0</span>
                     </div>
                     </div>
                 </section>
 
-                <div class="match-actions"><a class="match-btn watch is-upcoming" href="https://livebarn.com/en/video/4217/2026-10-22/18:40" target="_blank" rel="noopener noreferrer"><img src="assets/livebarn.png" alt="" width="15" height="17"><span>Watch live on LiveBarn</span></a><a class="match-btn" href="https://www.google.com/maps/dir/?api=1&amp;destination=705%20Matheson%20Boulevard%20East%2C%20Mississauga%2C%20ON" data-apple-maps="https://maps.apple.com/?daddr=705%20Matheson%20Boulevard%20East%2C%20Mississauga%2C%20ON&amp;dirflg=d" target="_blank" rel="noopener noreferrer" aria-label="Directions to Iceland 4">Directions</a></div>
+                <div class="match-actions"><a class="match-btn watch is-upcoming" href="https://watch.livebarn.com/en/video/4217/live" data-live="https://watch.livebarn.com/en/video/4217/live" data-replay="https://watch.livebarn.com/en/video/4217/2026-10-22/18:40" target="_blank" rel="noopener noreferrer" data-start="2026-10-22T18:40:00-04:00"><img src="assets/livebarn.png" alt="" width="15" height="17"><span>Watch live on LiveBarn</span></a><a class="match-btn" href="https://www.google.com/maps/dir/?api=1&amp;destination=705%20Matheson%20Boulevard%20East%2C%20Mississauga%2C%20ON" data-apple-maps="https://maps.apple.com/?daddr=705%20Matheson%20Boulevard%20East%2C%20Mississauga%2C%20ON&amp;dirflg=d" target="_blank" rel="noopener noreferrer" aria-label="Directions to Iceland 4">Directions</a></div>
 
                 <section class="team-block">
                     <div class="block-head"><h3>When and where</h3></div>
@@ -2461,7 +2461,7 @@
                     <div class="tape">
                         <div class="tape-row tape-head"><span class="tape-val"><a class="team-link" href="team-toronto-eagles.html">Toronto Eagles</a></span>
                             <span class="tape-label"></span><span class="tape-val right"><a class="team-link" href="team-mississauga-jets.html">Mississauga Jets</a></span></div>
-                        <div class="tape-row"><span class="tape-val">T-5th</span><span class="tape-label">Place</span><span class="tape-val right">T-5th</span></div><div class="tape-row"><span class="tape-val">0-0-0</span><span class="tape-label">Record</span><span class="tape-val right">0-0-0</span></div><div class="tape-row"><span class="tape-val">0</span><span class="tape-label">Points</span><span class="tape-val right">0</span></div>
+                        <div class="tape-row"><span class="tape-val">T-5th</span><span class="tape-label">Place</span><span class="tape-val right">T-5th</span></div><div class="tape-row"><span class="tape-val">0-0-0</span><span class="tape-label">Record</span><span class="tape-val right">0-1-0</span></div><div class="tape-row"><span class="tape-val">0</span><span class="tape-label">Points</span><span class="tape-val right">0</span></div><div class="tape-row"><span class="tape-val">–</span><span class="tape-label">Win %</span><span class="tape-val right">.000</span></div><div class="tape-row"><span class="tape-val">–</span><span class="tape-label">Goals for / game</span><span class="tape-val right">2.00</span></div><div class="tape-row"><span class="tape-val">–</span><span class="tape-label">Goals against / game</span><span class="tape-val right">3.00</span></div><div class="tape-row"><span class="tape-val">0-0-0</span><span class="tape-label">Road / home record</span><span class="tape-val right">0-1-0</span></div><div class="tape-row"><span class="tape-val">–</span><span class="tape-label">Streak</span><span class="tape-val right">Lost 1</span></div><div class="tape-row"><span class="tape-val form">–</span><span class="tape-label">Last 5 before</span><span class="tape-val right form"><span class="form-chip form-l" title="L 2–3 vs Mississauga North Stars, Oct 15">L</span></span></div>
                     </div>
                 </section>
 
@@ -2471,7 +2471,7 @@
                     </div>
                 </section>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-15T22:45:07.034002+00:00" title="Oct 15, 06:45 PM ET · Refreshes hourly">just now</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-16T00:25:34.010684+00:00" title="Oct 15, 08:25 PM ET · Refreshes hourly">just now</time></p>
         </div>
 
     </div>
@@ -2598,6 +2598,21 @@
           a.classList.add('is-' + state);
           if (!a.classList.contains('icon-btn')) a.textContent = text;
           a.setAttribute('aria-label', text + ': ' + (a.dataset.label || 'LiveBarn'));
+        });
+        // LiveBarn: the rink's live camera until the first hour is up, then
+        // the recording from puck drop. The big buttons say which.
+        var BUTTON = { upcoming: 'Watch live on LiveBarn', live: 'Live now on LiveBarn',
+                       rewatch: 'Rewatch on LiveBarn' };
+        document.querySelectorAll('[data-replay][data-start]').forEach(function (a) {
+          var minutes = (now - Date.parse(a.dataset.start)) / 60000;
+          var state = minutes < 0 ? 'upcoming' : minutes < 60 ? 'live' : 'rewatch';
+          a.href = state === 'rewatch' ? a.dataset.replay : a.dataset.live;
+          if (a.classList.contains('match-btn')) {
+            a.classList.remove('is-upcoming', 'is-live', 'is-rewatch');
+            a.classList.add('is-' + state);
+            var span = a.querySelector('span');
+            if (span) span.textContent = BUTTON[state];
+          }
         });
         document.querySelectorAll('[data-live-start]').forEach(function (flag) {
           var minutes = (now - Date.parse(flag.dataset.liveStart)) / 60000;
