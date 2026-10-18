@@ -1069,6 +1069,22 @@ _SCHEDULE_CSS = """
             color: var(--brand);
         }
 
+        /* Season view: a band naming the month where each one starts. */
+        .game.month-start::before {
+            content: attr(data-month);
+            grid-column: 1 / -1;
+            margin: -8px -12px -4px;
+            padding: 6px 12px;
+            background: var(--wash);
+            border-bottom: 1px solid var(--line);
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.74rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ink-2);
+        }
+
         .by-period .week > .week-head {
             display: none;
         }
@@ -2019,6 +2035,18 @@ SCHEDULE_JS = """
               if (!dayEl) return;
               if (!dayEl.dataset.day) dayEl.dataset.day = dayEl.textContent;
               dayEl.textContent = mark ? 'Today' : dayEl.dataset.day;
+            });
+            // Season: a month band where each month starts, since the rows
+            // only say the day ("Sat 7").
+            var lastMonth = null;
+            view.querySelectorAll('.week .game').forEach(function (row) {
+              var d = row.dataset.date;
+              var starts = period === 'season' && !row.hidden && d && d.slice(0, 7) !== lastMonth;
+              row.classList.toggle('month-start', !!starts);
+              if (starts) {
+                row.dataset.month = MONTHS[+d.slice(5, 7) - 1] + ' ' + d.slice(0, 4);
+                lastMonth = d.slice(0, 7);
+              }
             });
             var head = view.querySelector('[data-period-head]');
             view.classList.add('by-period');
