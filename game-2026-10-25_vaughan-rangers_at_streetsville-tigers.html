@@ -2457,7 +2457,7 @@
 
                 <section class="match-hero">
                     <div class="match-top"><span>U11 AA West · League game</span>
-                        <span class="match-status upcoming">In 8 days</span></div>
+                        <span class="match-status upcoming" data-countdown="2026-10-25">In 7 days</span></div>
                     <div class="match-face">
                     <div class="match-team">
                         <img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy">
@@ -2497,7 +2497,7 @@
                     </div>
                 </section>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-17T09:48:20.243622+00:00" title="Oct 17, 05:48 AM ET · Refreshes hourly">just now</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-18T12:26:15.644291+00:00" title="Oct 18, 08:26 AM ET · Refreshes hourly">just now</time></p>
         </div>
 
     </div>
@@ -2649,6 +2649,22 @@
         });
       }
       setInterval(updateStreams, 60000);
+
+      // "Today", "Tomorrow", "In 3 days", worked out from the reader's own
+      // date, so a countdown is right however long ago the page was built.
+      function updateCountdowns() {
+        var now = new Date();
+        var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        document.querySelectorAll('[data-countdown]').forEach(function (el) {
+          var p = el.dataset.countdown.split('-');
+          var days = Math.round((new Date(+p[0], +p[1] - 1, +p[2]) - today) / 86400000);
+          if (days < 0) return;   // Past: the page's next rebuild replaces it.
+          var text = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : 'In ' + days + ' days';
+          el.textContent = el.hasAttribute('data-countdown-lower') ? text.toLowerCase() : text;
+        });
+      }
+      updateCountdowns();
+      setInterval(updateCountdowns, 60000);
 
       function enhance() {
         updateStreams();
