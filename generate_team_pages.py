@@ -28,7 +28,7 @@ from html import escape
 
 import config
 import page_common
-from generate_schedule_html import (aware, clock, countdown, directions_link, format_score,
+from generate_schedule_html import (countdown_attr, aware, clock, countdown, directions_link, format_score,
                                     game_row, parse_game_date, parse_game_time, season_rows,
                                     watch_link, next_game_card, game_page)
 from season_schedule import parse_score, slug
@@ -261,7 +261,8 @@ def versus_eagles(games, team, now, today):
     l = sum(s["result"] == "L" for s in sides)
     t = sum(s["result"] == "T" for s in sides)
     nxt = next((g for g in meetings if not g["score"] and g["day"] >= today), None)
-    note = (f"Next meeting {countdown(nxt['day'], today).lower()}, {nxt['day'].strftime('%a %b')} {nxt['day'].day}"
+    note = (f"Next meeting <span data-countdown-lower{countdown_attr(nxt['day'])}>"
+            f"{countdown(nxt['day'], today).lower()}</span>, {nxt['day'].strftime('%a %b')} {nxt['day'].day}"
             if nxt else "No more meetings scheduled")
     record = (f'<div class="series-record"><span class="series-num">{w}-{l}-{t}</span>'
               f'<span class="series-label">{escape(config.TEAM_NAME.split()[-1])} record</span></div>'
@@ -270,7 +271,7 @@ def versus_eagles(games, team, now, today):
                 <section class="team-block">
                     <div class="block-head"><h3>Versus the {escape(us.split()[-1])}</h3>
                         <span>{len(meetings)} meeting{'s' if len(meetings) != 1 else ''} this season</span></div>
-                    <div class="series">{record}<span class="series-next">{escape(note)}</span></div>
+                    <div class="series">{record}<span class="series-next">{note}</span></div>
                     <div class="team-games">
 {rows_html(meetings, now)}                    </div>
                 </section>

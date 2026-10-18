@@ -28,6 +28,8 @@ def check_caption_guard():
         (good.replace(config.SEASON, "24-25"), False, "a different season"),
         (good.replace(config.DIVISION, "U13"), False, "a different division"),
         (good.replace(config.CATEGORY_VALUE, "A3"), False, "a different category"),
+        (good.replace(config.CATEGORY_VALUE, config.CATEGORY), True, "the category by name (AA)"),
+        (good.replace(config.CATEGORY_VALUE, "AAA"), False, "AAA, which contains AA"),
         ("", False, "a missing caption"),
     ]
 

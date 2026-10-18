@@ -30,7 +30,7 @@ import arenas
 import config
 import page_common
 import team_crypto
-from generate_schedule_html import (team_score, EVENT_TITLES, LOGIN_DIALOG, aware, clock, countdown,
+from generate_schedule_html import (countdown_attr, team_score, EVENT_TITLES, LOGIN_DIALOG, aware, clock, countdown,
                                     event_page, event_stream, load_team_events, maps_link,
                                     match_team_games, parse_game_date, parse_game_time,
                                     season_rows, short_venue, team_game_row, team_name_html,
@@ -89,7 +89,8 @@ def status(event, now, today):
         return '<span class="match-status live">On now</span>'
     elif last_day(event) < today:
         return '<span class="match-status">Done</span>'
-    return f'<span class="match-status upcoming">{escape(countdown(start.date(), today))}</span>'
+    return (f'<span class="match-status upcoming"{countdown_attr(start.date())}>'
+            f'{escape(countdown(start.date(), today))}</span>')
 
 
 def time_range(event):

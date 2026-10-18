@@ -28,6 +28,7 @@ wrong season's table.
 """
 
 import json
+import re
 import time
 from datetime import datetime, timezone
 
@@ -107,10 +108,14 @@ def caption_matches(caption):
     """Does the caption confirm the season, division and category we asked for?"""
     if not caption:
         return False
+    # The GTHL has printed the category both as its dropdown code ("U11 A2
+    # West", until 2026-10-16) and as its name ("U11 AA West", since). Either
+    # will do, as a whole word, so "AAA" never passes for "AA".
+    words = set(re.findall(r"[A-Za-z0-9-]+", caption))
     return (
         config.SEASON in caption
-        and config.DIVISION in caption
-        and config.CATEGORY_VALUE in caption
+        and config.DIVISION in words
+        and bool({config.CATEGORY_VALUE, config.CATEGORY} & words)
     )
 
 

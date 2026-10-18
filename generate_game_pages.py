@@ -26,7 +26,7 @@ from html import escape
 import arenas
 import config
 import page_common
-from generate_schedule_html import (aware, countdown, game_page, game_row, live_flag, maps_link,
+from generate_schedule_html import (countdown_attr, aware, countdown, game_page, game_row, live_flag, maps_link,
                                     stream_state, team_name_html, watch_button)
 from generate_team_pages import (all_games, division_rank, form_chips, number, ordinal,
                                  side_of, team_games)
@@ -48,7 +48,8 @@ def status(g, today, now):
         return live_flag(start, now)
     if state == "rewatch":
         return '<span class="match-status">Awaiting final score</span>'
-    return f'<span class="match-status upcoming">{escape(countdown(g["day"], today))}</span>'
+    return (f'<span class="match-status upcoming"{countdown_attr(g["day"])}>'
+            f'{escape(countdown(g["day"], today))}</span>')
 
 
 def matchup(g, standings, today, now):
