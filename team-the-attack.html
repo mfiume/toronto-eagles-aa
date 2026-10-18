@@ -2152,7 +2152,7 @@
 
                 <section class="next is-link" aria-label="Next game" data-href="game-2026-10-22_mississauga-rattlers_at_the-attack.html" tabindex="0" role="link">
                     <div class="next-top"><span>Next game</span>
-                        <span class="next-when">In 5 days</span></div>
+                        <span class="next-when" data-countdown="2026-10-22">In 4 days</span></div>
                     <div class="face">
                         <div class="face-team"><img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy">
                             <span><a class="team-link" href="team-mississauga-rattlers.html">Mississauga Rattlers</a><span class="face-role">Away</span></span></div>
@@ -2180,7 +2180,7 @@
                 <section class="team-block">
                     <div class="block-head"><h3>Versus the Eagles</h3>
                         <span>2 meetings this season</span></div>
-                    <div class="series"><div class="series-record"><span class="series-label">Yet to meet</span></div><span class="series-next">Next meeting in 8 days, Sun Oct 25</span></div>
+                    <div class="series"><div class="series-record"><span class="series-label">Yet to meet</span></div><span class="series-next">Next meeting <span data-countdown-lower data-countdown="2026-10-25">in 7 days</span>, Sun Oct 25</span></div>
                     <div class="team-games">
                     <div class="week-head"><h3 class="week-label">October</h3></div>
                     <div class="week-games">
@@ -2287,7 +2287,7 @@
                     </div>
                 </section>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-17T09:47:18.261531+00:00" title="Oct 17, 05:47 AM ET · Refreshes hourly">1 minute ago</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-18T12:25:12.352421+00:00" title="Oct 18, 08:25 AM ET · Refreshes hourly">1 minute ago</time></p>
         </div>
 
     </div>
@@ -2439,6 +2439,22 @@
         });
       }
       setInterval(updateStreams, 60000);
+
+      // "Today", "Tomorrow", "In 3 days", worked out from the reader's own
+      // date, so a countdown is right however long ago the page was built.
+      function updateCountdowns() {
+        var now = new Date();
+        var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        document.querySelectorAll('[data-countdown]').forEach(function (el) {
+          var p = el.dataset.countdown.split('-');
+          var days = Math.round((new Date(+p[0], +p[1] - 1, +p[2]) - today) / 86400000);
+          if (days < 0) return;   // Past: the page's next rebuild replaces it.
+          var text = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : 'In ' + days + ' days';
+          el.textContent = el.hasAttribute('data-countdown-lower') ? text.toLowerCase() : text;
+        });
+      }
+      updateCountdowns();
+      setInterval(updateCountdowns, 60000);
 
       function enhance() {
         updateStreams();
