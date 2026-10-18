@@ -1895,6 +1895,22 @@ SCHEDULE_JS = """
       }
       setInterval(updateStreams, 60000);
 
+      // "Today", "Tomorrow", "In 3 days", worked out from the reader's own
+      // date, so a countdown is right however long ago the page was built.
+      function updateCountdowns() {
+        var now = new Date();
+        var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        document.querySelectorAll('[data-countdown]').forEach(function (el) {
+          var p = el.dataset.countdown.split('-');
+          var days = Math.round((new Date(+p[0], +p[1] - 1, +p[2]) - today) / 86400000);
+          if (days < 0) return;   // Past: the page's next rebuild replaces it.
+          var text = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : 'In ' + days + ' days';
+          el.textContent = el.hasAttribute('data-countdown-lower') ? text.toLowerCase() : text;
+        });
+      }
+      updateCountdowns();
+      setInterval(updateCountdowns, 60000);
+
       function enhance() {
         updateStreams();
         if (apple) {

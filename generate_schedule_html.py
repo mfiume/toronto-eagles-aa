@@ -66,6 +66,15 @@ def countdown(day, today):
     return f"In {days} days"
 
 
+def countdown_attr(day):
+    """
+    Lets the page's script redo a countdown from the reader's own date
+    (SCHEDULE_JS), so "Tomorrow" never outlives the day it was written for,
+    however long ago the page was built.
+    """
+    return f' data-countdown="{day.isoformat()}"'
+
+
 def week_label(monday, this_monday):
     """'This week', 'Next week', 'Last week', or 'Week of Oct 19'."""
     weeks = (monday - this_monday).days // 7
@@ -530,7 +539,7 @@ def next_game_card(away, home, day, time_text, rink_html, today, extra="", href=
     return f"""
                 <section class="next{' is-link' if href else ''}" aria-label="Next game"{link}>
                     <div class="next-top"><span>Next game</span>
-                        <span class="next-when">{countdown(day, today)}</span></div>
+                        <span class="next-when"{countdown_attr(day)}>{countdown(day, today)}</span></div>
                     <div class="face">
                         <div class="face-team">{page_common.team_logo(away)}
                             <span>{team_name_html(away)}<span class="face-role">Away</span></span></div>
