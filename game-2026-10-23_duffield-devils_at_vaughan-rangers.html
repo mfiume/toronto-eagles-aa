@@ -568,6 +568,56 @@
             transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
         }
 
+        /* The team picker: a select dressed as a segment, with a caret. */
+        .team-pick {
+            position: relative;
+            padding-right: 26px !important;
+        }
+
+        .team-pick select {
+            appearance: none;
+            -webkit-appearance: none;
+            border: 0;
+            background: transparent;
+            font: inherit;
+            color: inherit;
+            max-width: 9.5rem;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .team-pick select:focus {
+            outline: none;
+        }
+
+        .team-pick:focus-within {
+            outline: 2px solid var(--brand);
+            outline-offset: 1px;
+        }
+
+        .team-pick::after {
+            content: "";
+            position: absolute;
+            right: 11px;
+            top: 50%;
+            width: 6px;
+            height: 6px;
+            border-right: 1.6px solid currentColor;
+            border-bottom: 1.6px solid currentColor;
+            transform: translateY(-70%) rotate(45deg);
+            pointer-events: none;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
+
         .sched-filter-btn:hover {
             color: var(--ink);
         }
@@ -2511,7 +2561,7 @@
                     </div>
                 </section>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-24T12:18:07.473983+00:00" title="Oct 24, 08:18 AM ET · Refreshes hourly">just now</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-24T12:38:15.954033+00:00" title="Oct 24, 08:38 AM ET · Refreshes hourly">just now</time></p>
         </div>
 
     </div>
@@ -2755,12 +2805,20 @@
           }
           if (!anchor) anchor = today;
           var empty = view.querySelector('[data-sched-empty]');
+          // One team, from the picker beside Eagles / West ('team:<slug>').
+          var teamSelect = document.querySelector('[data-team-filter]');
+          var teamPick = teamSelect && teamSelect.closest('.team-pick');
           var render = function () {
             var r = range(period, anchor);
+            var team = who.indexOf('team:') === 0 ? who.slice(5) : '';
             view.classList.toggle('filter-ours', who === 'ours');
             whoButtons.forEach(function (b) {
               b.setAttribute('aria-pressed', String(b.dataset.filter === who));
             });
+            if (teamSelect) {
+              teamSelect.value = team;
+              teamPick.setAttribute('aria-pressed', String(!!team));
+            }
             typeButtons.forEach(function (b) {
               b.setAttribute('aria-pressed', String(b.dataset.typeFilter === kind));
             });
@@ -2769,7 +2827,9 @@
               var visible = [];
               week.querySelectorAll('.game').forEach(function (row) {
                 var d = row.dataset.date;
-                var show = (who === 'all' || row.classList.contains('is-ours')) &&
+                var show = (who === 'all' ||
+                            (who === 'ours' && row.classList.contains('is-ours')) ||
+                            (team && (' ' + (row.dataset.teams || '') + ' ').indexOf(' ' + team + ' ') >= 0)) &&
                            (kind === 'all' || row.dataset.type === kind) &&
                            (!d || (d >= r[0] && d < r[1]));
                 row.hidden = !show;
@@ -2865,7 +2925,9 @@
           }
           var savedWho = stored(FILTER_KEY);
           // Only honour a stored choice the page can actually show.
-          if (savedWho === 'all' || (savedWho === 'ours' && view.dataset.hasOurs === '1')) {
+          if (savedWho === 'all' || (savedWho === 'ours' && view.dataset.hasOurs === '1') ||
+              (savedWho && savedWho.indexOf('team:') === 0 && teamSelect &&
+               teamSelect.querySelector('option[value="' + savedWho.slice(5) + '"]'))) {
             who = savedWho;
           }
           var savedKind = stored(TYPE_KEY);
@@ -2878,6 +2940,12 @@
               who = b.dataset.filter; store(FILTER_KEY, who); render();
             });
           });
+          if (teamSelect) {
+            teamSelect.addEventListener('change', function () {
+              who = teamSelect.value ? 'team:' + teamSelect.value : 'all';
+              store(FILTER_KEY, who); render();
+            });
+          }
           typeButtons.forEach(function (b) {
             b.addEventListener('click', function () {
               kind = b.dataset.typeFilter; store(TYPE_KEY, kind); render();
