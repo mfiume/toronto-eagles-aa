@@ -115,7 +115,8 @@ class MatchLeagueGames(unittest.TestCase):
         events = teamsnap.events_from_ics(SAMPLE_ICS)
         # On the 16th the league game is the next one, so its card carries
         # TeamSnap's arrival time and jersey; its row does not.
-        html = gen.build_block([LEAGUE_GAME], date(2026, 10, 16), "toronto eagles", events)
+        html = gen.build_block([LEAGUE_GAME], date(2026, 10, 16), "toronto eagles", events,
+                               now=datetime(2026, 10, 16, 12, 0, tzinfo=gen.page_common.TORONTO))
         self.assertEqual(html.count("Arrive 12:20 PM · White jersey"), 1)
         # The TeamSnap copy of the league game is not listed again.
         self.assertNotIn("Westmall", html)

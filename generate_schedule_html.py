@@ -255,7 +255,7 @@ def extra_line(*parts, details=False):
     return f'<div class="{cls}">' + " · ".join(escape(p) for p in parts) + "</div>"
 
 
-def row_attrs(classes, details, row_type="game", day=None, kind="game", href=None):
+def row_attrs(classes, details, row_type="game", day=None, kind="game", href=None, teams=()):
     """
     The opening tag's attributes for a row. A league game's row (`href`)
     opens the game's own page on tap, and any details it has always show.
@@ -270,10 +270,12 @@ def row_attrs(classes, details, row_type="game", day=None, kind="game", href=Non
     needs; a tap still closes them.
 
     `day` and `kind` are for the page's script: the Week / Month / Season
-    view goes by the date, and the week headings count by kind.
+    view goes by the date, and the week headings count by kind. `teams` are
+    who plays in it, for the pick-a-team filter.
     """
     data = (f'data-type="{row_type}" data-kind="{kind}"'
-            + (f' data-date="{day.isoformat()}"' if day else ''))
+            + (f' data-date="{day.isoformat()}"' if day else '')
+            + (f' data-teams="{" ".join(season_schedule.slug(t) for t in teams)}"' if teams else ''))
     if href:
         return f'class="{classes} is-link" {data} data-href="{href}" tabindex="0" role="link"'
     is_open = bool(details) and "is-ours" in classes.split()
@@ -382,7 +384,7 @@ def game_row(game, day, our_team, team=None, start=None, now=None):
 
     live = score is None and start is not None and stream_state(start, now) == 'live'
     classes = f"game{' is-ours' if ours else ''}{' is-final' if score else ''}{' is-live' if live else ''}"
-    return f"""                    <div {row_attrs(classes, details, day=day, href=game_page(game) if day else None)}>
+    return f"""                    <div {row_attrs(classes, details, day=day, href=game_page(game) if day else None, teams=(away, home))}>
                         <div class="game-when"><span class="game-day">{day_text}</span>
                             {when}</div>
                         <div class="game-teams">{teams}{icons}{details}</div>
@@ -500,7 +502,7 @@ def team_game_row(event, start, now=None):
         when = f'<span class="game-time">{time_text}</span>' + (live_flag(begins, now) if now else '')
         live = bool(begins and now and stream_state(begins, now) == 'live')
     classes = f"game is-ours team-game{' is-final' if score else ''}{' is-live' if live else ''}"
-    return f"""                    <div {row_attrs(classes, "", day=start.date(), href=event_page(event))}>
+    return f"""                    <div {row_attrs(classes, "", day=start.date(), href=event_page(event), teams=(away, home))}>
                         <div class="game-when"><span class="game-day">{start.strftime('%a')} {start.day}</span>
                             {when}</div>
                         <div class="game-teams">{team_line(away, 1)}{team_line(home, 2)}{icons}</div>
@@ -522,7 +524,7 @@ def team_event_row(event, start):
     time_text = clock(start.time()) if event.get("timed") else "All day"
     tag = '<span class="event-tag">Tournament</span>' if kind == "tournament" else ''
     where = short_venue(event.get("venue")) or (event.get("address") or "Location to be confirmed")
-    return f"""                    <div {row_attrs(f"game is-ours team-event kind-{kind}", "", ROW_TYPES.get(kind, "other"), start.date(), kind, href=event_page(event))}>
+    return f"""                    <div {row_attrs(f"game is-ours team-event kind-{kind}", "", ROW_TYPES.get(kind, "other"), start.date(), kind, href=event_page(event), teams=(config.TEAM_NAME,))}>
                         <div class="game-when"><span class="game-day">{start.strftime('%a')} {start.day}</span>
                             <span class="game-time">{time_text}</span></div>
                         <div class="game-teams"><div class="event-title r1">{tag}<span>{escape(title)}</span></div><div class="event-where r2">{escape(where)}</div></div>
@@ -691,6 +693,7 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
                                 aria-pressed="{str(default_ours).lower()}">{short_name}</button>
                         <button type="button" class="sched-filter-btn" data-filter="all"
                                 aria-pressed="{str(not default_ours).lower()}">{escape(config.REGION)}</button>
+                        {team_picker(league)}
                     </div>
 """
     if logged_in:
@@ -747,6 +750,17 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
     html += ('                <p class="sched-empty" data-sched-empty hidden></p>\n'
              "                </div>\n")
     return html
+
+
+def team_picker(league):
+    """
+    A third choice beside Eagles / West: one team's games. A native select
+    styled as one of the segments, so a phone opens its own picker.
+    """
+    names = sorted({n for g, _, _ in league for n in (g.get("Away", ""), g.get("Home", "")) if n})
+    options = "".join(f'<option value="{season_schedule.slug(n)}">{escape(n)}</option>' for n in names)
+    return (f'<label class="sched-filter-btn team-pick" aria-pressed="false"><span class="sr-only">Team</span>'
+            f'<select data-team-filter aria-label="One team\'s games"><option value="">Team</option>{options}</select></label>')
 
 
 def period_controls():
