@@ -574,6 +574,13 @@
             padding-right: 26px !important;
         }
 
+        /* Alone in its track, the dropdown always looks chosen. */
+        .team-pick[aria-pressed="true"] {
+            background: var(--surface);
+            color: var(--ink);
+            box-shadow: 0 1px 2px rgba(20, 22, 26, 0.14), 0 0 0 0.5px rgba(20, 22, 26, 0.06);
+        }
+
         .team-pick select {
             appearance: none;
             -webkit-appearance: none;
@@ -2432,7 +2439,7 @@
                     </div>
                 </section>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-24T12:37:11.372676+00:00" title="Oct 24, 08:37 AM ET · Refreshes hourly">1 minute ago</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-24T12:41:05.658480+00:00" title="Oct 24, 08:41 AM ET · Refreshes hourly">1 minute ago</time></p>
         </div>
 
     </div>
@@ -2657,9 +2664,9 @@
         // only exists logged in, which needs scripting anyway. A week shows
         // only while something in it passes both.
         var view = document.querySelector('[data-schedule-view]');
-        var whoButtons = document.querySelectorAll('[data-filter]');
+        var whoSelect = document.querySelector('[data-who]');
         var typeButtons = document.querySelectorAll('[data-type-filter]');
-        if (view && whoButtons.length) {
+        if (view && whoSelect) {
           var who = view.classList.contains('filter-ours') ? 'ours' : 'all';
           var kind = 'all';
           var bar = document.querySelector('[data-period-bar]');
@@ -2676,20 +2683,12 @@
           }
           if (!anchor) anchor = today;
           var empty = view.querySelector('[data-sched-empty]');
-          // One team, from the picker beside Eagles / West ('team:<slug>').
-          var teamSelect = document.querySelector('[data-team-filter]');
-          var teamPick = teamSelect && teamSelect.closest('.team-pick');
+          // Whose games: 'all' (the region), 'ours', or 'team:<slug>'.
           var render = function () {
             var r = range(period, anchor);
             var team = who.indexOf('team:') === 0 ? who.slice(5) : '';
             view.classList.toggle('filter-ours', who === 'ours');
-            whoButtons.forEach(function (b) {
-              b.setAttribute('aria-pressed', String(b.dataset.filter === who));
-            });
-            if (teamSelect) {
-              teamSelect.value = team;
-              teamPick.setAttribute('aria-pressed', String(!!team));
-            }
+            whoSelect.value = who;
             typeButtons.forEach(function (b) {
               b.setAttribute('aria-pressed', String(b.dataset.typeFilter === kind));
             });
@@ -2797,8 +2796,8 @@
           var savedWho = stored(FILTER_KEY);
           // Only honour a stored choice the page can actually show.
           if (savedWho === 'all' || (savedWho === 'ours' && view.dataset.hasOurs === '1') ||
-              (savedWho && savedWho.indexOf('team:') === 0 && teamSelect &&
-               teamSelect.querySelector('option[value="' + savedWho.slice(5) + '"]'))) {
+              (savedWho && savedWho.indexOf('team:') === 0 &&
+               whoSelect.querySelector('option[value="' + savedWho + '"]'))) {
             who = savedWho;
           }
           var savedKind = stored(TYPE_KEY);
@@ -2806,17 +2805,9 @@
             kind = savedKind;
           }
           render();
-          whoButtons.forEach(function (b) {
-            b.addEventListener('click', function () {
-              who = b.dataset.filter; store(FILTER_KEY, who); render();
-            });
+          whoSelect.addEventListener('change', function () {
+            who = whoSelect.value; store(FILTER_KEY, who); render();
           });
-          if (teamSelect) {
-            teamSelect.addEventListener('change', function () {
-              who = teamSelect.value ? 'team:' + teamSelect.value : 'all';
-              store(FILTER_KEY, who); render();
-            });
-          }
           typeButtons.forEach(function (b) {
             b.addEventListener('click', function () {
               kind = b.dataset.typeFilter; store(TYPE_KEY, kind); render();
