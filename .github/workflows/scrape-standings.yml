@@ -54,13 +54,26 @@ jobs:
           # ChromeDriver is handled by selenium-manager in Selenium 4.15+
           echo "Chrome and ChromeDriver setup complete"
 
+      # The GTHL's site sometimes fails to load for a moment, so each scrape
+      # gets three tries. If all three fail, the last good data is kept and
+      # the pages are still built, rather than the whole update stopping.
       - name: Run standings scraper
         run: |
-          python scrape_standings.py
+          for attempt in 1 2 3; do
+            python scrape_standings.py && exit 0
+            echo "Standings scrape failed (attempt $attempt)"; sleep 30
+          done
+          echo "::warning::Standings scrape failed three times; keeping the last good standings"
+          git checkout -- standings.json
 
       - name: Run schedule scraper
         run: |
-          python scrape_schedule.py
+          for attempt in 1 2 3; do
+            python scrape_schedule.py && exit 0
+            echo "Schedule scrape failed (attempt $attempt)"; sleep 30
+          done
+          echo "::warning::Schedule scrape failed three times; keeping the last good schedule"
+          git checkout -- schedule.json season_schedule.json eagles_schedule.json
 
       - name: Cache team logos
         run: |
