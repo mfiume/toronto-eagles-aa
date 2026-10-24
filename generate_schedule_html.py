@@ -750,18 +750,22 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
 
 def team_picker(league, default_ours):
     """
-    Whose games to show, as one dropdown: the whole region, the Eagles (the
-    default), or any one team. A native select dressed as a pill, so a phone
-    opens its own picker. Values: 'all', 'ours', 'team:<slug>'.
+    Whose games to show: an Eagles button (the default), and beside it a
+    dropdown with the whole region first and then each other team. The
+    dropdown is a native select, so a phone opens its own picker, laid
+    invisibly over a label that shows the choice. Values: 'ours', 'all',
+    'team:<slug>'.
     """
     ours = config.TEAM_NAME
     names = sorted({n for g, _, _ in league for n in (g.get("Away", ""), g.get("Home", "")) if n} - {ours})
-    options = (f'<option value="all"{"" if default_ours else " selected"}>{escape(config.REGION)}</option>'
-               f'<option value="ours"{" selected" if default_ours else ""}>{escape(ours.split()[-1])}</option>'
-               '<option disabled>──────────</option>'
-               + "".join(f'<option value="team:{season_schedule.slug(n)}">{escape(n)}</option>' for n in names))
-    return (f'<label class="sched-filter-btn team-pick" aria-pressed="true">'
-            f'<select data-who aria-label="Whose games to show">{options}</select></label>')
+    teams = "".join(f'<option value="team:{season_schedule.slug(n)}">{escape(n)}</option>' for n in names)
+    region = escape(config.REGION)
+    return (f'<button type="button" class="sched-filter-btn" data-filter="ours" '
+            f'aria-pressed="{str(default_ours).lower()}">{escape(ours.split()[-1])}</button>'
+            f'<label class="sched-filter-btn team-pick" aria-pressed="{str(not default_ours).lower()}">'
+            f'<span class="pick-text" data-who-text>{region}</span>'
+            f'<select data-who aria-label="Whose games to show">'
+            f'<option value="all">{region}</option><optgroup label="Teams">{teams}</optgroup></select></label>')
 
 
 def period_controls():
