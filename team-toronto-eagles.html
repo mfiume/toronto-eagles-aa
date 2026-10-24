@@ -574,24 +574,24 @@
             padding-right: 26px !important;
         }
 
-        /* Alone in its track, the dropdown always looks chosen. */
-        .team-pick[aria-pressed="true"] {
-            background: var(--surface);
-            color: var(--ink);
-            box-shadow: 0 1px 2px rgba(20, 22, 26, 0.14), 0 0 0 0.5px rgba(20, 22, 26, 0.06);
+
+
+        /* The native select lies invisibly over the label, so a tap opens
+           the phone's own picker while the label shows the choice. */
+        .team-pick select {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            opacity: 0;
+            font-size: 16px;   /* iOS zooms into smaller form fields */
+            cursor: pointer;
         }
 
-        .team-pick select {
-            appearance: none;
-            -webkit-appearance: none;
-            border: 0;
-            background: transparent;
-            font: inherit;
-            color: inherit;
+        .pick-text {
             max-width: 9.5rem;
+            overflow: hidden;
             text-overflow: ellipsis;
-            cursor: pointer;
-            padding: 0;
+            white-space: nowrap;
         }
 
         .team-pick select:focus {
@@ -2439,7 +2439,7 @@
                     </div>
                 </section>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-24T16:19:23.837209+00:00" title="Oct 24, 12:19 PM ET · Refreshes hourly">just now</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-24T16:47:02.685041+00:00" title="Oct 24, 12:47 PM ET · Refreshes hourly">just now</time></p>
         </div>
 
     </div>
@@ -2683,12 +2683,22 @@
           }
           if (!anchor) anchor = today;
           var empty = view.querySelector('[data-sched-empty]');
-          // Whose games: 'all' (the region), 'ours', or 'team:<slug>'.
+          // Whose games: 'ours' (the Eagles button), or from the dropdown
+          // 'all' (the region) or 'team:<slug>'.
+          var oursButton = document.querySelector('[data-filter="ours"]');
+          var pick = whoSelect.closest('.team-pick');
+          var pickText = pick.querySelector('[data-who-text]');
           var render = function () {
             var r = range(period, anchor);
             var team = who.indexOf('team:') === 0 ? who.slice(5) : '';
             view.classList.toggle('filter-ours', who === 'ours');
-            whoSelect.value = who;
+            if (oursButton) oursButton.setAttribute('aria-pressed', String(who === 'ours'));
+            pick.setAttribute('aria-pressed', String(who !== 'ours'));
+            // With the Eagles chosen the dropdown holds no choice, so that
+            // picking the region from it still counts as a change.
+            if (who === 'ours') whoSelect.selectedIndex = -1; else whoSelect.value = who;
+            var chosen = who === 'ours' ? whoSelect.options[0] : whoSelect.options[whoSelect.selectedIndex];
+            pickText.textContent = chosen ? chosen.textContent : '';
             typeButtons.forEach(function (b) {
               b.setAttribute('aria-pressed', String(b.dataset.typeFilter === kind));
             });
@@ -2808,6 +2818,11 @@
           whoSelect.addEventListener('change', function () {
             who = whoSelect.value; store(FILTER_KEY, who); render();
           });
+          if (oursButton) {
+            oursButton.addEventListener('click', function () {
+              who = 'ours'; store(FILTER_KEY, who); render();
+            });
+          }
           typeButtons.forEach(function (b) {
             b.addEventListener('click', function () {
               kind = b.dataset.typeFilter; store(TYPE_KEY, kind); render();
