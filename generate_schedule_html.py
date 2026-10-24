@@ -689,11 +689,7 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
                      data-season="{escape(page_common.season_label().replace('-', '–'))}">
                     <h2>Schedule</h2>
                     <div class="sched-filter" role="group" aria-label="Which games to show">
-                        <button type="button" class="sched-filter-btn" data-filter="ours"
-                                aria-pressed="{str(default_ours).lower()}">{short_name}</button>
-                        <button type="button" class="sched-filter-btn" data-filter="all"
-                                aria-pressed="{str(not default_ours).lower()}">{escape(config.REGION)}</button>
-                        {team_picker(league)}
+                        {team_picker(league, default_ours)}
                     </div>
 """
     if logged_in:
@@ -752,15 +748,20 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
     return html
 
 
-def team_picker(league):
+def team_picker(league, default_ours):
     """
-    A third choice beside Eagles / West: one team's games. A native select
-    styled as one of the segments, so a phone opens its own picker.
+    Whose games to show, as one dropdown: the whole region, the Eagles (the
+    default), or any one team. A native select dressed as a pill, so a phone
+    opens its own picker. Values: 'all', 'ours', 'team:<slug>'.
     """
-    names = sorted({n for g, _, _ in league for n in (g.get("Away", ""), g.get("Home", "")) if n})
-    options = "".join(f'<option value="{season_schedule.slug(n)}">{escape(n)}</option>' for n in names)
-    return (f'<label class="sched-filter-btn team-pick" aria-pressed="false"><span class="sr-only">Team</span>'
-            f'<select data-team-filter aria-label="One team\'s games"><option value="">Team</option>{options}</select></label>')
+    ours = config.TEAM_NAME
+    names = sorted({n for g, _, _ in league for n in (g.get("Away", ""), g.get("Home", "")) if n} - {ours})
+    options = (f'<option value="all"{"" if default_ours else " selected"}>{escape(config.REGION)}</option>'
+               f'<option value="ours"{" selected" if default_ours else ""}>{escape(ours.split()[-1])}</option>'
+               '<option disabled>──────────</option>'
+               + "".join(f'<option value="team:{season_schedule.slug(n)}">{escape(n)}</option>' for n in names))
+    return (f'<label class="sched-filter-btn team-pick" aria-pressed="true">'
+            f'<select data-who aria-label="Whose games to show">{options}</select></label>')
 
 
 def period_controls():
