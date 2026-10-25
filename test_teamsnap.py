@@ -136,8 +136,9 @@ class TeamScores(unittest.TestCase):
             gen._TEAM_SCORES = None
         self.assertIn("Final", row)
         self.assertIn('result-w', row)
-        self.assertIn('<span class="game-goals r2 won">3</span>', row)   # We were home.
-        self.assertIn('<span class="game-goals r1 lost">1</span>', row)
+        # We were home, and are still on top: ours always come first.
+        self.assertIn('<span class="game-goals r1 won">3</span>', row)
+        self.assertIn('<span class="game-goals r2 lost">1</span>', row)
 
     def test_score_key_hides_the_opponent(self):
         key = gen.score_key({"start": "2026-10-15T19:00", "opponent": "Burlington Eagles"})

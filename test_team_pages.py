@@ -32,6 +32,29 @@ class SideOf(unittest.TestCase):
         self.assertNotIn("result", tp.side_of(GAMES[3], "Toronto Eagles"))
 
 
+class RowOrder(unittest.TestCase):
+    GAME = {"Away": "Visitors", "Home": "Toronto Eagles", "Score": "2:5"}
+
+    def top(self, html):
+        return html.index("Visitors") < html.index("Toronto Eagles")
+
+    def test_ours_on_top_even_at_home(self):
+        import generate_schedule_html as gen
+        html = gen.game_row(self.GAME, None, "toronto eagles")
+        self.assertFalse(self.top(html))
+        self.assertIn('<span class="game-goals r1 won">5</span>', html)
+
+    def test_a_team_page_puts_its_team_on_top(self):
+        import generate_schedule_html as gen
+        self.assertTrue(self.top(gen.game_row(self.GAME, None, "toronto eagles", first="Visitors")))
+
+    def test_others_away_on_top(self):
+        import generate_schedule_html as gen
+        game = {"Away": "Visitors", "Home": "Hosts", "Score": ""}
+        html = gen.game_row(game, None, "toronto eagles")
+        self.assertLess(html.index("Visitors"), html.index("Hosts"))
+
+
 class Sections(unittest.TestCase):
     def test_series_record_is_the_eagles(self):
         html = tp.versus_eagles(GAMES, "Mississauga Beast", datetime(2026, 10, 20, tzinfo=tp.page_common.TORONTO), date(2026, 10, 20))

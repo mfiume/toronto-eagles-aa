@@ -333,7 +333,7 @@ def result_badge(ours, theirs):
             f'title="{"Win" if r == "W" else "Loss"}">{r}</span>')
 
 
-def game_row(game, day, our_team, team=None, start=None, now=None):
+def game_row(game, day, our_team, team=None, start=None, now=None, first=None):
     """
     One league game as a compact row: day and time, then both teams stacked,
     then the LiveBarn play icon, then each team's goals once played. Ours look
@@ -347,8 +347,13 @@ def game_row(game, day, our_team, team=None, start=None, now=None):
 
     `team` is the matching TeamSnap entry, if any, which adds arrival time and
     jersey colour in the team version of the page.
+
+    `first` is the team shown on top wherever it plays (ours by default, the
+    page's team on a team page), so it does not jump between rows with home
+    and away; otherwise the away team is on top.
     """
     away, home = game.get('Away', ''), game.get('Home', '')
+    top = (first or our_team).lower()
     ours = our_team in (away.lower(), home.lower())
     score = parse_score(format_score(game.get('Score')))
     day_text = f"{day.strftime('%a')} {day.day}" if day else escape(game.get('Date', ''))
@@ -374,12 +379,14 @@ def game_row(game, day, our_team, team=None, start=None, now=None):
         if ours:
             status += result_badge(*((h, a) if home.lower() == our_team else (a, h)))
         when = f'<span class="game-time">{status}</span>'
-        teams = team_line(away, a, h, 1) + team_line(home, h, a, 2)
+        teams = (team_line(home, h, a, 1) + team_line(away, a, h, 2) if home.lower() == top
+                 else team_line(away, a, h, 1) + team_line(home, h, a, 2))
         details = ''   # The game page has the rest.
     else:
         when = (f'<span class="game-time">{escape(game.get("Time", ""))}</span>'
                 + live_flag(start, now))
-        teams = team_line(away, 0, 0, 1) + team_line(home, 0, 0, 2)
+        teams = (team_line(home, 0, 0, 1) + team_line(away, 0, 0, 2) if home.lower() == top
+                 else team_line(away, 0, 0, 1) + team_line(home, 0, 0, 2))
         details = ''   # Where it is, and the rest, are on the game page.
 
     live = score is None and start is not None and stream_state(start, now) == 'live'
@@ -505,7 +512,7 @@ def team_game_row(event, start, now=None):
     return f"""                    <div {row_attrs(classes, "", day=start.date(), href=event_page(event), teams=(away, home))}>
                         <div class="game-when"><span class="game-day">{start.strftime('%a')} {start.day}</span>
                             {when}</div>
-                        <div class="game-teams">{team_line(away, 1)}{team_line(home, 2)}{icons}</div>
+                        <div class="game-teams">{team_line(us, 1)}{team_line(them, 2)}{icons}</div>
                     </div>
 """
 

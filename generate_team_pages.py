@@ -234,7 +234,7 @@ def points_path(played, team):
 """
 
 
-def rows_html(games, now):
+def rows_html(games, now, first=None):
     """Games as the schedule's compact rows, under a heading per month."""
     html, month = "", None
     for g in games:
@@ -245,7 +245,7 @@ def rows_html(games, now):
             html += (f'                    <div class="week-head"><h3 class="week-label">{label}</h3></div>\n'
                      '                    <div class="week-games">\n')
             month = label
-        html += game_row(g["row"], g["day"], config.TEAM_NAME.lower(), None, aware(g["start"]), now)
+        html += game_row(g["row"], g["day"], config.TEAM_NAME.lower(), None, aware(g["start"]), now, first)
     return html + ("                    </div>\n" if html else "")
 
 
@@ -273,7 +273,7 @@ def versus_eagles(games, team, now, today):
                         <span>{len(meetings)} meeting{'s' if len(meetings) != 1 else ''} this season</span></div>
                     <div class="series">{record}<span class="series-next">{note}</span></div>
                     <div class="team-games">
-{rows_html(meetings, now)}                    </div>
+{rows_html(meetings, now, team)}                    </div>
                 </section>
 """
 
@@ -327,14 +327,14 @@ def next_game(upcoming, today, now):
                           g["row"].get("Time", ""), rink_html, today, href=game_page(g["row"]))
 
 
-def games_section(title, games, now, note=""):
+def games_section(title, games, now, note="", team=None):
     if not games:
         return ""
     return f"""
                 <section class="team-block">
                     <div class="block-head"><h3>{title}</h3><span>{note}</span></div>
                     <div class="team-games">
-{rows_html(games, now)}                    </div>
+{rows_html(games, now, team)}                    </div>
                 </section>
 """
 
@@ -353,8 +353,8 @@ def team_page(row, standings, games, timestamp, today, now):
     body += scouting(row, standings, played, team)
     body += points_path(played, team)
     body += eagles_series(games, standings, now, today) if ours else versus_eagles(games, team, now, today)
-    body += games_section("Results", list(reversed(played)), now, "Newest first")
-    body += games_section("Still to play", upcoming, now)
+    body += games_section("Results", list(reversed(played)), now, "Newest first", team)
+    body += games_section("Still to play", upcoming, now, team=team)
     if not played and not upcoming:
         body += """
                 <section class="team-block"><p class="team-empty">No games on the schedule yet.</p></section>
