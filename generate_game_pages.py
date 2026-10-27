@@ -247,7 +247,7 @@ def shots_block(sheet, shots):
     other = sheet["away"] if sheet["home"] == config.TEAM_NAME else sheet["home"]
     total = max(ours + theirs, 1)
     return (f'<div class="shots"><div class="shots-head"><span class="shots-n us">{ours}</span>'
-            f'<span class="shots-title">Shots<span class="shots-note">Tracked by a parent</span></span>'
+            f'<span class="shots-title">Shots</span>'
             f'<span class="shots-n">{theirs}</span></div>'
             f'<div class="shots-bar" role="img" aria-label="Shots: {escape(config.TEAM_NAME)} {ours}, {escape(other)} {theirs}">'
             f'<i class="us" style="flex:{ours / total:.4f}"></i><i style="flex:{theirs / total:.4f}"></i></div></div>')
