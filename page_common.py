@@ -1276,6 +1276,52 @@ _SCHEDULE_CSS = """
             padding-left: 6px;
         }
 
+        /* On wide screens the venue and start time sit between the teams and
+           the icons, inside the row's two lines. */
+        .game-where {
+            display: none;
+        }
+
+        @media (min-width: 900px) {
+            .game-teams {
+                grid-template-columns: minmax(0, 1fr) 13rem 10.5rem 1.8rem;
+            }
+
+            .game-teams > .game-where {
+                grid-column: 2;
+                grid-row: 1 / span 2;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                min-width: 0;
+                padding-right: 10px;
+                font-size: 0.8rem;
+                line-height: 1.15rem;
+                color: var(--ink-2);
+            }
+
+            .where-place {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .where-time {
+                font-family: var(--display);
+                font-variant-numeric: tabular-nums;
+                color: var(--ink-3);
+            }
+
+            .game-teams > .game-icons {
+                grid-column: 3;
+                justify-content: flex-end;
+            }
+
+            .game-teams > .game-goals {
+                grid-column: 4;
+            }
+        }
+
         /* Icon links: a 32px target around a small glyph. */
         .icon-btn {
             display: inline-flex;

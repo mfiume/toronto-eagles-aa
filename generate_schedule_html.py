@@ -237,6 +237,15 @@ def venue_cell(venue, address, css_class="game-rink"):
     return f'<span class="{css_class}">{escape(text)}</span>' if text else ''
 
 
+def where_cell(venue, time_text):
+    """The venue and start time that sit beside the teams on wide screens."""
+    place = short_venue(venue)
+    if not place and not time_text:
+        return ""
+    return (f'<div class="game-where"><span class="where-place" data-tip="{escape(place)}">{escape(place)}</span>'
+            f'<span class="where-time">{escape(time_text)}</span></div>')
+
+
 def short_venue(venue):
     """'Ford Performance Center - Rink 1' -> 'Ford Performance Center · Rink 1'."""
     return re.sub(r"\s+-\s+", " · ", venue.strip()) if venue else ""
@@ -399,12 +408,13 @@ def game_row(game, day, our_team, team=None, start=None, now=None, first=None, v
                  else team_line(away, 0, 0, 1) + team_line(home, 0, 0, 2))
         details = ''   # Where it is, and the rest, are on the game page.
 
+    where = where_cell(game.get('Arena', ''), game.get('Time', '') if score is not None else '')
     live = score is None and start is not None and stream_state(start, now) == 'live'
     classes = f"game{' is-ours' if ours else ''}{' is-final' if score else ''}{' is-live' if live else ''}"
     return f"""                    <div {row_attrs(classes, details, day=day, href=game_page(game) if day else None, teams=(away, home))}>
                         <div class="game-when"><span class="game-day">{day_text}</span>
                             {when}</div>
-                        <div class="game-teams">{teams}{icons}{details}</div>
+                        <div class="game-teams">{teams}{where}{icons}{details}</div>
                     </div>
 """
 
@@ -518,11 +528,12 @@ def team_game_row(event, start, now=None):
         time_text = clock(start.time()) if event.get("timed") else "Time TBA"
         when = f'<span class="game-time">{time_text}</span>' + (live_flag(begins, now) if now else '')
         live = bool(begins and now and stream_state(begins, now) == 'live')
+    where = where_cell(event.get("venue") or event.get("address"), clock(start.time()) if score and event.get("timed") else "")
     classes = f"game is-ours team-game{' is-final' if score else ''}{' is-live' if live else ''}"
     return f"""                    <div {row_attrs(classes, "", day=start.date(), href=event_page(event), teams=(away, home))}>
                         <div class="game-when"><span class="game-day">{start.strftime('%a')} {start.day}</span>
                             {when}</div>
-                        <div class="game-teams">{team_line(us, 1)}{team_line(them, 2)}{icons}</div>
+                        <div class="game-teams">{team_line(us, 1)}{team_line(them, 2)}{where}{icons}</div>
                     </div>
 """
 
