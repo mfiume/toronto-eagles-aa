@@ -1272,6 +1272,18 @@ _SCHEDULE_CSS = """
             outline-offset: -2px;
         }
 
+        .icon-btn.game-video {
+            color: var(--ink-3);
+        }
+
+        .icon-btn.game-video:hover {
+            color: var(--brand);
+        }
+
+        .game-icons {
+            gap: 2px;
+        }
+
         .icon-btn.game-watch::before {
             content: none !important;
         }

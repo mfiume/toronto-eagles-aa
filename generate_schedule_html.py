@@ -139,6 +139,11 @@ def directions_link(rink, css_class, text, body=None):
 PLAY_ICON = '<img src="assets/livebarn.png" alt="" width="15" height="17">'
 
 
+# A play button in a rounded screen, in the page's own colour, for the game film. Kept to a plain shape so it does not
+# read as another company's mark.
+VIDEO_ICON = ('<svg viewBox="0 0 20 16" width="17" height="14" aria-hidden="true"><rect x="1" y="1" width="18" height="14" rx="3.5" '
+              'fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 5l5 3-5 3z" fill="currentColor"/></svg>')
+
 LIVE_MINUTES = 60
 
 
@@ -211,6 +216,15 @@ def live_flag(start, now):
         return ''
     hidden = '' if stream_state(start, now) == 'live' else ' hidden'
     return f'<span class="game-live" data-live-start="{start.isoformat()}"{hidden}>Live</span>'
+
+
+def video_link(url, game):
+    """The game's film on YouTube, for the team version of the page only: a link a parent could pass on is not for a public page."""
+    if not url:
+        return ''
+    label = f"{game.get('Away', '')} at {game.get('Home', '')}: game film"
+    return (f'<a class="icon-btn game-video" href="{escape(url)}" target="_blank" rel="noopener noreferrer" '
+            f'aria-label="{escape(label)}" title="Game film (team only)">{VIDEO_ICON}</a>')
 
 
 def row_icons(watch):
@@ -333,7 +347,7 @@ def result_badge(ours, theirs):
             f'title="{"Win" if r == "W" else "Loss"}">{r}</span>')
 
 
-def game_row(game, day, our_team, team=None, start=None, now=None, first=None):
+def game_row(game, day, our_team, team=None, start=None, now=None, first=None, video=None):
     """
     One league game as a compact row: day and time, then both teams stacked,
     then the LiveBarn play icon, then each team's goals once played. Ours look
@@ -371,7 +385,7 @@ def game_row(game, day, our_team, team=None, start=None, now=None, first=None):
         return (f'<div class="{" ".join(classes)}">{page_common.team_logo(name)}'
                 f'<span class="game-name">{team_name_html(name)}</span></div>{goals_html}')
 
-    icons = row_icons(watch_link(game, start, now, "icon-btn game-watch", icon=True))
+    icons = row_icons(watch_link(game, start, now, "icon-btn game-watch", icon=True) + video_link(video, game))
 
     if score is not None:
         a, h = score['away'], score['home']
@@ -617,7 +631,7 @@ def aware(start):
     return start.replace(tzinfo=page_common.TORONTO) if start else None
 
 
-def build_block(schedule, today, our_team, team_events=None, now=None):
+def build_block(schedule, today, our_team, team_events=None, now=None, videos=None):
     """
     The schedule itself: next-game card, heading with the filter, and the
     weeks. Without team_events this is the public version.
@@ -640,7 +654,8 @@ def build_block(schedule, today, our_team, team_events=None, now=None):
     items = []
     for i, (g, day, start) in enumerate(league):
         key = start or (datetime.combine(day, datetime.min.time()) if day else datetime.max)
-        items.append((key, day, game_row(g, day, our_team, matches.get(i), aware(start), now),
+        film = (videos or {}).get(game_page(g)[len("game-"):-len(".html")])
+        items.append((key, day, game_row(g, day, our_team, matches.get(i), aware(start), now, video=film),
                       is_ours(g), "game"))
 
     # Every team event: the page pages through the whole season.
@@ -839,6 +854,22 @@ def season_rows(schedule):
 
 
 
+def load_videos():
+    """
+    Where the team's game films are on YouTube, as {game id: address}, from the GAME_VIDEOS secret or a local game_videos.json.
+    Never read for the public page, and never committed: the addresses only ever reach a page inside the encrypted team version.
+    """
+    raw = os.environ.get("GAME_VIDEOS", "")
+    if not raw and os.path.exists("game_videos.json"):
+        with open("game_videos.json", encoding="utf-8") as f:
+            raw = f.read()
+    try:
+        found = json.loads(raw) if raw.strip() else {}
+    except ValueError:
+        return {}
+    return {k: v for k, v in found.items() if isinstance(v, str) and v.startswith("https://")}
+
+
 def load_team_events():
     """The team calendar and password, or (None, None) if either is missing."""
     password = os.environ.get(PASSWORD_ENV, "")
@@ -910,7 +941,7 @@ def generate_html(today=None):
 {page_common.freshness(timestamp)}"""
         if team_events is not None:
             import team_crypto
-            sealed = team_crypto.encrypt(build_block(schedule, today, our_team, team_events), password)
+            sealed = team_crypto.encrypt(build_block(schedule, today, our_team, team_events, videos=load_videos()), password)
             # A JSON script block is inert data; "</" is escaped so the
             # ciphertext can never close the tag.
             payload = json.dumps(sealed).replace("</", "<\\/")
