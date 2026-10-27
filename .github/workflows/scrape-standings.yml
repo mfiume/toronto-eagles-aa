@@ -91,6 +91,9 @@ jobs:
       - name: Generate HTML pages
         env:
           TEAM_EVENTS_PASSWORD: ${{ secrets.TEAM_EVENTS_PASSWORD }}
+          AGILEX_HOCKEY_ID: ${{ secrets.AGILEX_HOCKEY_ID }}
+          AGILEX_PERSONAL_CODE: ${{ secrets.AGILEX_PERSONAL_CODE }}
+          AGILEX_LEAGUE: ${{ secrets.AGILEX_LEAGUE }}
         run: |
           python livebarn.py
           python generate_html.py
@@ -98,6 +101,7 @@ jobs:
           python generate_playoffs_html.py
           python generate_privacy_html.py
           python generate_team_pages.py
+          python agilex_sheets.py
           python generate_game_pages.py
           python generate_event_pages.py
 
@@ -107,7 +111,7 @@ jobs:
           git config --local user.name "github-actions[bot]"
 
           # Add generated files
-          git add standings.json schedule.json season_schedule.json eagles_schedule.json livebarn_surfaces.json \
+          git add standings.json schedule.json season_schedule.json eagles_schedule.json livebarn_surfaces.json game_sheets.json \
                   index.html schedule.html playoffs.html privacy.html assets/logos
           git add -A -- 'team-*.html' 'game-*.html' 'event-*.html' || true
 

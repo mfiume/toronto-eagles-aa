@@ -15,10 +15,12 @@ What a page has, top to bottom:
   watch and go: LiveBarn, and directions to the rink
   when and where: the full date, the rink and its address
   tale of the tape: the two teams side by side, the better figure in bold
+  game sheet: for our games, the league's official score by period and the goals, penalties and timeouts
   season series: every meeting of the two this season, each linking on
 """
 
 import glob
+import json
 import os
 from datetime import datetime
 from html import escape
@@ -216,13 +218,81 @@ def series(g, games, now):
 """
 
 
+# --- The league's game sheet --------------------------------------------------------
+
+SHEETS_FILE = "game_sheets.json"
+# The league's penalty codes we can say in words. Any other code is shown as the league wrote it.
+PENALTIES = {"TR": "Tripping", "HKG": "Hooking", "SL": "Slashing", "BC": "Body checking"}
+
+
+def load_sheets():
+    try:
+        with open(SHEETS_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, ValueError):
+        return {}
+
+
+def period_label(n):
+    return {1: "1st", 2: "2nd", 3: "3rd"}.get(n, "OT" if n == 4 else f"P{n}")
+
+
+def game_sheet(sheet):
+    """
+    The league's official sheet for the game: the score by period, then the goals, penalties and timeouts in the order
+    they happened. No player is named and no jersey number is shown: the sheet is published without them.
+    """
+    if not sheet:
+        return ""
+    name = {"home": escape(sheet["home"]), "away": escape(sheet["away"])}
+    head = "".join(f"<th>{period_label(p['period'])}</th>" for p in sheet["periods"])
+    rows = "".join(
+        f'<tr><td class="sheet-team">{name[side]}</td>'
+        + "".join(f"<td>{p[side]}</td>" for p in sheet["periods"])
+        + f'<td class="sheet-total">{sheet["final"][side]}</td></tr>'
+        for side in ("away", "home"))
+    table = (f'<div class="table-wrapper"><table class="sheet-score"><thead><tr><th class="sheet-team"></th>{head}'
+             f'<th>Final</th></tr></thead><tbody>{rows}</tbody></table></div>')
+
+    def listing(title, items, line):
+        if not items:
+            return ""
+        lis = "".join(f'<li><span class="sheet-when">{period_label(i["period"])} · {i["clock"]}</span>{line(i)}</li>' for i in items)
+        return f'<div class="sheet-list"><h4>{title}</h4><ul>{lis}</ul></div>'
+
+    def goal(g):
+        extra = f' <span class="sheet-note">{escape(g["kind"])}</span>' if g.get("kind") else ""
+        return f'<span class="sheet-what">{name[g["side"]]} goal{extra}</span>'
+
+    def penalty(p):
+        what = PENALTIES.get(p["code"], p["code"]) or "Penalty"
+        return f'<span class="sheet-what">{name[p["side"]]}</span><span class="sheet-note">{escape(what)}, {p["minutes"]} min</span>'
+
+    def timeout(t):
+        return f'<span class="sheet-what">{name[t["side"]]}</span>'
+
+    lists = (listing("Scoring", sheet["goals"], goal) + listing("Penalties", sheet["penalties"], penalty)
+             + listing("Timeouts", sheet["timeouts"], timeout))
+    return f"""
+                <section class="team-block">
+                    <div class="block-head"><h3>Game sheet</h3><span>Official, from the league</span></div>
+                    <div class="sheet-card">
+                        {table}
+                        <div class="sheet-lists">{lists}</div>
+                    </div>
+                </section>
+"""
+
+
 # --- Assembly -------------------------------------------------------------------
 
-def page(g, standings, games, timestamp, today, now):
+def page(g, standings, games, timestamp, today, now, sheets=None):
+    sheets = sheets or {}
     row = g["row"]
     title = f"{row.get('Away', '')} at {row.get('Home', '')}"
     body = matchup(g, standings, today, now)
     body += actions(g, now)
+    body += game_sheet(sheets.get(game_page(row)[len("game-"):-len(".html")]))
     body += where_when(g)
     body += tale_of_the_tape(g, standings, games)
     body += series(g, games, now)
@@ -267,11 +337,12 @@ def generate(today=None):
     now = datetime.now(page_common.TORONTO)
     today = today or now.date()
     games = all_games(schedule_data.get("schedule", []))
+    sheets = load_sheets()
     written = {}
     for g in games:
         name = game_page(g["row"])
         with open(name, "w", encoding="utf-8") as f:
-            f.write(page(g, standings, games, schedule_data.get("timestamp", ""), today, now))
+            f.write(page(g, standings, games, schedule_data.get("timestamp", ""), today, now, sheets))
         written[name] = True
     # A game the GTHL no longer lists takes its page with it.
     for stale in set(glob.glob("game-*.html")) - set(written):
