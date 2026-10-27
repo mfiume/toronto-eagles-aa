@@ -239,14 +239,16 @@ def period_label(n):
 
 def sheet_timeline(sheet):
     """
-    The game's moments laid out by period: one bar for each, running left to right from the opening faceoff, the opposing
-    team's moments above it and ours below, whichever side of the game we were on. A goal is a dot, a penalty is a bar as long as the penalty, a timeout is a
-    diamond. Ours are red and theirs dark, so a stretch of the game reads at a glance. The sheet gives each moment by the
-    time left on the clock, so a moment at 3:15 left sits 8:45 of a 12 minute period in.
+    The game's moments laid out by period, one line for each, running left to right from the opening faceoff. A goal is a
+    dot on the line, a timeout a diamond, and a penalty a bar as long as the penalty, hung just under the line. Penalties
+    that run at the same time (matching minors, a power play) stack one under the other instead of covering each other.
+    Ours are red and theirs dark. The sheet gives each moment by the time left on the clock, so a moment at 3:15 left sits
+    8:45 of a 12 minute period in.
     """
     length = 12 * 60
     ours = "home" if sheet["home"] == config.TEAM_NAME else "away" if sheet["away"] == config.TEAM_NAME else None
     name = {"home": sheet["home"], "away": sheet["away"]}
+    theirs = name["away" if ours == "home" else "home"] if ours else None
 
     def secs(clock):
         m, sec = clock.split(":")
@@ -261,40 +263,49 @@ def sheet_timeline(sheet):
     # running score, to say what each goal made it
     score = {"home": 0, "away": 0}
     running = {}
-    for i, g in enumerate(sorted(sheet["goals"], key=lambda g: (g["period"], -secs(g["clock"])))):
+    for g in sorted(sheet["goals"], key=lambda g: (g["period"], -secs(g["clock"]))):
         score[g["side"]] += 1
         running[(g["period"], g["clock"], g["side"])] = f'{score["away"]}-{score["home"]}'
 
     blocks = ""
     for p in sheet["periods"]:
         n = p["period"]
-        lanes = {"away": "", "home": ""}
+        marks = ""
         for g in sheet["goals"]:
             if g["period"] == n:
                 tip = f'{name[g["side"]]} goal, {g["clock"]} left in the {period_label(n)} ({running[(n, g["clock"], g["side"])]})'
-                lanes[g["side"]] += f'<span class="tl-dot {mine(g["side"])}" style="left:{pos(g["clock"]):.2f}%" title="{escape(tip)}"></span>'
-        for t in sheet["penalties"]:
-            if t["period"] == n:
-                start = pos(t["clock"])
-                width = min(t["minutes"] * 60 / length * 100, 100 - start)
-                what = PENALTIES.get(t["code"], t["code"]) or "Penalty"
-                tip = f'{name[t["side"]]} penalty, {what}, {t["minutes"]} min, {t["clock"]} left in the {period_label(n)}'
-                lanes[t["side"]] += f'<span class="tl-pen {mine(t["side"])}" style="left:{start:.2f}%;width:{width:.2f}%" title="{escape(tip)}"></span>'
+                marks += f'<span class="tl-dot {mine(g["side"])}" style="left:{pos(g["clock"]):.2f}%" title="{escape(tip)}"></span>'
         for t in sheet["timeouts"]:
             if t["period"] == n:
                 tip = f'{name[t["side"]]} timeout, {t["clock"]} left in the {period_label(n)}'
-                lanes[t["side"]] += f'<span class="tl-to {mine(t["side"])}" style="left:{pos(t["clock"]):.2f}%" title="{escape(tip)}"></span>'
-        ticks = "".join(f'<span class="tl-tick" style="left:{i * 25}%"><i>{clock}</i></span>'
-                        for i, clock in enumerate(("12:00", "9:00", "6:00", "3:00")))
-        upper, lower = ("home", "away") if ours == "away" else ("away", "home")
-        blocks += (f'<div class="tl-period"><div class="tl-name">{period_label(n)}</div><div class="tl-track">'
-                   f'<div class="tl-lane">{lanes[upper]}</div><div class="tl-bar">{ticks}</div><div class="tl-lane">{lanes[lower]}</div>'
-                   f'</div></div>')
-    upper, lower = ("home", "away") if ours == "away" else ("away", "home")
-    legend = (f'<div class="tl-legend"><span><i class="tl-dot us"></i>Goal</span><span><i class="tl-pen us"></i>Penalty, as long as it lasts</span>'
-              f'<span><i class="tl-to us"></i>Timeout</span><span class="tl-key">Red is {escape(config.TEAM_NAME)}. '
-              f'{escape(name[upper])} above the line, {escape(name[lower])} below.</span></div>')
-    return f'<div class="tl">{blocks}{legend}</div>'
+                marks += f'<span class="tl-to {mine(t["side"])}" style="left:{pos(t["clock"]):.2f}%" title="{escape(tip)}"></span>'
+        # penalties, each in the first row under the line where it does not run into one already there
+        rows = []
+        bars = ""
+        for t in sorted((t for t in sheet["penalties"] if t["period"] == n), key=lambda t: pos(t["clock"])):
+            start = pos(t["clock"])
+            end = min(start + t["minutes"] * 60 / length * 100, 100)
+            row = next((r for r, last in enumerate(rows) if last <= start), len(rows))
+            if row == len(rows):
+                rows.append(end)
+            else:
+                rows[row] = end
+            what = PENALTIES.get(t["code"], t["code"]) or "Penalty"
+            tip = f'{name[t["side"]]} penalty, {what}, {t["minutes"]} min, {t["clock"]} left in the {period_label(n)}'
+            bars += (f'<span class="tl-pen {mine(t["side"])}" style="left:{start:.2f}%;width:{end - start:.2f}%;top:{19 + row * 7}px" '
+                     f'title="{escape(tip)}"></span>')
+        height = 19 + max(len(rows), 1) * 7 + 2 if rows else 21
+        grid = "".join(f'<span class="tl-tick" style="left:{k * 25}%"></span>' for k in range(1, 4))
+        blocks += (f'<div class="tl-period"><div class="tl-name">{period_label(n)}</div>'
+                   f'<div class="tl-track" style="height:{height}px">{grid}<div class="tl-line"></div>{bars}{marks}</div></div>')
+    axis = ('<div class="tl-period tl-axis"><div class="tl-name"></div><div class="tl-track">'
+            + "".join(f'<span class="tl-label" style="left:{k * 25}%">{c}</span>' for k, c in enumerate(("12:00", "9:00", "6:00", "3:00")))
+            + '<span class="tl-label end">0:00</span></div></div>')
+    who = (f'<span class="tl-key"><i class="tl-dot us"></i>{escape(config.TEAM_NAME)}</span>'
+           f'<span class="tl-key"><i class="tl-dot them"></i>{escape(theirs)}</span>') if ours else ""
+    legend = (f'<div class="tl-legend">{who}<span><i class="tl-dot"></i>Goal</span><span><i class="tl-pen"></i>Penalty, as long as it lasts</span>'
+              f'<span><i class="tl-to"></i>Timeout</span></div>')
+    return f'<div class="tl">{axis}{blocks}{legend}</div>'
 
 
 def game_sheet(sheet):
