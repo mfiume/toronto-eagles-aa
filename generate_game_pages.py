@@ -365,12 +365,15 @@ def sheet_timeline(sheet):
             if g["period"] == n:
                 a, h = running[(n, g["clock"], g["side"])]
                 kind = f' ({g["kind"]})' if g.get("kind") else ""
+                head = "Goal, " + name[g["side"]] + kind
+                after = "Score after the goal: " + name["away"] + " " + str(a) + ", " + name["home"] + " " + str(h)
                 marks += (f'<span class="tl-dot {mine(g["side"])}" style="left:{pos(g["clock"]):.2f}%" '
-                          f'{tip(f"Goal, {name[g["side"]]}{kind}", when(n, g["clock"]), f"Score after the goal: {name["away"]} {a}, {name["home"]} {h}")}></span>')
+                          f'{tip(head, when(n, g["clock"]), after)}></span>')
         for t in sheet["timeouts"]:
             if t["period"] == n:
+                head = "Timeout, " + name[t["side"]]
                 marks += (f'<span class="tl-to {mine(t["side"])}" style="left:{pos(t["clock"]):.2f}%" '
-                          f'{tip(f"Timeout, {name[t["side"]]}", when(n, t["clock"]), score_at(n, t["clock"]))}></span>')
+                          f'{tip(head, when(n, t["clock"]), score_at(n, t["clock"]))}></span>')
         # penalties, each in the first row under the line where it does not run into one already there
         rows = []
         bars = ""
@@ -385,8 +388,10 @@ def sheet_timeline(sheet):
             what = PENALTIES.get(t["code"], t["code"]) or "Penalty"
             left_after = secs(t["clock"]) - t["minutes"] * 60
             over = (f"Runs until {clock_left(left_after)} left" if left_after > 0 else f"Carries into the next period" if left_after < 0 else "Runs to the end of the period")
+            head = "Penalty, " + name[t["side"]]
+            detail = what + ", " + str(t["minutes"]) + " min"
             bars += (f'<span class="tl-pen {mine(t["side"])}" style="left:{start:.2f}%;width:{end - start:.2f}%;top:{19 + row * 7}px" '
-                     f'{tip(f"Penalty, {name[t["side"]]}", f"{what}, {t["minutes"]} min", when(n, t["clock"]), over, score_at(n, t["clock"]))}></span>')
+                     f'{tip(head, detail, when(n, t["clock"]), over, score_at(n, t["clock"]))}></span>')
         height = 19 + max(len(rows), 1) * 7 + 2 if rows else 21
         grid = "".join(f'<span class="tl-tick" style="left:{k * 25}%"></span>' for k in range(1, 4))
         blocks += (f'<div class="tl-period"><div class="tl-name">{period_label(n)}</div>'
