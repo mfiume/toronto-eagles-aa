@@ -2342,12 +2342,12 @@
             outline: none;
         }
 
-        .tl-track [data-tip]:focus-visible {
+        [data-tip]:focus-visible {
             outline: 2px solid var(--ink);
             outline-offset: 3px;
         }
 
-        .tl-tip {
+        .tip {
             display: none;
             position: fixed;
             z-index: 50;
@@ -2362,7 +2362,7 @@
             box-shadow: 0 6px 20px rgba(17, 18, 20, 0.25);
         }
 
-        .tl-tip-head {
+        .tip-head {
             font-family: var(--display);
             font-weight: 600;
             font-size: 0.86rem;
@@ -3020,48 +3020,7 @@
                     <div class="sheet-card">
                         <div class="table-wrapper"><table class="sheet-score"><thead><tr><th class="sheet-team"></th><th>1st</th><th>2nd</th><th>3rd</th><th>Final</th></tr></thead><tbody><tr><td class="sheet-team">West Mall Lightning</td><td>0</td><td>0</td><td>1</td><td class="sheet-total">1</td></tr><tr><td class="sheet-team">Toronto Eagles</td><td>0</td><td>1</td><td>0</td><td class="sheet-total">1</td></tr></tbody></table></div>
                         
-                        <div class="tl"><div class="tl-period tl-axis"><div class="tl-name"></div><div class="tl-track"><span class="tl-label" style="left:0%">12:00</span><span class="tl-label" style="left:25%">9:00</span><span class="tl-label" style="left:50%">6:00</span><span class="tl-label" style="left:75%">3:00</span><span class="tl-label end">0:00</span></div></div><div class="tl-period"><div class="tl-name">1st</div><div class="tl-track" style="height:21px"><span class="tl-tick" style="left:25%"></span><span class="tl-tick" style="left:50%"></span><span class="tl-tick" style="left:75%"></span><div class="tl-line"></div></div></div><div class="tl-period"><div class="tl-name">2nd</div><div class="tl-track" style="height:21px"><span class="tl-tick" style="left:25%"></span><span class="tl-tick" style="left:50%"></span><span class="tl-tick" style="left:75%"></span><div class="tl-line"></div><span class="tl-dot us" style="left:94.31%" data-tip="Goal, Toronto Eagles||2nd period, 0:41 left||Score: Lightning 0, Eagles 1" aria-label="Goal, Toronto Eagles - 2nd period, 0:41 left - Score: Lightning 0, Eagles 1" tabindex="0" role="img"></span></div></div><div class="tl-period"><div class="tl-name">3rd</div><div class="tl-track" style="height:35px"><span class="tl-tick" style="left:25%"></span><span class="tl-tick" style="left:50%"></span><span class="tl-tick" style="left:75%"></span><div class="tl-line"></div><span class="tl-pen us" style="left:45.69%;width:16.67%;top:19px" data-tip="Penalty, Toronto Eagles||Body checking, 2 min||3rd period, 6:31 left||Score: Lightning 0, Eagles 1" aria-label="Penalty, Toronto Eagles - Body checking, 2 min - 3rd period, 6:31 left - Score: Lightning 0, Eagles 1" tabindex="0" role="img"></span><span class="tl-pen them" style="left:45.69%;width:16.67%;top:26px" data-tip="Penalty, West Mall Lightning||Hooking, 2 min||3rd period, 6:31 left||Score: Lightning 0, Eagles 1" aria-label="Penalty, West Mall Lightning - Hooking, 2 min - 3rd period, 6:31 left - Score: Lightning 0, Eagles 1" tabindex="0" role="img"></span><span class="tl-dot them" style="left:95.00%" data-tip="Goal, West Mall Lightning||3rd period, 0:36 left||Score: Lightning 1, Eagles 1" aria-label="Goal, West Mall Lightning - 3rd period, 0:36 left - Score: Lightning 1, Eagles 1" tabindex="0" role="img"></span><span class="tl-to us" style="left:59.31%" data-tip="Timeout, Toronto Eagles||3rd period, 4:53 left||Score: Lightning 0, Eagles 1" aria-label="Timeout, Toronto Eagles - 3rd period, 4:53 left - Score: Lightning 0, Eagles 1" tabindex="0" role="img"></span><span class="tl-to them" style="left:82.64%" data-tip="Timeout, West Mall Lightning||3rd period, 2:05 left||Score: Lightning 0, Eagles 1" aria-label="Timeout, West Mall Lightning - 3rd period, 2:05 left - Score: Lightning 0, Eagles 1" tabindex="0" role="img"></span></div></div><div class="tl-legend"><span class="tl-key"><i class="tl-dot us"></i>Toronto Eagles</span><span class="tl-key"><i class="tl-dot them"></i>West Mall Lightning</span><span><i class="tl-dot"></i>Goal</span><span><i class="tl-pen"></i>Penalty, as long as it lasts</span><span><i class="tl-to"></i>Timeout</span></div></div><script>
-(function () {
-  var tip = null, shown = null, shownAt = 0;
-  function make() {
-    tip = document.createElement('div');
-    tip.className = 'tl-tip';
-    tip.setAttribute('role', 'tooltip');
-    document.body.appendChild(tip);
-  }
-  function show(el) {
-    if (!tip) make();
-    var lines = el.getAttribute('data-tip').split('||');
-    tip.textContent = '';
-    lines.forEach(function (text, i) {
-      var row = document.createElement('div');
-      if (i === 0) row.className = 'tl-tip-head';
-      row.textContent = text;
-      tip.appendChild(row);
-    });
-    tip.style.display = 'block';
-    var r = el.getBoundingClientRect(), t = tip.getBoundingClientRect();
-    var left = Math.max(8, Math.min(r.left + r.width / 2 - t.width / 2, document.documentElement.clientWidth - t.width - 8));
-    var top = r.top - t.height - 10;
-    if (top < 8) top = r.bottom + 10;
-    tip.style.left = left + 'px';
-    tip.style.top = top + 'px';
-    shown = el;
-    shownAt = Date.now();
-  }
-  function hide() { if (tip) tip.style.display = 'none'; shown = null; }
-  document.querySelectorAll('.tl [data-tip]').forEach(function (el) {
-    el.addEventListener('mouseenter', function () { show(el); });
-    el.addEventListener('mouseleave', hide);
-    el.addEventListener('focus', function () { show(el); });
-    el.addEventListener('blur', hide);
-    // a touch fires a hover and then a click; the click only closes a tooltip that has been open a moment
-    el.addEventListener('click', function (e) { e.stopPropagation(); if (shown === el && Date.now() - shownAt > 400) hide(); else show(el); });
-  });
-  document.addEventListener('click', hide);
-  window.addEventListener('scroll', hide, { passive: true });
-})();
-</script>
+                        <div class="tl"><div class="tl-period tl-axis"><div class="tl-name"></div><div class="tl-track"><span class="tl-label" style="left:0%">12:00</span><span class="tl-label" style="left:25%">9:00</span><span class="tl-label" style="left:50%">6:00</span><span class="tl-label" style="left:75%">3:00</span><span class="tl-label end">0:00</span></div></div><div class="tl-period"><div class="tl-name">1st</div><div class="tl-track" style="height:21px"><span class="tl-tick" style="left:25%"></span><span class="tl-tick" style="left:50%"></span><span class="tl-tick" style="left:75%"></span><div class="tl-line"></div></div></div><div class="tl-period"><div class="tl-name">2nd</div><div class="tl-track" style="height:21px"><span class="tl-tick" style="left:25%"></span><span class="tl-tick" style="left:50%"></span><span class="tl-tick" style="left:75%"></span><div class="tl-line"></div><span class="tl-dot us" style="left:94.31%" data-tip="Goal, Toronto Eagles||2nd period, 0:41 left||Score: Lightning 0, Eagles 1" aria-label="Goal, Toronto Eagles - 2nd period, 0:41 left - Score: Lightning 0, Eagles 1" tabindex="0" role="img"></span></div></div><div class="tl-period"><div class="tl-name">3rd</div><div class="tl-track" style="height:35px"><span class="tl-tick" style="left:25%"></span><span class="tl-tick" style="left:50%"></span><span class="tl-tick" style="left:75%"></span><div class="tl-line"></div><span class="tl-pen us" style="left:45.69%;width:16.67%;top:19px" data-tip="Penalty, Toronto Eagles||Body checking, 2 min||3rd period, 6:31 left||Score: Lightning 0, Eagles 1" aria-label="Penalty, Toronto Eagles - Body checking, 2 min - 3rd period, 6:31 left - Score: Lightning 0, Eagles 1" tabindex="0" role="img"></span><span class="tl-pen them" style="left:45.69%;width:16.67%;top:26px" data-tip="Penalty, West Mall Lightning||Hooking, 2 min||3rd period, 6:31 left||Score: Lightning 0, Eagles 1" aria-label="Penalty, West Mall Lightning - Hooking, 2 min - 3rd period, 6:31 left - Score: Lightning 0, Eagles 1" tabindex="0" role="img"></span><span class="tl-dot them" style="left:95.00%" data-tip="Goal, West Mall Lightning||3rd period, 0:36 left||Score: Lightning 1, Eagles 1" aria-label="Goal, West Mall Lightning - 3rd period, 0:36 left - Score: Lightning 1, Eagles 1" tabindex="0" role="img"></span><span class="tl-to us" style="left:59.31%" data-tip="Timeout, Toronto Eagles||3rd period, 4:53 left||Score: Lightning 0, Eagles 1" aria-label="Timeout, Toronto Eagles - 3rd period, 4:53 left - Score: Lightning 0, Eagles 1" tabindex="0" role="img"></span><span class="tl-to them" style="left:82.64%" data-tip="Timeout, West Mall Lightning||3rd period, 2:05 left||Score: Lightning 0, Eagles 1" aria-label="Timeout, West Mall Lightning - 3rd period, 2:05 left - Score: Lightning 0, Eagles 1" tabindex="0" role="img"></span></div></div><div class="tl-legend"><span class="tl-key"><i class="tl-dot us"></i>Toronto Eagles</span><span class="tl-key"><i class="tl-dot them"></i>West Mall Lightning</span><span><i class="tl-dot"></i>Goal</span><span><i class="tl-pen"></i>Penalty, as long as it lasts</span><span><i class="tl-to"></i>Timeout</span></div></div>
                         <div class="sheet-lists"><div class="sheet-list"><h4>Scoring</h4><ul><li><span class="sheet-when">2nd · 0:41</span><span class="sheet-what">Toronto Eagles goal</span></li><li><span class="sheet-when">3rd · 0:36</span><span class="sheet-what">West Mall Lightning goal</span></li></ul></div><div class="sheet-list"><h4>Penalties</h4><ul><li><span class="sheet-when">3rd · 6:31</span><span class="sheet-what">Toronto Eagles</span><span class="sheet-note">Body checking, 2 min</span></li><li><span class="sheet-when">3rd · 6:31</span><span class="sheet-what">West Mall Lightning</span><span class="sheet-note">Hooking, 2 min</span></li></ul></div><div class="sheet-list"><h4>Timeouts</h4><ul><li><span class="sheet-when">3rd · 4:53</span><span class="sheet-what">Toronto Eagles</span></li><li><span class="sheet-when">3rd · 2:05</span><span class="sheet-what">West Mall Lightning</span></li></ul></div></div>
                     </div>
                 </section>
@@ -3082,22 +3041,22 @@
                     <div class="game is-current is-ours is-final is-link" data-type="game" data-kind="game" data-date="2026-10-18" data-teams="west-mall-lightning toronto-eagles" data-href="game-2026-10-18_west-mall-lightning_at_toronto-eagles.html" tabindex="0" role="link">
                         <div class="game-when"><span class="game-day">Sun 18</span>
                             <span class="game-time"><span class="game-final">Final</span></span></div>
-                        <div class="game-teams"><div class="game-team r1 us tied"><img class="team-logo" src="assets/logos/toronto-eagles.png" alt="" loading="lazy"><span class="game-name"><a class="team-link" href="team-toronto-eagles.html">Toronto Eagles</a></span></div><span class="game-goals r1 tied">1</span><div class="game-team r2 tied"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span class="game-name"><a class="team-link" href="team-west-mall-lightning.html">West Mall Lightning</a></span></div><span class="game-goals r2 tied">1</span><div class="game-icons"><a class="icon-btn game-watch is-rewatch" href="https://watch.livebarn.com/en/video/4198/2026-10-18/13:10" data-live="https://watch.livebarn.com/en/video/4198/live" data-replay="https://watch.livebarn.com/en/video/4198/2026-10-18/13:10" target="_blank" rel="noopener noreferrer" data-start="2026-10-18T13:10:00-04:00" data-label="West Mall Lightning at Toronto Eagles on LiveBarn" aria-label="Rewatch: West Mall Lightning at Toronto Eagles on LiveBarn"><img src="assets/livebarn.png" alt="" width="15" height="17"></a></div></div>
+                        <div class="game-teams"><div class="game-team r1 us tied"><img class="team-logo" src="assets/logos/toronto-eagles.png" alt="" loading="lazy"><span class="game-name"><a class="team-link" href="team-toronto-eagles.html">Toronto Eagles</a></span></div><span class="game-goals r1 tied">1</span><div class="game-team r2 tied"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span class="game-name"><a class="team-link" href="team-west-mall-lightning.html">West Mall Lightning</a></span></div><span class="game-goals r2 tied">1</span><div class="game-icons"><a class="icon-btn game-watch is-rewatch" data-tip="Rewatch on LiveBarn" href="https://watch.livebarn.com/en/video/4198/2026-10-18/13:10" data-live="https://watch.livebarn.com/en/video/4198/live" data-replay="https://watch.livebarn.com/en/video/4198/2026-10-18/13:10" target="_blank" rel="noopener noreferrer" data-start="2026-10-18T13:10:00-04:00" data-label="West Mall Lightning at Toronto Eagles on LiveBarn" aria-label="Rewatch: West Mall Lightning at Toronto Eagles on LiveBarn"><img src="assets/livebarn.png" alt="" width="15" height="17"></a></div></div>
                     </div>
                     <div class="game is-ours is-link" data-type="game" data-kind="game" data-date="2026-11-13" data-teams="toronto-eagles west-mall-lightning" data-href="game-2026-11-13_toronto-eagles_at_west-mall-lightning.html" tabindex="0" role="link">
                         <div class="game-when"><span class="game-day">Fri 13</span>
                             <span class="game-time">6:25 PM</span><span class="game-live" data-live-start="2026-11-13T18:25:00-05:00" hidden>Live</span></div>
-                        <div class="game-teams"><div class="game-team r1 us"><img class="team-logo" src="assets/logos/toronto-eagles.png" alt="" loading="lazy"><span class="game-name"><a class="team-link" href="team-toronto-eagles.html">Toronto Eagles</a></span></div><div class="game-team r2"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span class="game-name"><a class="team-link" href="team-west-mall-lightning.html">West Mall Lightning</a></span></div><div class="game-icons"><a class="icon-btn game-watch is-upcoming" href="https://watch.livebarn.com/en/video/3875/live" data-live="https://watch.livebarn.com/en/video/3875/live" data-replay="https://watch.livebarn.com/en/video/3875/2026-11-13/18:25" target="_blank" rel="noopener noreferrer" data-start="2026-11-13T18:25:00-05:00" data-label="Toronto Eagles at West Mall Lightning on LiveBarn" aria-label="Watch: Toronto Eagles at West Mall Lightning on LiveBarn" hidden><img src="assets/livebarn.png" alt="" width="15" height="17"></a></div></div>
+                        <div class="game-teams"><div class="game-team r1 us"><img class="team-logo" src="assets/logos/toronto-eagles.png" alt="" loading="lazy"><span class="game-name"><a class="team-link" href="team-toronto-eagles.html">Toronto Eagles</a></span></div><div class="game-team r2"><img class="team-logo" src="assets/logos/west-mall-lightning.png" alt="" loading="lazy"><span class="game-name"><a class="team-link" href="team-west-mall-lightning.html">West Mall Lightning</a></span></div><div class="game-icons"><a class="icon-btn game-watch is-upcoming" data-tip="Watch live on LiveBarn" href="https://watch.livebarn.com/en/video/3875/live" data-live="https://watch.livebarn.com/en/video/3875/live" data-replay="https://watch.livebarn.com/en/video/3875/2026-11-13/18:25" target="_blank" rel="noopener noreferrer" data-start="2026-11-13T18:25:00-05:00" data-label="Toronto Eagles at West Mall Lightning on LiveBarn" aria-label="Watch: Toronto Eagles at West Mall Lightning on LiveBarn" hidden><img src="assets/livebarn.png" alt="" width="15" height="17"></a></div></div>
                     </div>
                     </div>
                     </div>
                 </section>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-27T04:50:50.002499+00:00" title="Oct 27, 12:50 AM ET · Refreshes hourly">just now</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-27T04:58:45.965809+00:00" title="Oct 27, 12:58 AM ET · Refreshes hourly">just now</time></p>
         </div>
 
     </div>
-    <script type="application/json" id="game-film">{"v": 1, "iter": 600000, "salt": "qOwYtfFfs8Azjl69mwsk7w==", "iv": "Ri0A+mABsHeCsqBm", "ct": "u1ChO2IA4wiOFrHz4FCoYHkkIG/PWEOcidce5Inr5xnDylS8eMYGkriGymxYA7YswBYkBt9s4CdQmwxNS8K44ts18ip173M4YDUswAd5mCYJ2fPYSZaDKWHJoYMvlmSKwacVQhffX0GpjKuN8RMajWNiDZwNA8o4d8bkzbglmVvWQ37Qf6+HUE7IaPzRXUy6kQjOM9Xm3Bw+bDZXudOI0S2Hezv8snCWBNHssGRTB/AnkDV1J/sM6yXMimB72kdvWwKro93aRfEa+PgdjRFbevPWHBo4PNudqyuQzjgyY0aWk3m6uMdqv9FAipEzW4QEeAlw7hPvAuitkowcH9MGvVMiPEs7rqoE27stT2cMQ0tEtZJRhmYr4kMcXuqxIx71jdX8ghIWSdX4tKQVTHwkL9R/6kLYo5PwD+uXEcuWLbSZw+bl+QADsklvk4SOZmgZ"}</script>
+    <script type="application/json" id="game-film">{"v": 1, "iter": 600000, "salt": "KicvhFfBe4P/O9GuldmiRg==", "iv": "9FHv+ymCJknWUIUe", "ct": "+DuDeDyuGv63fYHgeja8OKzbY0aGq1LahNLRgdAewkpjCcaAtxcdgKW4q4N9G++edfMcqFneYB457dAwPOZsIFX0LaP/3CbYZnp9nNBaTX1ngj+GLPIiOAc4JKO1Ubr/K6x1Nn4FIWn4mvBtr4SeymUgb+wjcMT3IiZ4vuxXDbPExK1Em5EmAjQ1cwjnE5VUfbWqR8v5fRQx0blsobvPTbDhuJLcfmKLgVy3rTE6jvIdfIj0LNSGlXw3y0TGuzDNbEvk3MeCyHb0kTkUhjIHERxEfVxgnbMg58Kva8YwX2Wz4Wm25fD1GN3f7OnOi32LEFATq4/ZZBU3tNKnPzJ86zS7yM7BuNIMzuM4d+0gSVa6JWgyizZ8gQY3dl9x5TX78eRSWcUKjB279vLL/qMMb0nlqSeRLZKX05PH4+A0WPDWegn1dvD7UTVg36GlGhc3"}</script>
 
     <script>
     (function () {
@@ -3128,6 +3087,70 @@
       var PERIOD_KEY = 'eagles-schedule-period';
       var period = null;   // 'day', 'week', 'month' or 'season'
       var anchor = null;   // a day inside the period shown, 'YYYY-MM-DD'
+
+      // Tooltips: anything with data-tip. One tooltip for the page, shown after a short pause on hover, at once on keyboard
+      // focus and on tap. Lines are split on '||', and the first is a heading when there are several. Listening on the
+      // document means the team version of the schedule, swapped in after log-in, gets them without further work.
+      var tipEl = null, tipFor = null, tipTimer = null, tipAt = 0;
+      function tipHide() {
+        clearTimeout(tipTimer);
+        if (tipEl) tipEl.style.display = 'none';
+        tipFor = null;
+      }
+      function tipShow(el) {
+        if (!tipEl) {
+          tipEl = document.createElement('div');
+          tipEl.className = 'tip';
+          tipEl.setAttribute('role', 'tooltip');
+          document.body.appendChild(tipEl);
+        }
+        var lines = el.getAttribute('data-tip').split('||');
+        tipEl.textContent = '';
+        lines.forEach(function (text, i) {
+          var row = document.createElement('div');
+          if (lines.length > 1 && i === 0) row.className = 'tip-head';
+          row.textContent = text;
+          tipEl.appendChild(row);
+        });
+        tipEl.style.display = 'block';
+        var r = el.getBoundingClientRect(), t = tipEl.getBoundingClientRect();
+        var left = Math.max(8, Math.min(r.left + r.width / 2 - t.width / 2,
+                                        document.documentElement.clientWidth - t.width - 8));
+        var top = r.top - t.height - 10;
+        if (top < 8) top = r.bottom + 10;
+        tipEl.style.left = left + 'px';
+        tipEl.style.top = top + 'px';
+        tipFor = el;
+        tipAt = Date.now();
+      }
+      function tipTarget(e) {
+        return e.target && e.target.closest ? e.target.closest('[data-tip]') : null;
+      }
+      document.addEventListener('mouseover', function (e) {
+        var t = tipTarget(e);
+        if (!t || t === tipFor) return;
+        clearTimeout(tipTimer);
+        tipTimer = setTimeout(function () { tipShow(t); }, 120);
+      });
+      document.addEventListener('mouseout', function (e) {
+        var t = tipTarget(e);
+        if (t && !(e.relatedTarget && t.contains(e.relatedTarget))) tipHide();
+      });
+      document.addEventListener('focusin', function (e) {
+        var t = tipTarget(e);
+        if (t) tipShow(t);
+      });
+      document.addEventListener('focusout', tipHide);
+      // A tap shows the tooltip and a second tap closes it; a touch also fires a hover, so a click straight after
+      // the tooltip opened is ignored. A link just opens.
+      document.addEventListener('click', function (e) {
+        var t = tipTarget(e);
+        if (!t) { tipHide(); return; }
+        if (t.matches('a[href]')) return;
+        if (tipFor === t && Date.now() - tipAt > 400) tipHide(); else tipShow(t);
+      });
+      window.addEventListener('scroll', tipHide, { passive: true });
+
 
       // Dates as 'YYYY-MM-DD' strings, which sort and compare as dates.
       function iso(d) {
@@ -3242,6 +3265,10 @@
           a.classList.add('is-' + state);
           if (!a.classList.contains('icon-btn')) a.textContent = text;
           a.setAttribute('aria-label', text + ': ' + (a.dataset.label || 'LiveBarn'));
+          if (a.hasAttribute('data-tip')) {
+            a.setAttribute('data-tip', { upcoming: 'Watch live on LiveBarn', live: 'Live now on LiveBarn',
+                                         rewatch: 'Rewatch on LiveBarn' }[state]);
+          }
         });
         // LiveBarn: the rink's live camera until the first hour is up, then
         // the recording from puck drop. The big buttons say which.
