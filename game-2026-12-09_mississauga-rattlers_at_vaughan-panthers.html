@@ -2471,6 +2471,27 @@
         <nav class="mastnav">
             <a href="index.html">Standings</a>
             <a href="schedule.html" class="active">Schedule</a>
+            <a class="mastnav-auth" href="schedule.html#login" data-auth-link>Team Login</a>
+            <script>
+            (function () {
+              var link = document.currentScript.previousElementSibling;
+              var saved = null;
+              try { saved = localStorage.getItem('eagles-team-password'); } catch (e) {}
+              if (!saved) return;
+              link.textContent = 'Log out';
+              link.dataset.loggedIn = '1';
+              link.addEventListener('click', function (event) {
+                // The schedule page logs out itself (it also has to put the
+                // public schedule back). This runs before the rest of the page
+                // has loaded, so which page it is can only be told on click.
+                if (document.querySelector('[data-schedule-block]')) return;
+                event.preventDefault();
+                try { localStorage.removeItem('eagles-team-password'); } catch (e) {}
+                link.textContent = 'Team Login';
+                delete link.dataset.loggedIn;
+              }, { once: true });
+            })();
+            </script>
         </nav>
         <aside class="sponsor-strip" aria-label="Our sponsors">
             <div class="sponsor-track">
@@ -2634,7 +2655,7 @@
                     </div>
                 </section>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-27T03:26:22.464013+00:00" title="Oct 26, 11:26 PM ET · Refreshes hourly">23 minutes ago</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-27T03:52:55.174286+00:00" title="Oct 26, 11:52 PM ET · Refreshes hourly">just now</time></p>
         </div>
 
     </div>
