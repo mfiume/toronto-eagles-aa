@@ -2627,8 +2627,67 @@ def page_end():
     return ""
 
 
+# The header lines up with the content under it. Each page has a measure, the width its content is held to, and on a wide
+# screen the brand, the tabs and the season line sit on that page's left and right edges instead of the window's.
+_MEASURE_CSS = """
+        .container {
+            --measure: var(--shell);
+            --edge: max(0px, calc((100% - var(--measure)) / 2));
+        }
+
+        .container:has(.schedule),
+        .container:has(.team-page) {
+            --measure: 860px;
+        }
+
+        .container:has(.privacy) {
+            --measure: 720px;
+        }
+
+        .masthead {
+            padding-left: max(clamp(12px, 3vw, 24px), var(--edge));
+            padding-right: max(clamp(12px, 3vw, 24px), var(--edge));
+        }
+
+        /* The tabs carry their own side padding, so the first label's text lands on the edge. */
+        .mastnav {
+            padding-left: max(clamp(6px, 2.2vw, 18px), calc(var(--edge) - clamp(11px, 2.2vw, 16px)));
+            padding-right: max(clamp(6px, 2.2vw, 18px), calc(var(--edge) - clamp(11px, 2.2vw, 16px)));
+        }
+
+        /* The sponsors still scroll the whole width of the band, but fade out at the edges of the content, so the logos
+           come and go inside the same column as everything else. */
+        @media (min-width: 900px) {
+            .sponsor-strip {
+                position: relative;
+            }
+
+            .sponsor-strip::before,
+            .sponsor-strip::after {
+                content: "";
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                width: calc(var(--edge) + 56px);
+                z-index: 1;
+                pointer-events: none;
+            }
+
+            .sponsor-strip::before {
+                left: 0;
+                background: linear-gradient(90deg, #ffffff calc(100% - 56px), rgba(255, 255, 255, 0));
+            }
+
+            .sponsor-strip::after {
+                right: 0;
+                background: linear-gradient(270deg, #ffffff calc(100% - 56px), rgba(255, 255, 255, 0));
+            }
+        }
+"""
+
+
 PAGE_CSS = (_TOKENS_CSS + _BASE_CSS + _LINK_CSS + _MASTHEAD_CSS + _TABLE_CSS
-            + _SCHEDULE_CSS + _CHROME_CSS + _SPONSOR_CSS + _RESPONSIVE_CSS)
+            + _SCHEDULE_CSS + _CHROME_CSS + _SPONSOR_CSS + _RESPONSIVE_CSS + _MEASURE_CSS)
 
 # Playoff-page extras: the round headers and the format box.
 PLAYOFF_CSS = """
