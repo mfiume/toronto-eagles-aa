@@ -1732,6 +1732,60 @@
             padding-right: max(clamp(12px, 3vw, 24px), var(--edge));
         }
 
+        /* On a wide screen the brand, the tabs and the season line share one row, to leave the room to the page. The two
+           halves are still separate elements, so they are laid out as one with display: contents and ordered here. */
+        @media (min-width: 900px) {
+            .topbar {
+                display: flex;
+                align-items: stretch;
+                background: var(--surface);
+                border-top: 3px solid var(--brand);
+                border-bottom: 1px solid var(--line);
+                padding: 0 max(clamp(12px, 3vw, 24px), var(--edge));
+            }
+
+            .topbar .masthead,
+            .topbar .mastnav {
+                display: contents;
+            }
+
+            .topbar .masthead-brand {
+                order: 1;
+                align-self: center;
+                margin-right: clamp(20px, 3vw, 36px);
+                padding: 8px 0;
+            }
+
+            .topbar .masthead-wordmark {
+                font-size: 1.45rem;
+            }
+
+            .topbar .masthead-mark {
+                height: 30px;
+            }
+
+            .topbar .mastnav a:not(.mastnav-auth) {
+                order: 2;
+                display: flex;
+                align-items: center;
+                padding-top: 0;
+                padding-bottom: 0;
+            }
+
+            .topbar .masthead-meta {
+                order: 3;
+                margin-left: auto;
+                align-self: center;
+            }
+
+            .topbar .mastnav a.mastnav-auth {
+                order: 4;
+                align-self: center;
+                margin-left: clamp(16px, 2vw, 28px);
+                padding: 0;
+            }
+        }
+
         /* The tabs carry their own side padding, so the first label's text lands on the edge. */
         .mastnav {
             padding-left: max(clamp(6px, 2.2vw, 18px), calc(var(--edge) - clamp(11px, 2.2vw, 16px)));
@@ -2103,6 +2157,67 @@
         }
 
 
+        /* --- Shots, when a parent tracked them --- */
+        .shots-head {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: baseline;
+            gap: 10px;
+        }
+
+        .shots-n {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 1.5rem;
+            line-height: 1;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .shots-n.us {
+            color: var(--brand);
+            text-align: left;
+        }
+
+        .shots-title {
+            display: grid;
+            justify-items: center;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.82rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-2);
+        }
+
+        .shots-note {
+            font-family: var(--body);
+            font-weight: 400;
+            font-size: 0.68rem;
+            letter-spacing: 0.02em;
+            text-transform: none;
+            color: var(--ink-3);
+        }
+
+        .shots-bar {
+            display: flex;
+            gap: 3px;
+            height: 8px;
+            margin-top: 8px;
+        }
+
+        .shots-bar i {
+            display: block;
+            border-radius: 4px;
+            background: var(--ink);
+            opacity: 0.35;
+        }
+
+        .shots-bar i.us {
+            background: var(--brand);
+            opacity: 1;
+        }
+
         /* --- The game sheet as a timeline --- */
         .tl {
             display: grid;
@@ -2191,6 +2306,54 @@
             height: 5px;
             border-radius: 2px;
             background: var(--ink-3);
+        }
+
+        /* A bigger target than the mark: a 5 px bar or a 13 px dot is small for a finger. */
+        .tl-track .tl-dot::after,
+        .tl-track .tl-to::after {
+            content: "";
+            position: absolute;
+            inset: -3px;
+        }
+
+        .tl-track .tl-pen::after {
+            content: "";
+            position: absolute;
+            inset: -1px 0;
+        }
+
+        .tl-track [data-tip] {
+            cursor: default;
+            outline: none;
+        }
+
+        .tl-track [data-tip]:focus-visible {
+            outline: 2px solid var(--ink);
+            outline-offset: 3px;
+        }
+
+        .tl-tip {
+            display: none;
+            position: fixed;
+            z-index: 50;
+            max-width: 240px;
+            padding: 8px 11px;
+            background: var(--ink);
+            color: #ffffff;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            line-height: 1.4;
+            pointer-events: none;
+            box-shadow: 0 6px 20px rgba(17, 18, 20, 0.25);
+        }
+
+        .tl-tip-head {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.86rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 2px;
         }
 
         .tl-dot.us, .tl-to.us { background: var(--brand); }
@@ -2643,6 +2806,7 @@
 </head>
 <body>
     <div class="container">
+        <div class="topbar">
         <header class="masthead">
             <a class="masthead-brand" href="index.html">
                 <img class="masthead-mark" src="assets/eagles-bird-red.svg" alt=""
@@ -2680,6 +2844,7 @@
             })();
             </script>
         </nav>
+        </div>
         <aside class="sponsor-strip" aria-label="Our sponsors">
             <div class="sponsor-track">
                 <div class="sponsor-set">
@@ -2833,7 +2998,49 @@
                     <div class="block-head"><h3>Game sheet</h3><span>Official, from the league</span></div>
                     <div class="sheet-card">
                         <div class="table-wrapper"><table class="sheet-score"><thead><tr><th class="sheet-team"></th><th>1st</th><th>2nd</th><th>3rd</th><th>Final</th></tr></thead><tbody><tr><td class="sheet-team">Toronto Eagles</td><td>1</td><td>1</td><td>2</td><td class="sheet-total">4</td></tr><tr><td class="sheet-team">Mississauga Jets</td><td>1</td><td>0</td><td>0</td><td class="sheet-total">1</td></tr></tbody></table></div>
-                        <div class="tl"><div class="tl-period tl-axis"><div class="tl-name"></div><div class="tl-track"><span class="tl-label" style="left:0%">12:00</span><span class="tl-label" style="left:25%">9:00</span><span class="tl-label" style="left:50%">6:00</span><span class="tl-label" style="left:75%">3:00</span><span class="tl-label end">0:00</span></div></div><div class="tl-period"><div class="tl-name">1st</div><div class="tl-track" style="height:28px"><span class="tl-tick" style="left:25%"></span><span class="tl-tick" style="left:50%"></span><span class="tl-tick" style="left:75%"></span><div class="tl-line"></div><span class="tl-pen us" style="left:40.28%;width:16.67%;top:19px" title="Toronto Eagles penalty, Tripping, 2 min, 7:10 left in the 1st"></span><span class="tl-dot them" style="left:2.08%" title="Mississauga Jets goal, 11:45 left in the 1st (0-1)"></span><span class="tl-dot us" style="left:72.78%" title="Toronto Eagles goal, 3:16 left in the 1st (1-1)"></span></div></div><div class="tl-period"><div class="tl-name">2nd</div><div class="tl-track" style="height:28px"><span class="tl-tick" style="left:25%"></span><span class="tl-tick" style="left:50%"></span><span class="tl-tick" style="left:75%"></span><div class="tl-line"></div><span class="tl-pen them" style="left:1.94%;width:16.67%;top:19px" title="Mississauga Jets penalty, Hooking, 2 min, 11:46 left in the 2nd"></span><span class="tl-pen us" style="left:66.39%;width:16.67%;top:19px" title="Toronto Eagles penalty, Slashing, 2 min, 4:02 left in the 2nd"></span><span class="tl-dot us" style="left:62.08%" title="Toronto Eagles goal, 4:33 left in the 2nd (2-1)"></span></div></div><div class="tl-period"><div class="tl-name">3rd</div><div class="tl-track" style="height:28px"><span class="tl-tick" style="left:25%"></span><span class="tl-tick" style="left:50%"></span><span class="tl-tick" style="left:75%"></span><div class="tl-line"></div><span class="tl-pen them" style="left:37.78%;width:16.67%;top:19px" title="Mississauga Jets penalty, Body checking, 2 min, 7:28 left in the 3rd"></span><span class="tl-pen us" style="left:84.31%;width:15.69%;top:19px" title="Toronto Eagles penalty, Tripping, 2 min, 1:53 left in the 3rd"></span><span class="tl-dot us" style="left:20.14%" title="Toronto Eagles goal, 9:35 left in the 3rd (3-1)"></span><span class="tl-dot us" style="left:64.44%" title="Toronto Eagles goal, 4:16 left in the 3rd (4-1)"></span></div></div><div class="tl-legend"><span class="tl-key"><i class="tl-dot us"></i>Toronto Eagles</span><span class="tl-key"><i class="tl-dot them"></i>Mississauga Jets</span><span><i class="tl-dot"></i>Goal</span><span><i class="tl-pen"></i>Penalty, as long as it lasts</span><span><i class="tl-to"></i>Timeout</span></div></div>
+                        <div class="shots"><div class="shots-head"><span class="shots-n us">47</span><span class="shots-title">Shots<span class="shots-note">Tracked by a parent</span></span><span class="shots-n">17</span></div><div class="shots-bar" role="img" aria-label="Shots: Toronto Eagles 47, Mississauga Jets 17"><i class="us" style="flex:0.7344"></i><i style="flex:0.2656"></i></div></div>
+                        <div class="tl"><div class="tl-period tl-axis"><div class="tl-name"></div><div class="tl-track"><span class="tl-label" style="left:0%">12:00</span><span class="tl-label" style="left:25%">9:00</span><span class="tl-label" style="left:50%">6:00</span><span class="tl-label" style="left:75%">3:00</span><span class="tl-label end">0:00</span></div></div><div class="tl-period"><div class="tl-name">1st</div><div class="tl-track" style="height:28px"><span class="tl-tick" style="left:25%"></span><span class="tl-tick" style="left:50%"></span><span class="tl-tick" style="left:75%"></span><div class="tl-line"></div><span class="tl-pen us" style="left:40.28%;width:16.67%;top:19px" data-tip="Penalty, Toronto Eagles||Tripping, 2 min||1st period, 7:10 left||Runs until 5:10 left||Score: Toronto Eagles 0, Mississauga Jets 1" aria-label="Penalty, Toronto Eagles - Tripping, 2 min - 1st period, 7:10 left - Runs until 5:10 left - Score: Toronto Eagles 0, Mississauga Jets 1" tabindex="0" role="img"></span><span class="tl-dot them" style="left:2.08%" data-tip="Goal, Mississauga Jets||1st period, 11:45 left||Score after the goal: Toronto Eagles 0, Mississauga Jets 1" aria-label="Goal, Mississauga Jets - 1st period, 11:45 left - Score after the goal: Toronto Eagles 0, Mississauga Jets 1" tabindex="0" role="img"></span><span class="tl-dot us" style="left:72.78%" data-tip="Goal, Toronto Eagles||1st period, 3:16 left||Score after the goal: Toronto Eagles 1, Mississauga Jets 1" aria-label="Goal, Toronto Eagles - 1st period, 3:16 left - Score after the goal: Toronto Eagles 1, Mississauga Jets 1" tabindex="0" role="img"></span></div></div><div class="tl-period"><div class="tl-name">2nd</div><div class="tl-track" style="height:28px"><span class="tl-tick" style="left:25%"></span><span class="tl-tick" style="left:50%"></span><span class="tl-tick" style="left:75%"></span><div class="tl-line"></div><span class="tl-pen them" style="left:1.94%;width:16.67%;top:19px" data-tip="Penalty, Mississauga Jets||Hooking, 2 min||2nd period, 11:46 left||Runs until 9:46 left||Score: Toronto Eagles 1, Mississauga Jets 1" aria-label="Penalty, Mississauga Jets - Hooking, 2 min - 2nd period, 11:46 left - Runs until 9:46 left - Score: Toronto Eagles 1, Mississauga Jets 1" tabindex="0" role="img"></span><span class="tl-pen us" style="left:66.39%;width:16.67%;top:19px" data-tip="Penalty, Toronto Eagles||Slashing, 2 min||2nd period, 4:02 left||Runs until 2:02 left||Score: Toronto Eagles 2, Mississauga Jets 1" aria-label="Penalty, Toronto Eagles - Slashing, 2 min - 2nd period, 4:02 left - Runs until 2:02 left - Score: Toronto Eagles 2, Mississauga Jets 1" tabindex="0" role="img"></span><span class="tl-dot us" style="left:62.08%" data-tip="Goal, Toronto Eagles||2nd period, 4:33 left||Score after the goal: Toronto Eagles 2, Mississauga Jets 1" aria-label="Goal, Toronto Eagles - 2nd period, 4:33 left - Score after the goal: Toronto Eagles 2, Mississauga Jets 1" tabindex="0" role="img"></span></div></div><div class="tl-period"><div class="tl-name">3rd</div><div class="tl-track" style="height:28px"><span class="tl-tick" style="left:25%"></span><span class="tl-tick" style="left:50%"></span><span class="tl-tick" style="left:75%"></span><div class="tl-line"></div><span class="tl-pen them" style="left:37.78%;width:16.67%;top:19px" data-tip="Penalty, Mississauga Jets||Body checking, 2 min||3rd period, 7:28 left||Runs until 5:28 left||Score: Toronto Eagles 3, Mississauga Jets 1" aria-label="Penalty, Mississauga Jets - Body checking, 2 min - 3rd period, 7:28 left - Runs until 5:28 left - Score: Toronto Eagles 3, Mississauga Jets 1" tabindex="0" role="img"></span><span class="tl-pen us" style="left:84.31%;width:15.69%;top:19px" data-tip="Penalty, Toronto Eagles||Tripping, 2 min||3rd period, 1:53 left||Carries into the next period||Score: Toronto Eagles 4, Mississauga Jets 1" aria-label="Penalty, Toronto Eagles - Tripping, 2 min - 3rd period, 1:53 left - Carries into the next period - Score: Toronto Eagles 4, Mississauga Jets 1" tabindex="0" role="img"></span><span class="tl-dot us" style="left:20.14%" data-tip="Goal, Toronto Eagles||3rd period, 9:35 left||Score after the goal: Toronto Eagles 3, Mississauga Jets 1" aria-label="Goal, Toronto Eagles - 3rd period, 9:35 left - Score after the goal: Toronto Eagles 3, Mississauga Jets 1" tabindex="0" role="img"></span><span class="tl-dot us" style="left:64.44%" data-tip="Goal, Toronto Eagles||3rd period, 4:16 left||Score after the goal: Toronto Eagles 4, Mississauga Jets 1" aria-label="Goal, Toronto Eagles - 3rd period, 4:16 left - Score after the goal: Toronto Eagles 4, Mississauga Jets 1" tabindex="0" role="img"></span></div></div><div class="tl-legend"><span class="tl-key"><i class="tl-dot us"></i>Toronto Eagles</span><span class="tl-key"><i class="tl-dot them"></i>Mississauga Jets</span><span><i class="tl-dot"></i>Goal</span><span><i class="tl-pen"></i>Penalty, as long as it lasts</span><span><i class="tl-to"></i>Timeout</span></div></div><script>
+(function () {
+  var tip = null, shown = null, shownAt = 0;
+  function make() {
+    tip = document.createElement('div');
+    tip.className = 'tl-tip';
+    tip.setAttribute('role', 'tooltip');
+    document.body.appendChild(tip);
+  }
+  function show(el) {
+    if (!tip) make();
+    var lines = el.getAttribute('data-tip').split('||');
+    tip.textContent = '';
+    lines.forEach(function (text, i) {
+      var row = document.createElement('div');
+      if (i === 0) row.className = 'tl-tip-head';
+      row.textContent = text;
+      tip.appendChild(row);
+    });
+    tip.style.display = 'block';
+    var r = el.getBoundingClientRect(), t = tip.getBoundingClientRect();
+    var left = Math.max(8, Math.min(r.left + r.width / 2 - t.width / 2, document.documentElement.clientWidth - t.width - 8));
+    var top = r.top - t.height - 10;
+    if (top < 8) top = r.bottom + 10;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+    shown = el;
+    shownAt = Date.now();
+  }
+  function hide() { if (tip) tip.style.display = 'none'; shown = null; }
+  document.querySelectorAll('.tl [data-tip]').forEach(function (el) {
+    el.addEventListener('mouseenter', function () { show(el); });
+    el.addEventListener('mouseleave', hide);
+    el.addEventListener('focus', function () { show(el); });
+    el.addEventListener('blur', hide);
+    // a touch fires a hover and then a click; the click only closes a tooltip that has been open a moment
+    el.addEventListener('click', function (e) { e.stopPropagation(); if (shown === el && Date.now() - shownAt > 400) hide(); else show(el); });
+  });
+  document.addEventListener('click', hide);
+  window.addEventListener('scroll', hide, { passive: true });
+})();
+</script>
                         <div class="sheet-lists"><div class="sheet-list"><h4>Scoring</h4><ul><li><span class="sheet-when">1st · 11:45</span><span class="sheet-what">Mississauga Jets goal</span></li><li><span class="sheet-when">1st · 3:16</span><span class="sheet-what">Toronto Eagles goal</span></li><li><span class="sheet-when">2nd · 4:33</span><span class="sheet-what">Toronto Eagles goal</span></li><li><span class="sheet-when">3rd · 9:35</span><span class="sheet-what">Toronto Eagles goal</span></li><li><span class="sheet-when">3rd · 4:16</span><span class="sheet-what">Toronto Eagles goal</span></li></ul></div><div class="sheet-list"><h4>Penalties</h4><ul><li><span class="sheet-when">1st · 7:10</span><span class="sheet-what">Toronto Eagles</span><span class="sheet-note">Tripping, 2 min</span></li><li><span class="sheet-when">2nd · 11:46</span><span class="sheet-what">Mississauga Jets</span><span class="sheet-note">Hooking, 2 min</span></li><li><span class="sheet-when">2nd · 4:02</span><span class="sheet-what">Toronto Eagles</span><span class="sheet-note">Slashing, 2 min</span></li><li><span class="sheet-when">3rd · 7:28</span><span class="sheet-what">Mississauga Jets</span><span class="sheet-note">Body checking, 2 min</span></li><li><span class="sheet-when">3rd · 1:53</span><span class="sheet-what">Toronto Eagles</span><span class="sheet-note">Tripping, 2 min</span></li></ul></div></div>
                     </div>
                 </section>
@@ -2865,7 +3072,7 @@
                     </div>
                 </section>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-27T04:17:26.213516+00:00" title="Oct 27, 12:17 AM ET · Refreshes hourly">just now</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-27T04:29:19.147261+00:00" title="Oct 27, 12:29 AM ET · Refreshes hourly">just now</time></p>
         </div>
 
     </div>

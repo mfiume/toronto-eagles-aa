@@ -1733,6 +1733,60 @@
             padding-right: max(clamp(12px, 3vw, 24px), var(--edge));
         }
 
+        /* On a wide screen the brand, the tabs and the season line share one row, to leave the room to the page. The two
+           halves are still separate elements, so they are laid out as one with display: contents and ordered here. */
+        @media (min-width: 900px) {
+            .topbar {
+                display: flex;
+                align-items: stretch;
+                background: var(--surface);
+                border-top: 3px solid var(--brand);
+                border-bottom: 1px solid var(--line);
+                padding: 0 max(clamp(12px, 3vw, 24px), var(--edge));
+            }
+
+            .topbar .masthead,
+            .topbar .mastnav {
+                display: contents;
+            }
+
+            .topbar .masthead-brand {
+                order: 1;
+                align-self: center;
+                margin-right: clamp(20px, 3vw, 36px);
+                padding: 8px 0;
+            }
+
+            .topbar .masthead-wordmark {
+                font-size: 1.45rem;
+            }
+
+            .topbar .masthead-mark {
+                height: 30px;
+            }
+
+            .topbar .mastnav a:not(.mastnav-auth) {
+                order: 2;
+                display: flex;
+                align-items: center;
+                padding-top: 0;
+                padding-bottom: 0;
+            }
+
+            .topbar .masthead-meta {
+                order: 3;
+                margin-left: auto;
+                align-self: center;
+            }
+
+            .topbar .mastnav a.mastnav-auth {
+                order: 4;
+                align-self: center;
+                margin-left: clamp(16px, 2vw, 28px);
+                padding: 0;
+            }
+        }
+
         /* The tabs carry their own side padding, so the first label's text lands on the edge. */
         .mastnav {
             padding-left: max(clamp(6px, 2.2vw, 18px), calc(var(--edge) - clamp(11px, 2.2vw, 16px)));
@@ -2104,6 +2158,67 @@
         }
 
 
+        /* --- Shots, when a parent tracked them --- */
+        .shots-head {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: baseline;
+            gap: 10px;
+        }
+
+        .shots-n {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 1.5rem;
+            line-height: 1;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .shots-n.us {
+            color: var(--brand);
+            text-align: left;
+        }
+
+        .shots-title {
+            display: grid;
+            justify-items: center;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.82rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-2);
+        }
+
+        .shots-note {
+            font-family: var(--body);
+            font-weight: 400;
+            font-size: 0.68rem;
+            letter-spacing: 0.02em;
+            text-transform: none;
+            color: var(--ink-3);
+        }
+
+        .shots-bar {
+            display: flex;
+            gap: 3px;
+            height: 8px;
+            margin-top: 8px;
+        }
+
+        .shots-bar i {
+            display: block;
+            border-radius: 4px;
+            background: var(--ink);
+            opacity: 0.35;
+        }
+
+        .shots-bar i.us {
+            background: var(--brand);
+            opacity: 1;
+        }
+
         /* --- The game sheet as a timeline --- */
         .tl {
             display: grid;
@@ -2192,6 +2307,54 @@
             height: 5px;
             border-radius: 2px;
             background: var(--ink-3);
+        }
+
+        /* A bigger target than the mark: a 5 px bar or a 13 px dot is small for a finger. */
+        .tl-track .tl-dot::after,
+        .tl-track .tl-to::after {
+            content: "";
+            position: absolute;
+            inset: -3px;
+        }
+
+        .tl-track .tl-pen::after {
+            content: "";
+            position: absolute;
+            inset: -1px 0;
+        }
+
+        .tl-track [data-tip] {
+            cursor: default;
+            outline: none;
+        }
+
+        .tl-track [data-tip]:focus-visible {
+            outline: 2px solid var(--ink);
+            outline-offset: 3px;
+        }
+
+        .tl-tip {
+            display: none;
+            position: fixed;
+            z-index: 50;
+            max-width: 240px;
+            padding: 8px 11px;
+            background: var(--ink);
+            color: #ffffff;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            line-height: 1.4;
+            pointer-events: none;
+            box-shadow: 0 6px 20px rgba(17, 18, 20, 0.25);
+        }
+
+        .tl-tip-head {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.86rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 2px;
         }
 
         .tl-dot.us, .tl-to.us { background: var(--brand); }
@@ -2738,6 +2901,7 @@
 </head>
 <body>
     <div class="container">
+        <div class="topbar">
         <header class="masthead">
             <a class="masthead-brand" href="index.html">
                 <img class="masthead-mark" src="assets/eagles-bird-red.svg" alt=""
@@ -2775,6 +2939,7 @@
             })();
             </script>
         </nav>
+        </div>
         <aside class="sponsor-strip" aria-label="Our sponsors">
             <div class="sponsor-track">
                 <div class="sponsor-set">
@@ -2905,8 +3070,8 @@
                 </section>
 </div>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-27T04:17:26.213516+00:00" title="Oct 27, 12:17 AM ET · Refreshes hourly">just now</time></p>
-            <script type="application/json" id="team-events">{"v": 1, "iter": 600000, "salt": "985taDubYzMy13sIzu8zvw==", "iv": "Po7nK2fJR66ji4KJ", "ct": "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"}</script>
+            <p class="content-meta">Updated <time datetime="2026-10-27T04:29:19.147261+00:00" title="Oct 27, 12:29 AM ET · Refreshes hourly">just now</time></p>
+            <script type="application/json" id="team-events">{"v": 1, "iter": 600000, "salt": "dPWqih8gWTg1kVmZaQKnkQ==", "iv": "pYS15gCkLA2vWuu5", "ct": "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"}</script>
 
             <dialog class="login-dialog" id="login-dialog" aria-labelledby="login-title">
                 <form method="dialog">
