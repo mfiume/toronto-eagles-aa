@@ -2978,16 +2978,19 @@ TEAM_CSS = """
             vector-effect: non-scaling-stroke;
         }
 
-        .points-path .dots {
-            fill: var(--ink);
+        .points-path .dots line {
+            stroke: var(--ink);
+            stroke-width: 8;
+            stroke-linecap: round;
+            vector-effect: non-scaling-stroke;
         }
 
         .team-page.is-ours .points-path .path {
             stroke: var(--brand);
         }
 
-        .team-page.is-ours .points-path .dots {
-            fill: var(--brand);
+        .team-page.is-ours .points-path .dots line {
+            stroke: var(--brand);
         }
 
         /* Versus the Eagles. */

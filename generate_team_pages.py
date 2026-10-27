@@ -218,7 +218,10 @@ def points_path(played, team):
     def xy(i, p):
         return f"{i / n * w:.1f},{h - p / top * h:.1f}"
     line = " ".join(xy(i, p) for i, p in enumerate(points))
-    dots = "".join(f'<circle cx="{xy(i, p).split(",")[0]}" cy="{xy(i, p).split(",")[1]}" r="3.5"/>'
+    # The chart is stretched to fit its box, which would turn a circle into an oval. A dot is a zero-length line with
+    # round ends and a stroke that does not scale, so it stays round at any stretch.
+    dots = "".join(f'<line x1="{xy(i, p).split(",")[0]}" y1="{xy(i, p).split(",")[1]}" '
+                   f'x2="{xy(i, p).split(",")[0]}" y2="{xy(i, p).split(",")[1]}"/>'
                    for i, p in enumerate(points) if i)
     return f"""
                 <section class="team-block">
