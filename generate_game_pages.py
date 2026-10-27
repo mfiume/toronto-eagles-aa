@@ -343,6 +343,9 @@ def sheet_timeline(sheet):
         score[g["side"]] += 1
         running[(g["period"], g["clock"], g["side"])] = (score["away"], score["home"])
 
+    # "Toronto Eagles" is "Eagles" in a tooltip: the score line is short enough to read at a glance
+    nick = {side: name[side].split()[-1] for side in ("home", "away")}
+
     def tip(*lines):
         """What the tooltip says, one line each, as an attribute the page's script reads. The same words label the mark for a screen reader."""
         text = "||".join(lines)
@@ -355,7 +358,7 @@ def sheet_timeline(sheet):
         """The score just before a moment: the goals scored earlier in the game, so a goal at the same second is not counted."""
         a = sum(1 for g in sheet["goals"] if g["side"] == "away" and (g["period"], -secs(g["clock"])) < (n, -secs(clock)))
         h = sum(1 for g in sheet["goals"] if g["side"] == "home" and (g["period"], -secs(g["clock"])) < (n, -secs(clock)))
-        return f'Score: {name["away"]} {a}, {name["home"]} {h}'
+        return "Score: " + nick["away"] + " " + str(a) + ", " + nick["home"] + " " + str(h)
 
     blocks = ""
     for p in sheet["periods"]:
@@ -366,7 +369,7 @@ def sheet_timeline(sheet):
                 a, h = running[(n, g["clock"], g["side"])]
                 kind = f' ({g["kind"]})' if g.get("kind") else ""
                 head = "Goal, " + name[g["side"]] + kind
-                after = "Score after the goal: " + name["away"] + " " + str(a) + ", " + name["home"] + " " + str(h)
+                after = "Score: " + nick["away"] + " " + str(a) + ", " + nick["home"] + " " + str(h)
                 marks += (f'<span class="tl-dot {mine(g["side"])}" style="left:{pos(g["clock"]):.2f}%" '
                           f'{tip(head, when(n, g["clock"]), after)}></span>')
         for t in sheet["timeouts"]:
