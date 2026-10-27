@@ -237,6 +237,66 @@ def period_label(n):
     return {1: "1st", 2: "2nd", 3: "3rd"}.get(n, "OT" if n == 4 else f"P{n}")
 
 
+def sheet_timeline(sheet):
+    """
+    The game's moments laid out by period: one bar for each, running left to right from the opening faceoff, the opposing
+    team's moments above it and ours below, whichever side of the game we were on. A goal is a dot, a penalty is a bar as long as the penalty, a timeout is a
+    diamond. Ours are red and theirs dark, so a stretch of the game reads at a glance. The sheet gives each moment by the
+    time left on the clock, so a moment at 3:15 left sits 8:45 of a 12 minute period in.
+    """
+    length = 12 * 60
+    ours = "home" if sheet["home"] == config.TEAM_NAME else "away" if sheet["away"] == config.TEAM_NAME else None
+    name = {"home": sheet["home"], "away": sheet["away"]}
+
+    def secs(clock):
+        m, sec = clock.split(":")
+        return int(m) * 60 + int(sec)
+
+    def pos(clock):
+        return max(0.0, min(100.0, (1 - secs(clock) / length) * 100))
+
+    def mine(side):
+        return "us" if side == ours else "them"
+
+    # running score, to say what each goal made it
+    score = {"home": 0, "away": 0}
+    running = {}
+    for i, g in enumerate(sorted(sheet["goals"], key=lambda g: (g["period"], -secs(g["clock"])))):
+        score[g["side"]] += 1
+        running[(g["period"], g["clock"], g["side"])] = f'{score["away"]}-{score["home"]}'
+
+    blocks = ""
+    for p in sheet["periods"]:
+        n = p["period"]
+        lanes = {"away": "", "home": ""}
+        for g in sheet["goals"]:
+            if g["period"] == n:
+                tip = f'{name[g["side"]]} goal, {g["clock"]} left in the {period_label(n)} ({running[(n, g["clock"], g["side"])]})'
+                lanes[g["side"]] += f'<span class="tl-dot {mine(g["side"])}" style="left:{pos(g["clock"]):.2f}%" title="{escape(tip)}"></span>'
+        for t in sheet["penalties"]:
+            if t["period"] == n:
+                start = pos(t["clock"])
+                width = min(t["minutes"] * 60 / length * 100, 100 - start)
+                what = PENALTIES.get(t["code"], t["code"]) or "Penalty"
+                tip = f'{name[t["side"]]} penalty, {what}, {t["minutes"]} min, {t["clock"]} left in the {period_label(n)}'
+                lanes[t["side"]] += f'<span class="tl-pen {mine(t["side"])}" style="left:{start:.2f}%;width:{width:.2f}%" title="{escape(tip)}"></span>'
+        for t in sheet["timeouts"]:
+            if t["period"] == n:
+                tip = f'{name[t["side"]]} timeout, {t["clock"]} left in the {period_label(n)}'
+                lanes[t["side"]] += f'<span class="tl-to {mine(t["side"])}" style="left:{pos(t["clock"]):.2f}%" title="{escape(tip)}"></span>'
+        ticks = "".join(f'<span class="tl-tick" style="left:{i * 25}%"><i>{clock}</i></span>'
+                        for i, clock in enumerate(("12:00", "9:00", "6:00", "3:00")))
+        upper, lower = ("home", "away") if ours == "away" else ("away", "home")
+        blocks += (f'<div class="tl-period"><div class="tl-name">{period_label(n)}</div><div class="tl-track">'
+                   f'<div class="tl-lane">{lanes[upper]}</div><div class="tl-bar">{ticks}</div><div class="tl-lane">{lanes[lower]}</div>'
+                   f'</div></div>')
+    upper, lower = ("home", "away") if ours == "away" else ("away", "home")
+    legend = (f'<div class="tl-legend"><span><i class="tl-dot us"></i>Goal</span><span><i class="tl-pen us"></i>Penalty, as long as it lasts</span>'
+              f'<span><i class="tl-to us"></i>Timeout</span><span class="tl-key">Red is {escape(config.TEAM_NAME)}. '
+              f'{escape(name[upper])} above the line, {escape(name[lower])} below.</span></div>')
+    return f'<div class="tl">{blocks}{legend}</div>'
+
+
 def game_sheet(sheet):
     """
     The league's official sheet for the game: the score by period, then the goals, penalties and timeouts in the order
@@ -278,6 +338,7 @@ def game_sheet(sheet):
                     <div class="block-head"><h3>Game sheet</h3><span>Official, from the league</span></div>
                     <div class="sheet-card">
                         {table}
+                        {sheet_timeline(sheet)}
                         <div class="sheet-lists">{lists}</div>
                     </div>
                 </section>
