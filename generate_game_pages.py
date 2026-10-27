@@ -237,6 +237,54 @@ def period_label(n):
     return {1: "1st", 2: "2nd", 3: "3rd"}.get(n, "OT" if n == 4 else f"P{n}")
 
 
+def clock_left(seconds):
+    return f"{seconds // 60}:{seconds % 60:02d}"
+
+
+TIP_JS = """<script>
+(function () {
+  var tip = null, shown = null, shownAt = 0;
+  function make() {
+    tip = document.createElement('div');
+    tip.className = 'tl-tip';
+    tip.setAttribute('role', 'tooltip');
+    document.body.appendChild(tip);
+  }
+  function show(el) {
+    if (!tip) make();
+    var lines = el.getAttribute('data-tip').split('||');
+    tip.textContent = '';
+    lines.forEach(function (text, i) {
+      var row = document.createElement('div');
+      if (i === 0) row.className = 'tl-tip-head';
+      row.textContent = text;
+      tip.appendChild(row);
+    });
+    tip.style.display = 'block';
+    var r = el.getBoundingClientRect(), t = tip.getBoundingClientRect();
+    var left = Math.max(8, Math.min(r.left + r.width / 2 - t.width / 2, document.documentElement.clientWidth - t.width - 8));
+    var top = r.top - t.height - 10;
+    if (top < 8) top = r.bottom + 10;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+    shown = el;
+    shownAt = Date.now();
+  }
+  function hide() { if (tip) tip.style.display = 'none'; shown = null; }
+  document.querySelectorAll('.tl [data-tip]').forEach(function (el) {
+    el.addEventListener('mouseenter', function () { show(el); });
+    el.addEventListener('mouseleave', hide);
+    el.addEventListener('focus', function () { show(el); });
+    el.addEventListener('blur', hide);
+    // a touch fires a hover and then a click; the click only closes a tooltip that has been open a moment
+    el.addEventListener('click', function (e) { e.stopPropagation(); if (shown === el && Date.now() - shownAt > 400) hide(); else show(el); });
+  });
+  document.addEventListener('click', hide);
+  window.addEventListener('scroll', hide, { passive: true });
+})();
+</script>"""
+
+
 def sheet_timeline(sheet):
     """
     The game's moments laid out by period, one line for each, running left to right from the opening faceoff. A goal is a
@@ -265,7 +313,15 @@ def sheet_timeline(sheet):
     running = {}
     for g in sorted(sheet["goals"], key=lambda g: (g["period"], -secs(g["clock"]))):
         score[g["side"]] += 1
-        running[(g["period"], g["clock"], g["side"])] = f'{score["away"]}-{score["home"]}'
+        running[(g["period"], g["clock"], g["side"])] = (score["away"], score["home"])
+
+    def tip(*lines):
+        """What the tooltip says, one line each, as an attribute the page's script reads. The same words label the mark for a screen reader."""
+        text = "||".join(lines)
+        return f'data-tip="{escape(text)}" aria-label="{escape(" - ".join(lines))}" tabindex="0" role="img"'
+
+    def when(n, clock):
+        return f'{period_label(n)} period, {clock} left'
 
     blocks = ""
     for p in sheet["periods"]:
@@ -273,12 +329,14 @@ def sheet_timeline(sheet):
         marks = ""
         for g in sheet["goals"]:
             if g["period"] == n:
-                tip = f'{name[g["side"]]} goal, {g["clock"]} left in the {period_label(n)} ({running[(n, g["clock"], g["side"])]})'
-                marks += f'<span class="tl-dot {mine(g["side"])}" style="left:{pos(g["clock"]):.2f}%" title="{escape(tip)}"></span>'
+                a, h = running[(n, g["clock"], g["side"])]
+                kind = f' ({g["kind"]})' if g.get("kind") else ""
+                marks += (f'<span class="tl-dot {mine(g["side"])}" style="left:{pos(g["clock"]):.2f}%" '
+                          f'{tip(f"Goal, {name[g["side"]]}{kind}", when(n, g["clock"]), f"{name["away"]} {a}, {name["home"]} {h}")}></span>')
         for t in sheet["timeouts"]:
             if t["period"] == n:
-                tip = f'{name[t["side"]]} timeout, {t["clock"]} left in the {period_label(n)}'
-                marks += f'<span class="tl-to {mine(t["side"])}" style="left:{pos(t["clock"]):.2f}%" title="{escape(tip)}"></span>'
+                marks += (f'<span class="tl-to {mine(t["side"])}" style="left:{pos(t["clock"]):.2f}%" '
+                          f'{tip(f"Timeout, {name[t["side"]]}", when(n, t["clock"]))}></span>')
         # penalties, each in the first row under the line where it does not run into one already there
         rows = []
         bars = ""
@@ -291,9 +349,10 @@ def sheet_timeline(sheet):
             else:
                 rows[row] = end
             what = PENALTIES.get(t["code"], t["code"]) or "Penalty"
-            tip = f'{name[t["side"]]} penalty, {what}, {t["minutes"]} min, {t["clock"]} left in the {period_label(n)}'
+            left_after = secs(t["clock"]) - t["minutes"] * 60
+            over = (f"Runs until {clock_left(left_after)} left" if left_after > 0 else f"Carries into the next period" if left_after < 0 else "Runs to the end of the period")
             bars += (f'<span class="tl-pen {mine(t["side"])}" style="left:{start:.2f}%;width:{end - start:.2f}%;top:{19 + row * 7}px" '
-                     f'title="{escape(tip)}"></span>')
+                     f'{tip(f"Penalty, {name[t["side"]]}", f"{what}, {t["minutes"]} min", when(n, t["clock"]), over)}></span>')
         height = 19 + max(len(rows), 1) * 7 + 2 if rows else 21
         grid = "".join(f'<span class="tl-tick" style="left:{k * 25}%"></span>' for k in range(1, 4))
         blocks += (f'<div class="tl-period"><div class="tl-name">{period_label(n)}</div>'
@@ -305,7 +364,7 @@ def sheet_timeline(sheet):
            f'<span class="tl-key"><i class="tl-dot them"></i>{escape(theirs)}</span>') if ours else ""
     legend = (f'<div class="tl-legend">{who}<span><i class="tl-dot"></i>Goal</span><span><i class="tl-pen"></i>Penalty, as long as it lasts</span>'
               f'<span><i class="tl-to"></i>Timeout</span></div>')
-    return f'<div class="tl">{axis}{blocks}{legend}</div>'
+    return f'<div class="tl">{axis}{blocks}{legend}</div>{TIP_JS}'
 
 
 def game_sheet(sheet):

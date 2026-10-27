@@ -3217,6 +3217,54 @@ GAME_CSS = """
             background: var(--ink-3);
         }
 
+        /* A bigger target than the mark: a 5 px bar or a 13 px dot is small for a finger. */
+        .tl-track .tl-dot::after,
+        .tl-track .tl-to::after {
+            content: "";
+            position: absolute;
+            inset: -3px;
+        }
+
+        .tl-track .tl-pen::after {
+            content: "";
+            position: absolute;
+            inset: -1px 0;
+        }
+
+        .tl-track [data-tip] {
+            cursor: default;
+            outline: none;
+        }
+
+        .tl-track [data-tip]:focus-visible {
+            outline: 2px solid var(--ink);
+            outline-offset: 3px;
+        }
+
+        .tl-tip {
+            display: none;
+            position: fixed;
+            z-index: 50;
+            max-width: 240px;
+            padding: 8px 11px;
+            background: var(--ink);
+            color: #ffffff;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            line-height: 1.4;
+            pointer-events: none;
+            box-shadow: 0 6px 20px rgba(17, 18, 20, 0.25);
+        }
+
+        .tl-tip-head {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.86rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
         .tl-dot.us, .tl-to.us { background: var(--brand); }
         .tl-dot.them, .tl-to.them { background: var(--ink); }
         .tl-pen.us { background: var(--brand); opacity: 0.45; }
