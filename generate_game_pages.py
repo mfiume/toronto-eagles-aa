@@ -389,12 +389,10 @@ def sheet_timeline(sheet):
             else:
                 rows[row] = end
             what = PENALTIES.get(t["code"], t["code"]) or "Penalty"
-            left_after = secs(t["clock"]) - t["minutes"] * 60
-            over = (f"Runs until {clock_left(left_after)} left" if left_after > 0 else f"Carries into the next period" if left_after < 0 else "Runs to the end of the period")
             head = "Penalty, " + name[t["side"]]
             detail = what + ", " + str(t["minutes"]) + " min"
             bars += (f'<span class="tl-pen {mine(t["side"])}" style="left:{start:.2f}%;width:{end - start:.2f}%;top:{19 + row * 7}px" '
-                     f'{tip(head, detail, when(n, t["clock"]), over, score_at(n, t["clock"]))}></span>')
+                     f'{tip(head, detail, when(n, t["clock"]), score_at(n, t["clock"]))}></span>')
         height = 19 + max(len(rows), 1) * 7 + 2 if rows else 21
         grid = "".join(f'<span class="tl-tick" style="left:{k * 25}%"></span>' for k in range(1, 4))
         blocks += (f'<div class="tl-period"><div class="tl-name">{period_label(n)}</div>'
