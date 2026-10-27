@@ -45,6 +45,13 @@ PRIVACY_CSS = """
             margin-bottom: 8px;
         }
 
+        .privacy .intro {
+            font-size: 1.02rem;
+            color: var(--ink);
+            line-height: 1.6;
+            margin: 14px 0 4px;
+        }
+
         .privacy h2 {
             font-family: var(--display);
             font-weight: 600;
@@ -67,23 +74,38 @@ PRIVACY_CSS = """
         }
 """
 
+INTRO = (
+    "Film Room is a hockey video analysis application for the Toronto Eagles. "
+    "It is a tool for coaches, players, and families to review game film for "
+    "discussion and self-improvement."
+)
+
 SECTIONS = [
-    ("What it is",
-     "Film Room is a personal tool used by one person to review hockey games. "
-     "It is not offered to the public and has no sign-up."),
-    ("What it does with YouTube",
-     "It uploads the owner's own game videos to the owner's own YouTube channel, "
-     "and reads back the status of those videos. It does not access anyone "
-     "else's account or channel."),
-    ("What it collects",
-     "Nothing from visitors or other users. It does not use cookies, advertising "
-     "or analytics, and it does not sell or share information with anyone."),
-    ("Who can see the videos",
-     "The owner chooses who can watch each video. Videos are shared only by link "
-     "with the team's families."),
-    ("Questions",
-     'Contact the team through the <a href="index.html">team page</a>.'),
+    ("Who can see the film",
+     "Videos are shared within a single team only. They are not to be shared "
+     "externally. Film is for the team's coaches, players, and families, and a "
+     "link to a video must not be posted publicly or passed to anyone outside "
+     "the team."),
+    ("How the film is stored",
+     "Game film is uploaded to the team's YouTube channel as unlisted videos. "
+     "An unlisted video does not appear in search or on the channel page and "
+     "can be opened only with its link. Titles and descriptions give the teams, "
+     "the date, the rink, and the score. They do not name players."),
+    ("What Film Room asks of YouTube",
+     "Film Room asks for access to the team's YouTube channel only to upload "
+     "these videos and check their status. It does not read anyone else's "
+     "account, and it does not collect information from the people who watch."),
+    ("What information it keeps",
+     "Game film, the league's published game results, and the notes coaches "
+     "make while reviewing film. All of it stays within the team. Film Room "
+     "does not use advertising, analytics, or tracking, and it does not sell or "
+     "share personal information."),
+    ("Removal and questions",
+     "A video will be taken down on request. For that, or for any question, "
+     'contact the team through the <a href="index.html">team page</a>.'),
 ]
+
+UPDATED = "Updated October 26, 2026"
 
 
 def generate_html():
@@ -101,12 +123,13 @@ def generate_html():
 </head>
 <body>
     <div class="container">
-{page_common.masthead("privacy.html", "Film Room", "Privacy")}
+{page_common.masthead("privacy.html", page_common.division_label(), page_common.season_label())}
 
         <div class="content">
           <article class="privacy">
             <h1>Privacy</h1>
-            <p class="lede">Film Room, a personal tool for {config.TEAM_NAME} {config.DIVISION}</p>
+            <p class="lede">{UPDATED}</p>
+            <p class="intro">{INTRO}</p>
 {body}          </article>
         </div>
 
