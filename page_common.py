@@ -2046,7 +2046,7 @@ SCHEDULE_JS = """
         document.querySelectorAll('.game-watch[data-start]').forEach(function (a) {
           var minutes = (now - Date.parse(a.dataset.start)) / 60000;
           var state = minutes < 0 ? 'upcoming' : minutes < 60 ? 'live' : 'rewatch';
-          var text = { upcoming: 'Watch', live: 'Live', rewatch: 'Rewatch' }[state];
+          var text = { upcoming: 'Watch', live: 'Live', rewatch: 'Watch' }[state];
           a.hidden = state === 'upcoming';
           a.classList.remove('is-upcoming', 'is-live', 'is-rewatch');
           a.classList.add('is-' + state);
@@ -2054,13 +2054,13 @@ SCHEDULE_JS = """
           a.setAttribute('aria-label', text + ': ' + (a.dataset.label || 'LiveBarn'));
           if (a.hasAttribute('data-tip')) {
             a.setAttribute('data-tip', { upcoming: 'Watch live on LiveBarn', live: 'Live now on LiveBarn',
-                                         rewatch: 'Rewatch on LiveBarn' }[state]);
+                                         rewatch: 'Watch on LiveBarn' }[state]);
           }
         });
         // LiveBarn: the rink's live camera until the first hour is up, then
         // the recording from puck drop. The big buttons say which.
         var BUTTON = { upcoming: 'Watch live on LiveBarn', live: 'Live now on LiveBarn',
-                       rewatch: 'Rewatch on LiveBarn' };
+                       rewatch: 'Watch on LiveBarn' };
         document.querySelectorAll('[data-replay][data-start]').forEach(function (a) {
           var minutes = (now - Date.parse(a.dataset.start)) / 60000;
           var state = minutes < 0 ? 'upcoming' : minutes < 60 ? 'live' : 'rewatch';

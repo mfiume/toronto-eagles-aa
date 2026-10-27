@@ -13,7 +13,7 @@ unstyled, and does not work on a phone.
 
 ## Content
 
-- **One line for a plain control or icon**: a verb and its object. "Watch on YouTube", "Rewatch on LiveBarn", "Win".
+- **One line for a plain control or icon**: a verb and its object. "Watch on YouTube", "Watch on LiveBarn", "Win".
 - **Several lines for an event**, written as `heading || detail || detail`. The first line is the heading in the display face.
   A goal reads "Goal, Mississauga Jets / 1st period, 11:45 left / Score: Eagles 0, Jets 1".
 - Say what the thing is or does, not where the data came from, who may see it, or how to use it.

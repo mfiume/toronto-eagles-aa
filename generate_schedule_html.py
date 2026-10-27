@@ -150,7 +150,7 @@ def stream_state(start, now):
     return 'live' if minutes < LIVE_MINUTES else 'rewatch'
 
 
-STREAM_TEXT = {'upcoming': 'Watch', 'live': 'Live', 'rewatch': 'Rewatch'}
+STREAM_TEXT = {'upcoming': 'Watch', 'live': 'Live', 'rewatch': 'Watch'}
 
 
 def watch_link(game, start, now, css_class="game-watch", icon=False):
@@ -178,7 +178,7 @@ def watch_link(game, start, now, css_class="game-watch", icon=False):
 
 
 WATCH_BUTTON_TEXT = {"upcoming": "Watch live on LiveBarn", "live": "Live now on LiveBarn",
-                     "rewatch": "Rewatch on LiveBarn"}
+                     "rewatch": "Watch on LiveBarn"}
 
 
 def watch_button(stream, start, now):
