@@ -14,8 +14,8 @@ What a page has, top to bottom:
                the score, LIVE, or when it starts
   watch and go: LiveBarn, and directions to the rink
   when and where: the full date, the rink and its address
-  tale of the tape: the two teams side by side, the better figure in bold
   game sheet: for our games, the league's official score by period and the goals, penalties and timeouts
+  tale of the tape: the two teams side by side, the better figure in bold
   season series: every meeting of the two this season, each linking on
 """
 
@@ -353,8 +353,8 @@ def page(g, standings, games, timestamp, today, now, sheets=None):
     title = f"{row.get('Away', '')} at {row.get('Home', '')}"
     body = matchup(g, standings, today, now)
     body += actions(g, now)
-    body += game_sheet(sheets.get(game_page(row)[len("game-"):-len(".html")]))
     body += where_when(g)
+    body += game_sheet(sheets.get(game_page(row)[len("game-"):-len(".html")]))
     body += tale_of_the_tape(g, standings, games)
     body += series(g, games, now)
     return f"""<!DOCTYPE html>
