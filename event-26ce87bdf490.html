@@ -1714,6 +1714,60 @@
             }
         }
 
+        .container {
+            --measure: var(--shell);
+            --edge: max(0px, calc((100% - var(--measure)) / 2));
+        }
+
+        .container:has(.schedule),
+        .container:has(.team-page) {
+            --measure: 860px;
+        }
+
+        .container:has(.privacy) {
+            --measure: 720px;
+        }
+
+        .masthead {
+            padding-left: max(clamp(12px, 3vw, 24px), var(--edge));
+            padding-right: max(clamp(12px, 3vw, 24px), var(--edge));
+        }
+
+        /* The tabs carry their own side padding, so the first label's text lands on the edge. */
+        .mastnav {
+            padding-left: max(clamp(6px, 2.2vw, 18px), calc(var(--edge) - clamp(11px, 2.2vw, 16px)));
+            padding-right: max(clamp(6px, 2.2vw, 18px), calc(var(--edge) - clamp(11px, 2.2vw, 16px)));
+        }
+
+        /* The sponsors still scroll the whole width of the band, but fade out at the edges of the content, so the logos
+           come and go inside the same column as everything else. */
+        @media (min-width: 900px) {
+            .sponsor-strip {
+                position: relative;
+            }
+
+            .sponsor-strip::before,
+            .sponsor-strip::after {
+                content: "";
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                width: calc(var(--edge) + 56px);
+                z-index: 1;
+                pointer-events: none;
+            }
+
+            .sponsor-strip::before {
+                left: 0;
+                background: linear-gradient(90deg, #ffffff calc(100% - 56px), rgba(255, 255, 255, 0));
+            }
+
+            .sponsor-strip::after {
+                right: 0;
+                background: linear-gradient(270deg, #ffffff calc(100% - 56px), rgba(255, 255, 255, 0));
+            }
+        }
+
         .team-page {
             max-width: 860px;
             margin: 0 auto;
@@ -2851,8 +2905,8 @@
                 </section>
 </div>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-27T04:13:46.664444+00:00" title="Oct 27, 12:13 AM ET · Refreshes hourly">just now</time></p>
-            <script type="application/json" id="team-events">{"v": 1, "iter": 600000, "salt": "tfaVnzMj3j7f7GrPhY5WhA==", "iv": "4g3l1+0//7mhxRqr", "ct": "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"}</script>
+            <p class="content-meta">Updated <time datetime="2026-10-27T04:17:26.213516+00:00" title="Oct 27, 12:17 AM ET · Refreshes hourly">just now</time></p>
+            <script type="application/json" id="team-events">{"v": 1, "iter": 600000, "salt": "985taDubYzMy13sIzu8zvw==", "iv": "mtIKmZGXEkqso97b", "ct": "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"}</script>
 
             <dialog class="login-dialog" id="login-dialog" aria-labelledby="login-title">
                 <form method="dialog">
