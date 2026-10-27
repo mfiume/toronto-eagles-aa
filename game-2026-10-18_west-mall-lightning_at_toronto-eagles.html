@@ -996,12 +996,15 @@
             outline-offset: -2px;
         }
 
-        .icon-btn.game-video {
-            color: var(--ink-3);
+        .icon-btn.game-video .film-icon {
+            width: 17px;
+            height: 12px;
+            display: block;
+            opacity: 0.9;
         }
 
-        .icon-btn.game-video:hover {
-            color: var(--brand);
+        .icon-btn.game-video:hover .film-icon {
+            opacity: 1;
         }
 
         .game-icons {
@@ -2682,6 +2685,12 @@
             height: 17px;
         }
 
+        .match-btn .film-icon {
+            width: 20px;
+            height: 14px;
+            flex: none;
+        }
+
         .match-btn.watch.is-live {
             border-color: var(--brand);
             color: var(--brand);
@@ -3084,10 +3093,32 @@
                     </div>
                 </section>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-27T04:41:49.841789+00:00" title="Oct 27, 12:41 AM ET · Refreshes hourly">just now</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-27T04:50:50.002499+00:00" title="Oct 27, 12:50 AM ET · Refreshes hourly">just now</time></p>
         </div>
 
     </div>
+    <script type="application/json" id="game-film">{"v": 1, "iter": 600000, "salt": "qOwYtfFfs8Azjl69mwsk7w==", "iv": "Ri0A+mABsHeCsqBm", "ct": "u1ChO2IA4wiOFrHz4FCoYHkkIG/PWEOcidce5Inr5xnDylS8eMYGkriGymxYA7YswBYkBt9s4CdQmwxNS8K44ts18ip173M4YDUswAd5mCYJ2fPYSZaDKWHJoYMvlmSKwacVQhffX0GpjKuN8RMajWNiDZwNA8o4d8bkzbglmVvWQ37Qf6+HUE7IaPzRXUy6kQjOM9Xm3Bw+bDZXudOI0S2Hezv8snCWBNHssGRTB/AnkDV1J/sM6yXMimB72kdvWwKro93aRfEa+PgdjRFbevPWHBo4PNudqyuQzjgyY0aWk3m6uMdqv9FAipEzW4QEeAlw7hPvAuitkowcH9MGvVMiPEs7rqoE27stT2cMQ0tEtZJRhmYr4kMcXuqxIx71jdX8ghIWSdX4tKQVTHwkL9R/6kLYo5PwD+uXEcuWLbSZw+bl+QADsklvk4SOZmgZ"}</script>
+
+    <script>
+    (function () {
+      var el = document.getElementById('game-film'), pw = null;
+      try { pw = localStorage.getItem('eagles-team-password'); } catch (e) {}
+      if (!el || !pw || !window.crypto || !crypto.subtle) return;
+      var p = JSON.parse(el.textContent);
+      function b(s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); }
+      crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey'])
+        .then(function (base) {
+          return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b(p.salt), iterations: p.iter, hash: 'SHA-256' },
+                                         base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+        })
+        .then(function (key) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b(p.iv) }, key, b(p.ct)); })
+        .then(function (plain) {
+          var slot = document.querySelector('.match-actions');
+          if (slot) slot.insertAdjacentHTML('afterbegin', new TextDecoder().decode(plain));
+        })
+        .catch(function () {});
+    })();
+    </script>
 
     <script>
     (function () {
