@@ -1787,6 +1787,27 @@
         <nav class="mastnav">
             <a href="index.html">Standings</a>
             <a href="schedule.html">Schedule</a>
+            <a class="mastnav-auth" href="schedule.html#login" data-auth-link>Team Login</a>
+            <script>
+            (function () {
+              var link = document.currentScript.previousElementSibling;
+              var saved = null;
+              try { saved = localStorage.getItem('eagles-team-password'); } catch (e) {}
+              if (!saved) return;
+              link.textContent = 'Log out';
+              link.dataset.loggedIn = '1';
+              link.addEventListener('click', function (event) {
+                // The schedule page logs out itself (it also has to put the
+                // public schedule back). This runs before the rest of the page
+                // has loaded, so which page it is can only be told on click.
+                if (document.querySelector('[data-schedule-block]')) return;
+                event.preventDefault();
+                try { localStorage.removeItem('eagles-team-password'); } catch (e) {}
+                link.textContent = 'Team Login';
+                delete link.dataset.loggedIn;
+              }, { once: true });
+            })();
+            </script>
         </nav>
         <aside class="sponsor-strip" aria-label="Our sponsors">
             <div class="sponsor-track">
