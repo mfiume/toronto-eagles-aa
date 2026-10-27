@@ -14,7 +14,8 @@ What a page has, top to bottom:
                the score, LIVE, or when it starts
   watch and go: LiveBarn, and directions to the rink
   when and where: the full date, the rink and its address
-  game sheet: for our games, the league's official score by period and the goals, penalties and timeouts
+  game sheet: for our games, the league's official score by period and the goals, penalties and timeouts,
+              and the shots a parent tracked, when there are any (game_shots.json)
   tale of the tape: the two teams side by side, the better figure in bold
   season series: every meeting of the two this season, each linking on
 """
@@ -225,6 +226,33 @@ SHEETS_FILE = "game_sheets.json"
 PENALTIES = {"TR": "Tripping", "HKG": "Hooking", "SL": "Slashing", "BC": "Body checking"}
 
 
+SHOTS_FILE = "game_shots.json"
+
+
+def load_shots():
+    """Shots on goal a parent tracked for a game, by hand: {game id: {"eagles": n, "opponent": n}}. Optional, and never in the league's sheet."""
+    try:
+        with open(SHOTS_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, ValueError):
+        return {}
+
+
+def shots_block(sheet, shots):
+    """Shots for each team as two numbers over a bar split in proportion, ours in red. Only when someone tracked them."""
+    if not shots or config.TEAM_NAME not in (sheet["home"], sheet["away"]):
+        return ""
+    ours = shots["eagles"]
+    theirs = shots["opponent"]
+    other = sheet["away"] if sheet["home"] == config.TEAM_NAME else sheet["home"]
+    total = max(ours + theirs, 1)
+    return (f'<div class="shots"><div class="shots-head"><span class="shots-n us">{ours}</span>'
+            f'<span class="shots-title">Shots<span class="shots-note">Tracked by a parent</span></span>'
+            f'<span class="shots-n">{theirs}</span></div>'
+            f'<div class="shots-bar" role="img" aria-label="Shots: {escape(config.TEAM_NAME)} {ours}, {escape(other)} {theirs}">'
+            f'<i class="us" style="flex:{ours / total:.4f}"></i><i style="flex:{theirs / total:.4f}"></i></div></div>')
+
+
 def load_sheets():
     try:
         with open(SHEETS_FILE, encoding="utf-8") as f:
@@ -367,7 +395,7 @@ def sheet_timeline(sheet):
     return f'<div class="tl">{axis}{blocks}{legend}</div>{TIP_JS}'
 
 
-def game_sheet(sheet):
+def game_sheet(sheet, shots=None):
     """
     The league's official sheet for the game: the score by period, then the goals, penalties and timeouts in the order
     they happened. No player is named and no jersey number is shown: the sheet is published without them.
@@ -408,6 +436,7 @@ def game_sheet(sheet):
                     <div class="block-head"><h3>Game sheet</h3><span>Official, from the league</span></div>
                     <div class="sheet-card">
                         {table}
+                        {shots_block(sheet, shots)}
                         {sheet_timeline(sheet)}
                         <div class="sheet-lists">{lists}</div>
                     </div>
@@ -417,14 +446,16 @@ def game_sheet(sheet):
 
 # --- Assembly -------------------------------------------------------------------
 
-def page(g, standings, games, timestamp, today, now, sheets=None):
+def page(g, standings, games, timestamp, today, now, sheets=None, shot_counts=None):
     sheets = sheets or {}
+    shot_counts = shot_counts or {}
     row = g["row"]
     title = f"{row.get('Away', '')} at {row.get('Home', '')}"
     body = matchup(g, standings, today, now)
     body += actions(g, now)
     body += where_when(g)
-    body += game_sheet(sheets.get(game_page(row)[len("game-"):-len(".html")]))
+    gid = game_page(row)[len("game-"):-len(".html")]
+    body += game_sheet(sheets.get(gid), shot_counts.get(gid))
     body += tale_of_the_tape(g, standings, games)
     body += series(g, games, now)
     return f"""<!DOCTYPE html>
@@ -473,7 +504,7 @@ def generate(today=None):
     for g in games:
         name = game_page(g["row"])
         with open(name, "w", encoding="utf-8") as f:
-            f.write(page(g, standings, games, schedule_data.get("timestamp", ""), today, now, sheets))
+            f.write(page(g, standings, games, schedule_data.get("timestamp", ""), today, now, sheets, load_shots()))
         written[name] = True
     # A game the GTHL no longer lists takes its page with it.
     for stale in set(glob.glob("game-*.html")) - set(written):
