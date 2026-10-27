@@ -139,11 +139,6 @@ def directions_link(rink, css_class, text, body=None):
 PLAY_ICON = '<img src="assets/livebarn.png" alt="" width="15" height="17">'
 
 
-# A play button in a rounded screen, in the page's own colour, for the game film. Kept to a plain shape so it does not
-# read as another company's mark.
-VIDEO_ICON = ('<svg viewBox="0 0 20 16" width="17" height="14" aria-hidden="true"><rect x="1" y="1" width="18" height="14" rx="3.5" '
-              'fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 5l5 3-5 3z" fill="currentColor"/></svg>')
-
 LIVE_MINUTES = 60
 
 
@@ -222,13 +217,13 @@ def video_link(url, game):
     """The game's film on YouTube, for the team version of the page only: a link a parent could pass on is not for a public page."""
     if not url:
         return ''
-    label = f"{game.get('Away', '')} at {game.get('Home', '')}: game film"
+    label = f"{game.get('Away', '')} at {game.get('Home', '')} on YouTube"
     return (f'<a class="icon-btn game-video" href="{escape(url)}" target="_blank" rel="noopener noreferrer" '
-            f'aria-label="{escape(label)}" title="Game film (team only)">{VIDEO_ICON}</a>')
+            f'aria-label="Watch: {escape(label)}" title="Watch on YouTube">{page_common.FILM_ICON}</a>')
 
 
 def row_icons(watch):
-    """The LiveBarn play icon, between the teams and the score."""
+    """The icons between the teams and the score: the game film, then LiveBarn, so LiveBarn sits in the same place in every row."""
     return f'<div class="game-icons">{watch}</div>' if watch else ''
 
 
@@ -385,7 +380,7 @@ def game_row(game, day, our_team, team=None, start=None, now=None, first=None, v
         return (f'<div class="{" ".join(classes)}">{page_common.team_logo(name)}'
                 f'<span class="game-name">{team_name_html(name)}</span></div>{goals_html}')
 
-    icons = row_icons(watch_link(game, start, now, "icon-btn game-watch", icon=True) + video_link(video, game))
+    icons = row_icons(video_link(video, game) + watch_link(game, start, now, "icon-btn game-watch", icon=True))
 
     if score is not None:
         a, h = score['away'], score['home']

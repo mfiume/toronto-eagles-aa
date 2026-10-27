@@ -29,7 +29,7 @@ from html import escape
 import arenas
 import config
 import page_common
-from generate_schedule_html import (countdown_attr, aware, countdown, game_page, game_row, live_flag, maps_link,
+from generate_schedule_html import (countdown_attr, aware, countdown, game_page, game_row, live_flag, load_videos, maps_link,
                                     stream_state, team_name_html, watch_button)
 from generate_team_pages import (all_games, division_rank, form_chips, number, ordinal,
                                  side_of, team_games)
@@ -98,7 +98,7 @@ def matchup(g, standings, today, now):
 """
 
 
-def actions(g, now):
+def actions(g, now, film=False):
     row = g["row"]
     buttons = ""
     start = aware(g["start"])
@@ -109,7 +109,7 @@ def actions(g, now):
     if google and not g["score"]:
         buttons += maps_link(google, arenas.apple_directions_url(rink), "match-btn", "Directions",
                              f"Directions to {rink}")
-    return f'\n                <div class="match-actions">{buttons}</div>\n' if buttons else ""
+    return f'\n                <div class="match-actions">{buttons}</div>\n' if buttons or film else ""
 
 
 def where_when(g):
@@ -458,13 +458,13 @@ def game_sheet(sheet, shots=None):
 
 # --- Assembly -------------------------------------------------------------------
 
-def page(g, standings, games, timestamp, today, now, sheets=None, shot_counts=None):
+def page(g, standings, games, timestamp, today, now, sheets=None, shot_counts=None, film=None):
     sheets = sheets or {}
     shot_counts = shot_counts or {}
     row = g["row"]
     title = f"{row.get('Away', '')} at {row.get('Home', '')}"
     body = matchup(g, standings, today, now)
-    body += actions(g, now)
+    body += actions(g, now, film=bool(film))
     body += where_when(g)
     gid = game_page(row)[len("game-"):-len(".html")]
     body += game_sheet(sheets.get(gid), shot_counts.get(gid))
@@ -492,9 +492,22 @@ def page(g, standings, games, timestamp, today, now, sheets=None, shot_counts=No
 {page_common.freshness(timestamp)}        </div>
 
 {page_common.page_end()}    </div>
-{page_common.SCHEDULE_JS}</body>
+{film_payload(film)}{page_common.SCHEDULE_JS}</body>
 </html>
 """
+
+
+def film_payload(sealed):
+    """The film button, sealed with the team password, and the script that opens it for a signed-in phone. Nothing for a game with no film."""
+    if not sealed:
+        return ""
+    data = json.dumps(sealed).replace("</", "<\\/")
+    return f'    <script type="application/json" id="game-film">{data}</script>\n{page_common.FILM_JS}'
+
+
+def film_button(url):
+    return (f'<a class="match-btn film" href="{escape(url)}" target="_blank" rel="noopener noreferrer">'
+            f'{page_common.FILM_ICON}<span>Watch on YouTube</span></a>')
 
 
 def generate(today=None):
@@ -512,11 +525,19 @@ def generate(today=None):
     today = today or now.date()
     games = all_games(schedule_data.get("schedule", []))
     sheets = load_sheets()
+    videos = load_videos()
+    password = os.environ.get("TEAM_EVENTS_PASSWORD", "")
+    sealer = None
+    if videos and password:
+        import team_crypto
+        sealer = team_crypto.Sealer(password)
     written = {}
     for g in games:
         name = game_page(g["row"])
+        gid = name[len("game-"):-len(".html")]
         with open(name, "w", encoding="utf-8") as f:
-            f.write(page(g, standings, games, schedule_data.get("timestamp", ""), today, now, sheets, load_shots()))
+            f.write(page(g, standings, games, schedule_data.get("timestamp", ""), today, now, sheets, load_shots(),
+                               film=sealer.seal(film_button(videos[gid])) if sealer and videos.get(gid) else None))
         written[name] = True
     # A game the GTHL no longer lists takes its page with it.
     for stale in set(glob.glob("game-*.html")) - set(written):

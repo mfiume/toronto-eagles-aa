@@ -105,6 +105,36 @@ FAVICON_LINKS = """    <link rel="icon" href="assets/favicon.svg" type="image/sv
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="apple-mobile-web-app-title" content="Eagles">"""
 
+# The red play button that marks a link to a game's film on YouTube, wherever the site shows one.
+FILM_ICON = ('<svg class="film-icon" viewBox="0 0 20 14" width="20" height="14" aria-hidden="true">'
+             '<rect width="20" height="14" rx="4" fill="#ff0000"/><path d="M8 4l5 3-5 3z" fill="#ffffff"/></svg>')
+
+# On a game page the film button is sealed with the team password, like the schedule's team version, and put in place once the
+# phone's saved password opens it. Without the password the page carries nothing but the sealed text.
+FILM_JS = """
+    <script>
+    (function () {
+      var el = document.getElementById('game-film'), pw = null;
+      try { pw = localStorage.getItem('eagles-team-password'); } catch (e) {}
+      if (!el || !pw || !window.crypto || !crypto.subtle) return;
+      var p = JSON.parse(el.textContent);
+      function b(s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); }
+      crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey'])
+        .then(function (base) {
+          return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b(p.salt), iterations: p.iter, hash: 'SHA-256' },
+                                         base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+        })
+        .then(function (key) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b(p.iv) }, key, b(p.ct)); })
+        .then(function (plain) {
+          var slot = document.querySelector('.match-actions');
+          if (slot) slot.insertAdjacentHTML('afterbegin', new TextDecoder().decode(plain));
+        })
+        .catch(function () {});
+    })();
+    </script>
+"""
+
+
 _MASTHEAD_CSS = """
         .masthead {
             background: var(--surface);
@@ -1272,12 +1302,15 @@ _SCHEDULE_CSS = """
             outline-offset: -2px;
         }
 
-        .icon-btn.game-video {
-            color: var(--ink-3);
+        .icon-btn.game-video .film-icon {
+            width: 17px;
+            height: 12px;
+            display: block;
+            opacity: 0.9;
         }
 
-        .icon-btn.game-video:hover {
-            color: var(--brand);
+        .icon-btn.game-video:hover .film-icon {
+            opacity: 1;
         }
 
         .game-icons {
@@ -3705,6 +3738,12 @@ GAME_CSS = """
         .match-btn img {
             width: 15px;
             height: 17px;
+        }
+
+        .match-btn .film-icon {
+            width: 20px;
+            height: 14px;
+            flex: none;
         }
 
         .match-btn.watch.is-live {
