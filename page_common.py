@@ -1875,6 +1875,70 @@ SCHEDULE_JS = """
       var period = null;   // 'day', 'week', 'month' or 'season'
       var anchor = null;   // a day inside the period shown, 'YYYY-MM-DD'
 
+      // Tooltips: anything with data-tip. One tooltip for the page, shown after a short pause on hover, at once on keyboard
+      // focus and on tap. Lines are split on '||', and the first is a heading when there are several. Listening on the
+      // document means the team version of the schedule, swapped in after log-in, gets them without further work.
+      var tipEl = null, tipFor = null, tipTimer = null, tipAt = 0;
+      function tipHide() {
+        clearTimeout(tipTimer);
+        if (tipEl) tipEl.style.display = 'none';
+        tipFor = null;
+      }
+      function tipShow(el) {
+        if (!tipEl) {
+          tipEl = document.createElement('div');
+          tipEl.className = 'tip';
+          tipEl.setAttribute('role', 'tooltip');
+          document.body.appendChild(tipEl);
+        }
+        var lines = el.getAttribute('data-tip').split('||');
+        tipEl.textContent = '';
+        lines.forEach(function (text, i) {
+          var row = document.createElement('div');
+          if (lines.length > 1 && i === 0) row.className = 'tip-head';
+          row.textContent = text;
+          tipEl.appendChild(row);
+        });
+        tipEl.style.display = 'block';
+        var r = el.getBoundingClientRect(), t = tipEl.getBoundingClientRect();
+        var left = Math.max(8, Math.min(r.left + r.width / 2 - t.width / 2,
+                                        document.documentElement.clientWidth - t.width - 8));
+        var top = r.top - t.height - 10;
+        if (top < 8) top = r.bottom + 10;
+        tipEl.style.left = left + 'px';
+        tipEl.style.top = top + 'px';
+        tipFor = el;
+        tipAt = Date.now();
+      }
+      function tipTarget(e) {
+        return e.target && e.target.closest ? e.target.closest('[data-tip]') : null;
+      }
+      document.addEventListener('mouseover', function (e) {
+        var t = tipTarget(e);
+        if (!t || t === tipFor) return;
+        clearTimeout(tipTimer);
+        tipTimer = setTimeout(function () { tipShow(t); }, 120);
+      });
+      document.addEventListener('mouseout', function (e) {
+        var t = tipTarget(e);
+        if (t && !(e.relatedTarget && t.contains(e.relatedTarget))) tipHide();
+      });
+      document.addEventListener('focusin', function (e) {
+        var t = tipTarget(e);
+        if (t) tipShow(t);
+      });
+      document.addEventListener('focusout', tipHide);
+      // A tap shows the tooltip and a second tap closes it; a touch also fires a hover, so a click straight after
+      // the tooltip opened is ignored. A link just opens.
+      document.addEventListener('click', function (e) {
+        var t = tipTarget(e);
+        if (!t) { tipHide(); return; }
+        if (t.matches('a[href]')) return;
+        if (tipFor === t && Date.now() - tipAt > 400) tipHide(); else tipShow(t);
+      });
+      window.addEventListener('scroll', tipHide, { passive: true });
+
+
       // Dates as 'YYYY-MM-DD' strings, which sort and compare as dates.
       function iso(d) {
         return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' +
@@ -1988,6 +2052,10 @@ SCHEDULE_JS = """
           a.classList.add('is-' + state);
           if (!a.classList.contains('icon-btn')) a.textContent = text;
           a.setAttribute('aria-label', text + ': ' + (a.dataset.label || 'LiveBarn'));
+          if (a.hasAttribute('data-tip')) {
+            a.setAttribute('data-tip', { upcoming: 'Watch live on LiveBarn', live: 'Live now on LiveBarn',
+                                         rewatch: 'Rewatch on LiveBarn' }[state]);
+          }
         });
         // LiveBarn: the rink's live camera until the first hour is up, then
         // the recording from puck drop. The big buttons say which.
@@ -3397,12 +3465,12 @@ GAME_CSS = """
             outline: none;
         }
 
-        .tl-track [data-tip]:focus-visible {
+        [data-tip]:focus-visible {
             outline: 2px solid var(--ink);
             outline-offset: 3px;
         }
 
-        .tl-tip {
+        .tip {
             display: none;
             position: fixed;
             z-index: 50;
@@ -3417,7 +3485,7 @@ GAME_CSS = """
             box-shadow: 0 6px 20px rgba(17, 18, 20, 0.25);
         }
 
-        .tl-tip-head {
+        .tip-head {
             font-family: var(--display);
             font-weight: 600;
             font-size: 0.86rem;

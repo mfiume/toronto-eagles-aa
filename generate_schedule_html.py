@@ -115,10 +115,10 @@ def clock(t):
 def maps_link(google, apple, css_class, text, label, body=None):
     """
     A directions link: Google Maps in the HTML, Apple Maps swapped in on iOS.
-    With `body` (HTML, such as an icon) the text becomes the hover title.
+    With `body` (HTML, such as an icon) the text becomes the tooltip.
     """
     apple_attr = f' data-apple-maps="{escape(apple)}"' if apple else ''
-    title = f' title="{escape(text)}"' if body is not None else ''
+    title = f' data-tip="{escape(text)}"' if body is not None else ''
     return (f'<a class="{css_class}" href="{escape(google)}"{apple_attr}{title} '
             f'target="_blank" rel="noopener noreferrer" aria-label="{escape(label)}">'
             f'{escape(text) if body is None else body}</a>')
@@ -170,7 +170,8 @@ def watch_link(game, start, now, css_class="game-watch", icon=False):
     state = stream_state(start, now)
     hidden = ' hidden' if state == 'upcoming' else ''
     label = f"{game.get('Away', '')} at {game.get('Home', '')} on LiveBarn"
-    return (f'<a class="{css_class} is-{state}" {stream_href(found, state)} target="_blank" '
+    tip = f' data-tip="{WATCH_BUTTON_TEXT[state]}"' if icon else ''
+    return (f'<a class="{css_class} is-{state}"{tip} {stream_href(found, state)} target="_blank" '
             f'rel="noopener noreferrer" data-start="{start.isoformat()}" '
             f'data-label="{escape(label)}" aria-label="{STREAM_TEXT[state]}: {escape(label)}"{hidden}>'
             f'{PLAY_ICON if icon else STREAM_TEXT[state]}</a>')
@@ -219,7 +220,7 @@ def video_link(url, game):
         return ''
     label = f"{game.get('Away', '')} at {game.get('Home', '')} on YouTube"
     return (f'<a class="icon-btn game-video" href="{escape(url)}" target="_blank" rel="noopener noreferrer" '
-            f'aria-label="Watch: {escape(label)}" title="Watch on YouTube">{page_common.FILM_ICON}</a>')
+            f'aria-label="Watch: {escape(label)}" data-tip="Watch on YouTube">{page_common.FILM_ICON}</a>')
 
 
 def row_icons(watch):
@@ -339,7 +340,7 @@ def result_badge(ours, theirs):
         return ""
     r = "W" if ours > theirs else "L"
     return (f'<span class="game-result result-{r.lower()}" '
-            f'title="{"Win" if r == "W" else "Loss"}">{r}</span>')
+            f'data-tip="{"Win" if r == "W" else "Loss"}">{r}</span>')
 
 
 def game_row(game, day, our_team, team=None, start=None, now=None, first=None, video=None):
@@ -502,7 +503,7 @@ def team_game_row(event, start, now=None):
     watch = (watch_link(event_as_game(event), begins, now, "icon-btn game-watch", icon=True)
              if begins and now else "")
     label = event.get("label") or ""
-    tag = (f'<span class="event-tag soft game-kind" title="{escape(label)}">'
+    tag = (f'<span class="event-tag soft game-kind" data-tip="{escape(label)}">'
            f'<span class="kind-short">{GAME_TAGS[label]}</span><span class="kind-long">{escape(label)}</span></span>'
            if label in GAME_TAGS else "")
     # The tag sits left of LiveBarn, and LiveBarn keeps its slot (empty before

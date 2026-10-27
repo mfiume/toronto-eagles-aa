@@ -269,50 +269,6 @@ def clock_left(seconds):
     return f"{seconds // 60}:{seconds % 60:02d}"
 
 
-TIP_JS = """<script>
-(function () {
-  var tip = null, shown = null, shownAt = 0;
-  function make() {
-    tip = document.createElement('div');
-    tip.className = 'tl-tip';
-    tip.setAttribute('role', 'tooltip');
-    document.body.appendChild(tip);
-  }
-  function show(el) {
-    if (!tip) make();
-    var lines = el.getAttribute('data-tip').split('||');
-    tip.textContent = '';
-    lines.forEach(function (text, i) {
-      var row = document.createElement('div');
-      if (i === 0) row.className = 'tl-tip-head';
-      row.textContent = text;
-      tip.appendChild(row);
-    });
-    tip.style.display = 'block';
-    var r = el.getBoundingClientRect(), t = tip.getBoundingClientRect();
-    var left = Math.max(8, Math.min(r.left + r.width / 2 - t.width / 2, document.documentElement.clientWidth - t.width - 8));
-    var top = r.top - t.height - 10;
-    if (top < 8) top = r.bottom + 10;
-    tip.style.left = left + 'px';
-    tip.style.top = top + 'px';
-    shown = el;
-    shownAt = Date.now();
-  }
-  function hide() { if (tip) tip.style.display = 'none'; shown = null; }
-  document.querySelectorAll('.tl [data-tip]').forEach(function (el) {
-    el.addEventListener('mouseenter', function () { show(el); });
-    el.addEventListener('mouseleave', hide);
-    el.addEventListener('focus', function () { show(el); });
-    el.addEventListener('blur', hide);
-    // a touch fires a hover and then a click; the click only closes a tooltip that has been open a moment
-    el.addEventListener('click', function (e) { e.stopPropagation(); if (shown === el && Date.now() - shownAt > 400) hide(); else show(el); });
-  });
-  document.addEventListener('click', hide);
-  window.addEventListener('scroll', hide, { passive: true });
-})();
-</script>"""
-
-
 def sheet_timeline(sheet):
     """
     The game's moments laid out by period, one line for each, running left to right from the opening faceoff. A goal is a
@@ -404,7 +360,7 @@ def sheet_timeline(sheet):
            f'<span class="tl-key"><i class="tl-dot them"></i>{escape(theirs)}</span>') if ours else ""
     legend = (f'<div class="tl-legend">{who}<span><i class="tl-dot"></i>Goal</span><span><i class="tl-pen"></i>Penalty, as long as it lasts</span>'
               f'<span><i class="tl-to"></i>Timeout</span></div>')
-    return f'<div class="tl">{axis}{blocks}{legend}</div>{TIP_JS}'
+    return f'<div class="tl">{axis}{blocks}{legend}</div>'
 
 
 def game_sheet(sheet, shots=None):
