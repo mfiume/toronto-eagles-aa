@@ -238,7 +238,8 @@ def masthead(active_page, meta_main, meta_sub):
     its own tab. `meta_main` and `meta_sub` are the two right-hand lines, which
     say what the page is actually showing.
     """
-    html = f"""        <header class="masthead">
+    html = f"""        <div class="topbar">
+        <header class="masthead">
             <a class="masthead-brand" href="index.html">
                 <img class="masthead-mark" src="assets/eagles-bird-red.svg" alt=""
                      width="369" height="383">
@@ -261,7 +262,7 @@ def masthead(active_page, meta_main, meta_sub):
         html += f'            <a href="{href}"{active}>{label}</a>\n'
     if auth_enabled():
         html += AUTH_LINK
-    html += "        </nav>\n"
+    html += "        </nav>\n        </div>\n"
     return html + sponsor_strip()
 
 
@@ -2647,6 +2648,60 @@ _MEASURE_CSS = """
         .masthead {
             padding-left: max(clamp(12px, 3vw, 24px), var(--edge));
             padding-right: max(clamp(12px, 3vw, 24px), var(--edge));
+        }
+
+        /* On a wide screen the brand, the tabs and the season line share one row, to leave the room to the page. The two
+           halves are still separate elements, so they are laid out as one with display: contents and ordered here. */
+        @media (min-width: 900px) {
+            .topbar {
+                display: flex;
+                align-items: stretch;
+                background: var(--surface);
+                border-top: 3px solid var(--brand);
+                border-bottom: 1px solid var(--line);
+                padding: 0 max(clamp(12px, 3vw, 24px), var(--edge));
+            }
+
+            .topbar .masthead,
+            .topbar .mastnav {
+                display: contents;
+            }
+
+            .topbar .masthead-brand {
+                order: 1;
+                align-self: center;
+                margin-right: clamp(20px, 3vw, 36px);
+                padding: 8px 0;
+            }
+
+            .topbar .masthead-wordmark {
+                font-size: 1.45rem;
+            }
+
+            .topbar .masthead-mark {
+                height: 30px;
+            }
+
+            .topbar .mastnav a:not(.mastnav-auth) {
+                order: 2;
+                display: flex;
+                align-items: center;
+                padding-top: 0;
+                padding-bottom: 0;
+            }
+
+            .topbar .masthead-meta {
+                order: 3;
+                margin-left: auto;
+                align-self: center;
+            }
+
+            .topbar .mastnav a.mastnav-auth {
+                order: 4;
+                align-self: center;
+                margin-left: clamp(16px, 2vw, 28px);
+                padding: 0;
+            }
         }
 
         /* The tabs carry their own side padding, so the first label's text lands on the edge. */
