@@ -437,10 +437,14 @@ def game_sheet(sheet, shots=None):
 
     # The score after each goal, ours first, counted in the order the goals were scored.
     mine = "home" if sheet["home"] == config.TEAM_NAME else "away"
+    theirs_name = sheet["away" if mine == "home" else "home"]
     running, after = {"home": 0, "away": 0}, {}
     for g in sorted(sheet["goals"], key=lambda g: (g["period"], -clock_seconds(g["clock"]))):
         running[g["side"]] += 1
-        after[id(g)] = f'{running[mine]}\u2013{running["home" if mine == "away" else "away"]}'
+        us_n, them_n = running[mine], running["home" if mine == "away" else "away"]
+        lead = "us" if us_n > them_n else "them" if them_n > us_n else "tied"
+        after[id(g)] = (f'<span class="sc lead-{lead}" aria-label="{escape(sheet[mine])} {us_n}, {escape(theirs_name)} {them_n}">'
+                        f'<b class="sc-us">{us_n}</b><i>\u2013</i><b class="sc-them">{them_n}</b></span>')
 
     def goal(g):
         return who(g["side"], "Goal", g.get("kind") or "", after[id(g)])

@@ -4154,6 +4154,36 @@ GAME_CSS = """
             min-width: 0;
         }
 
+        /* The score after a goal: the Eagles' number in red, the other team's in black, the team ahead in heavier type. */
+        .sc {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 3px;
+        }
+
+        .sc b {
+            font-weight: 500;
+            opacity: 0.55;
+        }
+
+        .sc i {
+            font-style: normal;
+            color: var(--ink-3);
+        }
+
+        .sc .sc-us {
+            color: var(--brand);
+        }
+
+        .sc .sc-them {
+            color: var(--ink);
+        }
+
+        .lead-us .sc-us, .lead-them .sc-them, .lead-tied b {
+            font-weight: 700;
+            opacity: 1;
+        }
+
         .sheet-score-now {
             margin-left: 6px;
             font-family: var(--display);
