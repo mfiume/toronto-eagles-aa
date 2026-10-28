@@ -11,7 +11,7 @@ ciphertext. The public page holds a short locked notice, and the browser decrypt
 (`page_common.SCHEDULE_JS`, the same script as the event pages). With no team password there is no page and no tab
 (`page_common.TEAM_ONLY_PAGES`).
 
-The raw `game_sheets.json` and `game_shots.json` are in the repository, so this protects the page, not those files.
+The sheets it draws on are sealed too (see `docs/SEALED_SHEETS.md`). `game_shots.json`, the shots a parent counts by hand, is still a plain file in the repository.
 
 ## What it shows and how each figure is made
 

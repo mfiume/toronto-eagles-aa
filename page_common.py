@@ -674,8 +674,13 @@ __REVIEW__
       function apply(plain) {
         var text = new TextDecoder().decode(plain), film = null;
         try { film = JSON.parse(text); } catch (e) {}
+        // The game sheet goes in first: the film's links are made on its marks and rows.
+        var sheetSlot = document.querySelector('[data-sheet-slot]');
+        if (sheetSlot && film && typeof film.sheet === 'string') sheetSlot.outerHTML = film.sheet;
         var slot = document.querySelector('.match-actions');
-        if (slot) slot.insertAdjacentHTML('afterbegin', film && typeof film.html === 'string' ? film.html : text);
+        if (slot && !(film && film.sheet && typeof film.html !== 'string')) {
+          slot.insertAdjacentHTML('afterbegin', film && typeof film.html === 'string' ? film.html : text);
+        }
         if (film && typeof film.url === 'string' && film.url.indexOf('https://') === 0 && Array.isArray(film.moments)) {
           link(film);
           review(film);
@@ -4048,6 +4053,12 @@ GAME_CSS = """
         .compare-bar i.us {
             background: var(--brand);
             opacity: 1;
+        }
+
+        .sheet-locked-actions {
+            display: flex;
+            justify-content: center;
+            margin-top: 14px;
         }
 
         /* --- The game sheet as a timeline --- */

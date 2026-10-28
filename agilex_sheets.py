@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-The league's official game sheets for our games (Agilex SportTrek), kept as game_sheets.json.
+The league's official game sheets for our games (Agilex SportTrek), kept sealed with the team password as game_sheets.sealed.json (sheet_store.py).
 
 A team official signs in with a Hockey ID and a personal code. The sheet of a game is two JSON calls the league's own
 pages make. The sign-in comes from the environment (AGILEX_HOCKEY_ID, AGILEX_PERSONAL_CODE, AGILEX_LEAGUE), never from a
 file in this repository. Without it the script does nothing and the existing file is left as it is.
 
-This site is public, so only what is safe to publish is kept: the goals, penalties and timeouts with their period,
+This site is public, so only team-level figures are kept: the goals, penalties and timeouts with their period,
 clock and team, and the score by period. Player names, jersey numbers and rosters are dropped here, before anything is
-written, so they cannot reach the repository.
+written, so they cannot reach the repository. What is kept is sealed as well, so the sheets are not readable there.
 """
 
 import json
@@ -19,9 +19,9 @@ import urllib.request
 
 import config
 import season_schedule
+import sheet_store
 
 ORIGIN = os.environ.get("AGILEX_ORIGIN", "https://www.agilex.ca/SportTrek/AppService")
-SHEETS_FILE = "game_sheets.json"
 
 
 def _request(path, token=None, body=None):
@@ -92,16 +92,15 @@ def public_sheet(raw):
 
 
 def main():
+    if sheet_store.migrating():
+        sheet_store.save(sheet_store.load())
+        print("Game sheets sealed")
     if not (os.environ.get("AGILEX_HOCKEY_ID") and os.environ.get("AGILEX_PERSONAL_CODE")):
         print("League sign-in not set: game sheets left as they were")
         return 0
     with open(season_schedule.EAGLES_FILE, encoding="utf-8") as f:
         games = [g for g in json.load(f)["games"] if g.get("status") == "final"]
-    try:
-        with open(SHEETS_FILE, encoding="utf-8") as f:
-            sheets = json.load(f)
-    except FileNotFoundError:
-        sheets = {}
+    sheets = sheet_store.load()
     token, _ = login()
     changed = 0
     for g in games:
@@ -117,9 +116,11 @@ def main():
         if sheets.get(g["id"]) != sheet:
             sheets[g["id"]] = sheet
             changed += 1
-    with open(SHEETS_FILE, "w", encoding="utf-8") as f:
-        json.dump(sheets, f, indent=2, sort_keys=True)
-        f.write("\n")
+    # Sealing writes a new file every time, so it is only written when there is something new to keep.
+    if changed or not os.path.exists(sheet_store.SEALED_FILE):
+        if not sheet_store.save(sheets):
+            print("Game sheets not kept: no team password to seal them with")
+            return 0
     print(f"Game sheets: {len(sheets)} kept, {changed} new or changed")
     return 0
 

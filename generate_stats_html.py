@@ -17,7 +17,8 @@ import os
 import config
 import page_common
 import team_crypto
-from generate_game_pages import SHEETS_FILE, clock_seconds, load_shots, penalty_name
+import sheet_store
+from generate_game_pages import clock_seconds, load_shots, penalty_name
 from generate_schedule_html import LOGIN_DIALOG
 
 PASSWORD_ENV = "TEAM_EVENTS_PASSWORD"
@@ -32,11 +33,7 @@ MISCONDUCT = 10
 
 
 def load_sheets():
-    try:
-        with open(SHEETS_FILE, encoding="utf-8") as f:
-            return json.load(f)
-    except (FileNotFoundError, ValueError):
-        return {}
+    return sheet_store.load()
 
 
 def elapsed(period, clock):
@@ -184,17 +181,23 @@ def period_name(n):
 
 
 def bar_pair(rows, games, ours_label, theirs_label):
-    """Grouped bars, one row per label: ours in red over theirs in grey, scaled together by the per-game figure."""
-    top = max([max(a, b) for _, a, b in rows] + [1]) / games
-    out = ""
+    """
+    Back-to-back bars, one row per label: ours grow left from a centre line and theirs grow right, on one scale, so the
+    side that is longer is the side that has more. The figure at the end of each bar is per game, with the total beside it.
+    """
+    top = max([max(a, b) for _, a, b in rows] + [1])
+
+    def side(n, cls):
+        value = f'<b>{avg(n, games)}<span>{n}</span></b>'
+        bar = f'<div class="stat-track"><i class="{cls}" style="width:{100 * n / top:.0f}%"></i></div>'
+        return f'<div class="stat-side {cls}">{value}{bar}</div>' if cls == "us" else f'<div class="stat-side">{bar}{value}</div>'
+
+    out = (f'<div class="stat-split stat-split-head"><span class="us">{html.escape(ours_label)}</span><span></span>'
+           f'<span>{html.escape(theirs_label)}</span></div>')
     for label, a, b in rows:
-        out += (f'<div class="stat-row"><span class="stat-label">{html.escape(label)}</span><div class="stat-bars">'
-                f'<div class="stat-line"><i class="us" style="width:{100 * (a / games) / top:.0f}%"></i>'
-                f'<b>{avg(a, games)}</b><span>{a}</span></div>'
-                f'<div class="stat-line"><i style="width:{100 * (b / games) / top:.0f}%"></i>'
-                f'<b>{avg(b, games)}</b><span>{b}</span></div></div></div>')
-    return (f'<div class="stat-key"><span class="us">{html.escape(ours_label)}</span>'
-            f'<span>{html.escape(theirs_label)}</span><em>Per game, with the total</em></div>{out}')
+        out += (f'<div class="stat-split">{side(a, "us")}<span class="stat-label">{html.escape(label)}</span>'
+                f'{side(b, "them")}</div>')
+    return f'<div class="stat-chart">{out}</div>'
 
 
 def ranked(counts, empty):
@@ -244,10 +247,10 @@ def body(stats):
              + tile("Penalty minutes", avg(stats["pim"], n), "Per game")
              + "</div>"]
     rows = [(period_name(p), stats["periods_for"].get(p, 0), stats["periods_against"].get(p, 0)) for p in stats["periods"]]
-    parts.append(block("Goals by period", bar_pair(rows, n, "Eagles", "Opponent")))
+    parts.append(block("Goals by period", bar_pair(rows, n, "Eagles", "Opponent"), "Per game, with the total"))
     rows = [(period_name(p), stats["pens_by_period"]["taken"].get(p, 0), stats["pens_by_period"]["drawn"].get(p, 0))
             for p in stats["periods"]]
-    parts.append(block("Penalties by period", bar_pair(rows, n, "We take", "We draw")))
+    parts.append(block("Penalties by period", bar_pair(rows, n, "We take", "We draw"), "Per game, with the total"))
     parts.append('<div class="stat-pair">'
                  + block("Penalties we take", ranked(stats["names"]["taken"], "No penalties yet."))
                  + block("Penalties we draw", ranked(stats["names"]["drawn"], "No penalties yet.")) + "</div>")
@@ -301,22 +304,26 @@ STATS_CSS = """
         .stat-tile-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
         .stat-tile-value { font-family: var(--display); font-weight: 600; font-size: 1.9rem; line-height: 1; font-variant-numeric: tabular-nums; }
         .stat-tile-note { font-size: 0.8rem; color: var(--ink-3); }
-        .stat-key { display: flex; gap: 16px; align-items: baseline; font-size: 0.78rem; color: var(--ink-2); padding: 0 2px 8px; }
-        .stat-key span::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 3px; background: var(--ink); opacity: 0.35; }
-        .stat-key span.us::before { background: var(--brand); opacity: 1; }
-        .stat-key em { margin-left: auto; font-style: normal; color: var(--ink-3); }
-        .stat-row { display: grid; grid-template-columns: 4.5em 1fr; gap: 10px; align-items: center; padding: 8px 14px; background: var(--surface); border: 1px solid var(--line); border-top: 0; }
-        .stat-key + .stat-row { border-top: 1px solid var(--line); }
-        .stat-label { font-family: var(--display); font-weight: 600; font-size: 0.9rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
-        .stat-bars { display: grid; gap: 4px; }
-        .stat-line { display: grid; grid-template-columns: minmax(0, 1fr) 2.6em 2.2em; gap: 8px; align-items: center; }
-        .stat-line i { display: block; height: 8px; border-radius: 4px; background: var(--ink); opacity: 0.35; min-width: 2px; }
-        .stat-line i.us { background: var(--brand); opacity: 1; }
-        .stat-line b { font-family: var(--display); font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
-        .stat-line span { font-size: 0.78rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
-        .stat-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
+        .stat-chart { background: var(--surface); border: 1px solid var(--line); padding: 6px 14px; }
+        .stat-split { display: grid; grid-template-columns: 1fr 3.4em 1fr; align-items: center; gap: 8px; padding: 9px 0; }
+        .stat-split + .stat-split { border-top: 1px solid var(--line-soft); }
+        .stat-split-head { padding: 6px 0 2px; border-top: 0 !important; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+        .stat-split-head span:first-child { text-align: right; color: var(--brand); }
+        .stat-label { text-align: center; font-family: var(--display); font-weight: 600; font-size: 0.9rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+        .stat-side { display: flex; align-items: center; gap: 8px; min-width: 0; }
+        .stat-side b { flex: none; min-width: 3.4em; font-family: var(--display); font-weight: 600; font-size: 1rem; font-variant-numeric: tabular-nums; }
+        .stat-side.us b { text-align: right; color: var(--brand); }
+        .stat-side b span { margin-left: 5px; font-family: var(--body); font-weight: 400; font-size: 0.78rem; color: var(--ink-3); }
+        .stat-side.us b span { margin: 0 5px 0 0; order: -1; }
+        .stat-side.us b { display: inline-flex; justify-content: flex-end; align-items: baseline; }
+        .stat-track { flex: 1; display: flex; min-width: 0; }
+        .stat-side.us .stat-track { justify-content: flex-end; }
+        .stat-track i { display: block; height: 16px; min-width: 2px; background: var(--ink); opacity: 0.35; border-radius: 0 4px 4px 0; }
+        .stat-track i.us { background: var(--brand); opacity: 1; border-radius: 4px 0 0 4px; }
+        .stat-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 24px; align-items: start; }
         .stat-rank { background: var(--surface); border: 1px solid var(--line); }
-        .stat-rank-row { position: relative; display: flex; justify-content: space-between; gap: 10px; padding: 10px 14px; font-size: 0.94rem; }
+        .stat-pair .team-block, .stat-pair .team-block + .team-block { margin-top: 0; }
+        .stat-rank-row { position: relative; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 10px 14px; font-size: 0.94rem; }
         .stat-rank-row + .stat-rank-row { border-top: 1px solid var(--line); }
         .stat-rank-row b { font-family: var(--display); font-variant-numeric: tabular-nums; }
         .stat-rank-row i { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--brand); opacity: 0.8; }
@@ -330,8 +337,10 @@ STATS_CSS = """
         @media (max-width: 700px) {
             .stat-tiles { grid-template-columns: repeat(2, 1fr); }
             .stat-pair { grid-template-columns: 1fr; }
-            .stat-key { flex-wrap: wrap; }
-            .stat-key em { margin-left: 0; width: 100%; }
+            .stat-chart { padding: 6px 10px; }
+            .stat-split { grid-template-columns: 1fr 2.8em 1fr; gap: 4px; }
+            .stat-side b { min-width: 2.6em; font-size: 0.9rem; }
+            .stat-side b span { display: none; }
         }
 """
 

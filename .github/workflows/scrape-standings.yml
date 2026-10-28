@@ -113,9 +113,12 @@ jobs:
           git config --local user.name "github-actions[bot]"
 
           # Add generated files
-          git add standings.json schedule.json season_schedule.json eagles_schedule.json livebarn_surfaces.json game_sheets.json \
+          git add standings.json schedule.json season_schedule.json eagles_schedule.json livebarn_surfaces.json \
                   index.html schedule.html playoffs.html privacy.html statistics.html assets/logos
           git add -A -- 'team-*.html' 'game-*.html' 'event-*.html' || true
+          # The sheets are kept sealed; this also removes the unsealed file the first time they are.
+          git add -A -- game_sheets.sealed.json || true
+          git add -A -- game_sheets.json || true
 
           # Check if there are changes to commit
           if git diff --staged --quiet; then

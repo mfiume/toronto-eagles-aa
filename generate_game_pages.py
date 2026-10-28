@@ -28,6 +28,7 @@ from html import escape
 
 import arenas
 import config
+import sheet_store
 import page_common
 from generate_schedule_html import (countdown_attr, aware, countdown, game_page, game_row, live_flag, load_film, maps_link,
                                     stream_state, team_name_html, watch_button)
@@ -221,7 +222,6 @@ def series(g, games, now):
 
 # --- The league's game sheet --------------------------------------------------------
 
-SHEETS_FILE = "game_sheets.json"
 # The league's penalty codes in words: the Ontario Hockey Federation's list of minor and major penalty abbreviations, and the
 # Hockey Canada rule number the league sometimes writes in place of one (8.6 is tripping). A code not here is shown as written.
 PENALTIES = {
@@ -283,11 +283,8 @@ def comparisons(sheet, shots):
 
 
 def load_sheets():
-    try:
-        with open(SHEETS_FILE, encoding="utf-8") as f:
-            return json.load(f)
-    except (FileNotFoundError, ValueError):
-        return {}
+    """The kept sheets, opened with the team password (sheet_store.py). None are shown without one."""
+    return sheet_store.load()
 
 
 def clock_seconds(clock):
@@ -479,16 +476,35 @@ def game_sheet(sheet, shots=None):
 
 # --- Assembly -------------------------------------------------------------------
 
-def page(g, standings, games, timestamp, today, now, sheets=None, shot_counts=None, film=None):
+SHEET_LOCKED = """
+                <section class="team-block" data-sheet-slot>
+                    <div class="block-head"><h3>Game sheet</h3></div>
+                    <div class="team-empty">The game sheet is for the team. Log in with the team password to see it.
+                        <div class="sheet-locked-actions"><a class="match-btn" href="schedule.html#login">Team Login</a></div>
+                    </div>
+                </section>
+"""
+
+
+def page(g, standings, games, timestamp, today, now, sheets=None, shot_counts=None, film=None, has_film=None,
+         locked_sheet=False):
+    """
+    `film` is the sealed package (the film button and the game sheet, both sealed with the team password), `has_film`
+    says whether it carries a film, and `locked_sheet` puts a notice where the sheet goes instead of the sheet itself.
+    """
     sheets = sheets or {}
+    has_film = bool(film) if has_film is None else has_film
     shot_counts = shot_counts or {}
     row = g["row"]
     title = f"{row.get('Away', '')} at {row.get('Home', '')}"
     body = matchup(g, standings, today, now)
-    body += actions(g, now, film=bool(film))
+    body += actions(g, now, film=has_film)
     body += where_when(g)
     gid = game_page(row)[len("game-"):-len(".html")]
-    body += game_sheet(sheets.get(gid), shot_counts.get(gid))
+    if locked_sheet and sheets.get(gid):
+        body += SHEET_LOCKED
+    else:
+        body += game_sheet(sheets.get(gid), shot_counts.get(gid))
     body += tale_of_the_tape(g, standings, games)
     body += series(g, games, now)
     return f"""<!DOCTYPE html>
@@ -566,6 +582,14 @@ def film_package(entry, g=None):
                       separators=(",", ":"))
 
 
+def sealed_package(entry, g, sheet_html):
+    """What one login opens on a game page: the film (when there is one) and the game sheet (when there is one)."""
+    data = json.loads(film_package(entry, g)) if entry else {}
+    if sheet_html:
+        data["sheet"] = sheet_html
+    return json.dumps(data, separators=(",", ":"))
+
+
 def film_button(url):
     return (f'<a class="match-btn film" href="{escape(url)}" target="_blank" rel="noopener noreferrer">'
             f'{page_common.FILM_ICON}<span>Video review</span></a>')
@@ -585,20 +609,25 @@ def generate(today=None):
     now = datetime.now(page_common.TORONTO)
     today = today or now.date()
     games = all_games(schedule_data.get("schedule", []))
-    sheets = load_sheets()
-    films = load_film()
     password = os.environ.get("TEAM_EVENTS_PASSWORD", "")
+    # Without the team password nothing can be sealed, and a public page never carries a sheet, so none is shown.
+    sheets = load_sheets() if password else {}
+    shots = load_shots()
+    films = load_film()
     sealer = None
-    if films and password:
+    if password and (films or sheets):
         import team_crypto
         sealer = team_crypto.Sealer(password)
     written = {}
     for g in games:
         name = game_page(g["row"])
         gid = name[len("game-"):-len(".html")]
+        entry = films.get(gid) if sealer else None
+        sheet_html = game_sheet(sheets[gid], shots.get(gid)) if sealer and sheets.get(gid) else ""
+        sealed = sealer.seal(sealed_package(entry, g, sheet_html)) if entry or sheet_html else None
         with open(name, "w", encoding="utf-8") as f:
-            f.write(page(g, standings, games, schedule_data.get("timestamp", ""), today, now, sheets, load_shots(),
-                               film=sealer.seal(film_package(films[gid], g)) if sealer and films.get(gid) else None))
+            f.write(page(g, standings, games, schedule_data.get("timestamp", ""), today, now, sheets, shots,
+                         film=sealed, has_film=bool(entry), locked_sheet=bool(sheet_html)))
         written[name] = True
     # A game the GTHL no longer lists takes its page with it.
     for stale in set(glob.glob("game-*.html")) - set(written):

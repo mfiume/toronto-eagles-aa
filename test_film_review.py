@@ -155,8 +155,28 @@ class Review(unittest.TestCase):
             self.assertIn(part, js.replace("'highlights'", "highlights"))
 
     def test_sheet_rows_say_whose_event_they_are(self):
-        self.assertEqual(self.page.count('data-side="us"') + self.page.count('data-side="them"'), self.page.count('<li data-m="goal') + self.page.count('<li data-m="penalty') + self.page.count('<li data-m="timeout'))
-        self.assertIn('data-side="us"', self.page)
+        sheet = self.sealed(self.page)["sheet"]
+        self.assertEqual(sheet.count('data-side="us"') + sheet.count('data-side="them"'), sheet.count('<li data-m="goal') + sheet.count('<li data-m="penalty') + sheet.count('<li data-m="timeout'))
+        self.assertIn('data-side="us"', sheet)
+
+    def test_the_public_page_carries_no_game_sheet(self):
+        for page in (self.page, self.plain):
+            for part in ('data-m="', 'class="sheet-score"', 'class="sheet-lists"', 'class="compare-row"', "Official, from the league"):
+                self.assertNotIn(part, page)
+            self.assertIn("data-sheet-slot", page)
+            self.assertIn("The game sheet is for the team", page)
+
+    def test_the_sheet_is_sealed_with_the_film_and_alone_for_a_game_without_one(self):
+        self.assertIn("Game sheet", self.sealed(self.page)["sheet"])
+        self.assertIn("Official, from the league", self.sealed(self.page)["sheet"])
+        self.assertIn("url", self.sealed(self.page))
+        plain = self.sealed(self.plain)
+        self.assertIn("sheet", plain)
+
+    def test_a_game_without_a_sheet_has_no_notice(self):
+        with open(os.path.join(self.out, [n for n in os.listdir(self.out) if n.startswith("game-2026-11-")][0]), encoding="utf-8") as f:
+            page = f.read()
+        self.assertNotIn("data-sheet-slot", page)
 
     def test_package_carries_the_score_line_and_the_public_page_does_not(self):
         inner = self.sealed(self.page)

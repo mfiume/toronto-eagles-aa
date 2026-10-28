@@ -537,7 +537,14 @@ for (const [name, w, h] of [['desktop', 1100, 800], ['phone', 390, 800]]) {
 for (const signedIn of [false, true]) for (const w of [1100, 1000, 871, 700, 390]) {
   const p = await newPage(w, 900, signedIn);
   await p.open(info.moments);
-  if (signedIn) await p.waitForSelector('a.is-film', { timeout: 8000 });
+  if (!signedIn) {
+    // The sheet is sealed with the team password: logged out there is a notice where it goes and nothing of it.
+    const none = await p.evaluate(() => !document.querySelector('.sheet-lists') && !document.querySelector('[data-m]') && !!document.querySelector('[data-sheet-slot]'));
+    ok(`logged out ${w}: the game sheet is not on the page, a notice is`, none);
+    await p.close();
+    continue;
+  }
+  await p.waitForSelector('a.is-film', { timeout: 8000 });
   const r = await p.evaluate(() => {
     const lists = document.querySelector('.sheet-lists');
     const nl = lists.querySelectorAll('.sheet-list').length, cols = new Set(Array.from(lists.querySelectorAll('.sheet-list')).map((x) => Math.round(x.getBoundingClientRect().left))).size;
