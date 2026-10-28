@@ -515,13 +515,19 @@ def film_payload(sealed):
     return f'    <script type="application/json" id="game-film">{data}</script>\n{page_common.FILM_JS}'
 
 
+# The video player's script. It is sealed with the film, never written into the public page, so the page names no video host
+# and nothing is fetched from it until a signed-in viewer opens the review.
+PLAYER_API = "https://www.youtube.com/iframe_api"
+
+
 def film_package(entry):
     """
     What is sealed for a game with a film: the button, the address, and the moments of the game sheet that are placed on the film
-    (kind, period, clock, and the second of the video). The script puts the button in place and turns the matching marks and rows
+    (kind, period, clock, and the second of the video), and the address of the video player's script. The script puts the button in place and turns the matching marks and rows
     into links to the video at that second. Like the button, none of it is in the page unless it is sealed.
     """
-    return json.dumps({"html": film_button(entry["url"]), "url": entry["url"], "moments": entry["moments"]}, separators=(",", ":"))
+    return json.dumps({"html": film_button(entry["url"]), "url": entry["url"], "moments": entry["moments"], "api": PLAYER_API},
+                      separators=(",", ":"))
 
 
 def film_button(url):

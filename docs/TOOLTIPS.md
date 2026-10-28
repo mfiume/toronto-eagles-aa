@@ -38,3 +38,5 @@ they were. The tooltip gains a last line, "Watch on YouTube", and a row gets the
 The moments come from Film Room in the `GAME_VIDEOS` secret: a game's value is an address alone, or
 `{"url", "moments": [{"kind", "period", "clock", "t"}]}`, where `t` is the second of the YouTube video. The package is sealed with the
 team password like the film button, so neither the address nor a time is in the public page.
+
+The same marks, rows and the film button open the in-page film review instead of a new tab; see `docs/FILM_REVIEW.md`.
