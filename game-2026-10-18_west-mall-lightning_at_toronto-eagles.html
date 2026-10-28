@@ -303,6 +303,7 @@
             height: 22px;
             object-fit: contain;
             flex-shrink: 0;
+            border-radius: 5px;
         }
 
         /* Our own row, tied to the crest rather than to a grey box. */
@@ -2437,13 +2438,6 @@
             text-decoration: underline;
         }
 
-        .sheet-what .film-icon {
-            width: 20px;
-            height: 14px;
-            flex: none;
-            margin-left: auto;
-        }
-
         /* --- Film review: the game's goals and penalties beside the film --- */
         .rv {
             position: fixed;
@@ -2466,14 +2460,65 @@
             flex: none;
         }
 
+        .rv-who {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .rv-line {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            min-width: 0;
+        }
+
         .rv-title {
             font-family: var(--display);
             font-weight: 600;
             font-size: 0.95rem;
             letter-spacing: 0.08em;
             text-transform: uppercase;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
+        .rv-score {
+            flex: none;
+            font-family: var(--display);
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: 0.04em;
+            color: var(--brand-dark);
+        }
+
+        .rv-score small {
+            margin-left: 6px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+        }
+
+        .rv-sub {
+            margin-top: 2px;
+            font-size: 0.78rem;
+            line-height: 1.3;
+            color: var(--ink-2);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .rv-tools {
+            display: flex;
+            flex: none;
+            gap: 8px;
+        }
+
+        .rv-share,
         .rv-close {
             display: inline-flex;
             align-items: center;
@@ -2487,6 +2532,7 @@
             cursor: pointer;
         }
 
+        .rv-share:hover,
         .rv-close:hover {
             border-color: var(--ink-3);
         }
@@ -2537,6 +2583,7 @@
             color: var(--brand-dark);
         }
 
+        .rv-share:focus-visible,
         .rv-close:focus-visible,
         .rv-row:focus-visible,
         .rv-open:focus-visible {
@@ -2544,6 +2591,7 @@
             outline-offset: -2px;
         }
 
+        .rv-share:focus-visible,
         .rv-close:focus-visible {
             outline-offset: 2px;
         }
@@ -2773,7 +2821,7 @@
 
         .sheet-lists {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 18px;
         }
 
@@ -2793,7 +2841,7 @@
 
         .sheet-list li {
             display: grid;
-            grid-template-columns: 5.4em 1fr;
+            grid-template-columns: 5.4em minmax(0, 1fr);
             gap: 2px 8px;
             padding: 6px 0;
             border-bottom: 1px solid var(--line-soft);
@@ -2855,8 +2903,20 @@
             white-space: nowrap;
         }
 
-        .sheet-what .team-logo,
-        .sheet-what .film-icon {
+        /* A long name gives way with an ellipsis; the logo, the minutes and the score never shrink. */
+        .sheet-what > span:not(.sheet-note):not(.sheet-score-now) {
+            flex: 0 1 auto;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sheet-what > .sheet-note,
+        .sheet-what > .sheet-score-now {
+            flex: none;
+        }
+
+        .sheet-what .team-logo {
             flex: none;
         }
 
@@ -3452,7 +3512,7 @@
     (function () {
       var el = document.getElementById('game-film'), pw = null;
       try { pw = localStorage.getItem('eagles-team-password'); } catch (e) {}
-      if (!el || !pw || !window.crypto || !crypto.subtle) return;
+      if (!el || !window.crypto || !crypto.subtle) return;
       var p = JSON.parse(el.textContent);
       var ICON = "<svg class=\"film-icon\" viewBox=\"0 0 20 14\" width=\"20\" height=\"14\" aria-hidden=\"true\"><rect width=\"20\" height=\"14\" rx=\"4\" fill=\"#ff0000\"/><path d=\"M8 4l5 3-5 3z\" fill=\"#ffffff\"/></svg>";
       // A mark or row on the game sheet whose moment is placed on the film becomes a link to the video at that second.
@@ -3478,7 +3538,6 @@
           a.setAttribute('data-tip', (tip ? tip + '||' : '') + 'Video review');
           a.setAttribute('data-t', at[k]);
           a.setAttribute('aria-label', (label ? label + ', ' : '') + 'open in video review');
-          if (row) a.insertAdjacentHTML('beforeend', ICON);
           el.parentNode.replaceChild(a, el);
         });
       }
@@ -3489,7 +3548,11 @@
         var id = null;
         try { var u = new URL(film.url); id = u.searchParams.get('v') || u.pathname.split('/').pop(); } catch (e) {}
         if (!id || !/^[\w-]{6,}$/.test(id) || typeof film.api !== 'string' || film.api.indexOf('https://') !== 0) return;
-        var at = {}, state = null;
+        var at = {}, state = null, info = null;
+        var fi = film.info;
+        if (fi && typeof fi.away === 'string' && typeof fi.home === 'string' && fi.away && fi.home) {
+          info = { away: fi.away, home: fi.home, score: typeof fi.score === 'string' ? fi.score : '', when: typeof fi.when === 'string' ? fi.when : '' };
+        }
         film.moments.forEach(function (m) {
           var k = m.kind + '|' + m.period + '|' + m.clock;
           if (typeof m.t === 'number' && m.t >= 0 && !(k in at)) at[k] = Math.floor(m.t);
@@ -3514,16 +3577,56 @@
           if (text) n.textContent = text;
           return n;
         }
+        // The address follows the review: #review at the start of the film, #review=goal-2-10:11 at a moment. No new history entries.
+        function setHash(key) {
+          var h = key ? '#review=' + key.replace(/\|/g, '-') : '#review';
+          if (location.hash !== h) { try { history.replaceState(null, '', location.pathname + location.search + h); } catch (e) {} }
+        }
+        function clearHash() {
+          if (/^#review(=|$)/.test(location.hash)) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} }
+        }
+        // '#review=goal-2-10:11' names a moment placed on the film: kind, period, clock. Anything else opens at the start.
+        function fromHash() {
+          var m = /^#review(?:=([a-z]+)-(\d+)-(\d+:\d\d))?$/.exec(location.hash);
+          if (!m) return null;
+          var t = m[1] ? at[m[1] + '|' + m[2] + '|' + m[3]] : undefined;
+          return { t: typeof t === 'number' ? t : 0 };
+        }
+        function copyText(text) {
+          function old() {
+            var ta = document.createElement('textarea');
+            ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+            document.body.appendChild(ta); ta.select();
+            var done = false;
+            try { done = document.execCommand('copy'); } catch (e) {}
+            ta.remove();
+            return Promise[done ? 'resolve' : 'reject']();
+          }
+          if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).catch(old);
+          return old();
+        }
         function watchUrl(t) { return film.url + (t > 0 ? (film.url.indexOf('?') < 0 ? '?' : '&') + 't=' + Math.floor(t) : ''); }
         function show(t, trigger) {
           if (state) return;
-          var list = events(), rows = [], timer = null, player = null, ready = false, pending = null, now = -1;
+          var shared = null, list = events(), rows = [], timer = null, player = null, ready = false, pending = null, now = -1;
           var root = el('div', 'rv'), box = el('div', 'rv-box' + (list.length ? '' : ' rv-solo'));
-          root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', 'Video review');
-          var head = el('div', 'rv-head'), close = el('button', 'rv-close');
+          root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', info ? 'Video review, ' + info.away + ' at ' + info.home : 'Video review');
+          var head = el('div', 'rv-head'), close = el('button', 'rv-close'), share = el('button', 'rv-share');
           close.type = 'button'; close.setAttribute('aria-label', 'Close'); close.setAttribute('data-tip', 'Close');
           close.innerHTML = '<svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
-          head.appendChild(el('span', 'rv-title', 'Video review')); head.appendChild(close);
+          share.type = 'button'; share.setAttribute('aria-label', 'Copy link'); share.setAttribute('data-tip', 'Copy link');
+          share.innerHTML = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.8 9.2a3 3 0 0 0 4.2 0l2.2-2.2a3 3 0 0 0-4.2-4.2L8 3.8"/><path d="M9.2 6.8a3 3 0 0 0-4.2 0L2.8 9a3 3 0 0 0 4.2 4.2L8 12.2"/></g></svg>';
+          var who = el('div', 'rv-who'), line = el('div', 'rv-line'), tools = el('div', 'rv-tools');
+          if (info) {
+            line.appendChild(el('span', 'rv-title', info.away + ' at ' + info.home));
+            if (info.score) { var sc = el('span', 'rv-score', info.score); sc.appendChild(el('small', '', 'Final')); line.appendChild(sc); }
+            who.appendChild(line);
+            if (info.when) who.appendChild(el('div', 'rv-sub', info.when));
+          } else {
+            line.appendChild(el('span', 'rv-title', 'Video review')); who.appendChild(line);
+          }
+          tools.appendChild(share); tools.appendChild(close);
+          head.appendChild(who); head.appendChild(tools);
           var stage = el('div', 'rv-stage'), frame = el('div', 'rv-frame'), mount = el('div'), ext = el('a', 'rv-open');
           frame.appendChild(mount); stage.appendChild(frame);
           ext.target = '_blank'; ext.rel = 'noopener noreferrer'; ext.href = watchUrl(t);
@@ -3559,6 +3662,7 @@
             rows.forEach(function (r, i) { if (r.ev.t <= ct) best = i; });
             if (best === now) return;
             now = best;
+            setHash(best >= 0 ? rows[best].ev.key : null);
             rows.forEach(function (r, i) {
               r.btn.classList.toggle('is-now', i === best);
               if (i === best) r.btn.setAttribute('aria-current', 'true'); else r.btn.removeAttribute('aria-current');
@@ -3595,7 +3699,8 @@
           function shut() {
             if (!state) return;
             state = null;
-            clearInterval(timer);
+            clearInterval(timer); clearTimeout(shared);
+            clearHash();
             try { player && player.destroy(); } catch (e) {}
             document.removeEventListener('keydown', keys, true);
             document.removeEventListener('focusin', keep, true);
@@ -3617,9 +3722,22 @@
           function keep(e) { if (state && !root.contains(e.target)) close.focus(); }
           state = { shut: shut };
           close.addEventListener('click', shut);
+          share.addEventListener('click', function () {
+            copyText(location.href).then(function () {
+              share.setAttribute('data-tip', 'Link copied'); share.setAttribute('aria-label', 'Link copied');
+              // The tooltip shows what the button says now.
+              share.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+              clearTimeout(shared);
+              shared = setTimeout(function () {
+                share.setAttribute('data-tip', 'Copy link'); share.setAttribute('aria-label', 'Copy link');
+                if (document.activeElement === share || share.matches(':hover')) share.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+              }, 2200);
+            }, function () {});
+          });
           document.addEventListener('keydown', keys, true);
           document.addEventListener('focusin', keep, true);
           mark(t);
+          setHash(now >= 0 ? rows[now].ev.key : null);
           close.focus();
           if (window.YT && YT.Player) build();
           else {
@@ -3632,10 +3750,11 @@
             }
           }
         }
-        // The schedule's video icon arrives here with #review and opens the review at the start of the film.
-        if (location.hash === '#review') {
+        // A shared link or the schedule's video icon arrives here with #review or #review=<moment> and opens the review.
+        var want = fromHash();
+        if (want) {
           var opener = document.querySelector('.match-actions a.film');
-          if (opener) show(0, opener);
+          if (opener) show(want.t, opener);
         }
         // A plain click on a mark, a row or the film button opens the review; a modified click or a middle click still goes to the video.
         document.addEventListener('click', function (e) {
@@ -3648,23 +3767,74 @@
         });
       }
       function b(s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); }
-      crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey'])
-        .then(function (base) {
-          return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b(p.salt), iterations: p.iter, hash: 'SHA-256' },
-                                         base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
-        })
-        .then(function (key) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b(p.iv) }, key, b(p.ct)); })
-        .then(function (plain) {
-          var text = new TextDecoder().decode(plain), film = null;
-          try { film = JSON.parse(text); } catch (e) {}
-          var slot = document.querySelector('.match-actions');
-          if (slot) slot.insertAdjacentHTML('afterbegin', film && typeof film.html === 'string' ? film.html : text);
-          if (film && typeof film.url === 'string' && film.url.indexOf('https://') === 0 && Array.isArray(film.moments)) {
-            link(film);
-            review(film);
-          }
-        })
-        .catch(function () {});
+      function attempt(password) {
+        return crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey'])
+          .then(function (base) {
+            return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b(p.salt), iterations: p.iter, hash: 'SHA-256' },
+                                           base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+          })
+          .then(function (key) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b(p.iv) }, key, b(p.ct)); });
+      }
+      function apply(plain) {
+        var text = new TextDecoder().decode(plain), film = null;
+        try { film = JSON.parse(text); } catch (e) {}
+        var slot = document.querySelector('.match-actions');
+        if (slot) slot.insertAdjacentHTML('afterbegin', film && typeof film.html === 'string' ? film.html : text);
+        if (film && typeof film.url === 'string' && film.url.indexOf('https://') === 0 && Array.isArray(film.moments)) {
+          link(film);
+          review(film);
+        }
+      }
+      var AUTH = document.querySelector('[data-auth-link]');
+      function setAuth(inn) {
+        if (!AUTH) return;
+        AUTH.textContent = inn ? 'Log out' : 'Team Login';
+        if (inn) {
+          AUTH.dataset.loggedIn = '1';
+          AUTH.addEventListener('click', function (e) {
+            e.preventDefault();
+            try { localStorage.removeItem('eagles-team-password'); } catch (x) {}
+            AUTH.textContent = 'Team Login'; delete AUTH.dataset.loggedIn;
+          }, { once: true });
+        } else delete AUTH.dataset.loggedIn;
+      }
+      // A shared link reaches a visitor who is not signed in: the site's sign-in box, and the review opens after it. Nothing else changes.
+      function signIn(message) {
+        var d = document.createElement('dialog');
+        d.className = 'login-dialog'; d.id = 'login-dialog'; d.setAttribute('aria-labelledby', 'login-title');
+        d.innerHTML = '<form method="dialog"><h2 id="login-title">Team Login</h2><p>Enter the team password to continue.</p>' +
+          '<label for="login-password">Team password</label>' +
+          '<input id="login-password" class="login-input" type="password" autocomplete="current-password" required>' +
+          '<p class="login-msg" role="status" aria-live="polite"></p>' +
+          '<div class="login-actions"><button type="button" class="login-btn secondary" data-login-cancel>Cancel</button>' +
+          '<button type="submit" class="login-btn">Log in</button></div></form>';
+        document.body.appendChild(d);
+        var form = d.querySelector('form'), input = d.querySelector('input'), msg = d.querySelector('.login-msg');
+        msg.textContent = message || '';
+        function close() { if (d.close) d.close(); else d.removeAttribute('open'); }
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          msg.textContent = 'Logging in…';
+          attempt(input.value).then(function (plain) {
+            try { localStorage.setItem('eagles-team-password', input.value); } catch (x) {}
+            input.value = ''; close(); d.remove(); setAuth(true); apply(plain);
+          }, function () {
+            msg.textContent = 'That password didn’t work. Check the team message for it.';
+            input.select();
+          });
+        });
+        d.querySelector('[data-login-cancel]').addEventListener('click', close);
+        if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+        input.focus();
+      }
+      var wanted = /^#review(=|$)/.test(location.hash);
+      if (!pw) { if (wanted) signIn(); return; }
+      attempt(pw).then(apply, function () {
+        if (!wanted) return;
+        try { localStorage.removeItem('eagles-team-password'); } catch (e) {}
+        setAuth(false);
+        signIn('The team password has changed. Enter the new one.');
+      });
     })();
     </script>
 
