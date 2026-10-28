@@ -3430,10 +3430,231 @@
                     </div>
                 </section>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-28T03:08:11.250393+00:00" title="Oct 27, 11:08 PM ET · Refreshes hourly">just now</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-28T03:13:37.664371+00:00" title="Oct 27, 11:13 PM ET · Refreshes hourly">just now</time></p>
         </div>
 
     </div>
+    <script type="application/json" id="game-film">{"v": 1, "iter": 600000, "salt": "nvIgZlaj30Ue/m+zjdIAXw==", "iv": "aXnKKFJwrW53AfMH", "ct": "iBsG/Xa2MHzIn4L8MU7KlVYoNVKHl3RRodS9cxUXSSyub5JalBH7/D74jHX83Nhr1A9ug2Y2b6ccYu1RwoA3YWshmG/0vV+otsOzl12jdjh0M5y6fbbFY3ZT0IqG2AJgmAAp//iJxwS5ynYNxeiHM16mzCPkA532wa2FMRnvL841ZLR70fyEi7mRijhO2zECA7mYKVC6d2YBP5aUUFdSrndIx4hbfGC8ZjK5XvLwYUKL2arbX+DCV4LdlDRGsFBqPP4zt9nM9whzUoD7l+4dl9APaa7zeSfDdJK/Zrbz6ScoVqeh0/sSsNusNdsL3pcN+/oc0ew3YRFpyW+e8q/4ylcZziT9+BUea4nXq0AvfciXL741QzxazWldURL9W+3RFABcpKIfjFyDKR2JYn4YZkK5LNLYkWRPFkoVCdlIGyzJZQgd/zbLituT3t8nleKBg7sBhvxwFLK7NszKLWVMhu994IhDC0AeSIW2As7eAjR3WmNFwqRxV+/mHlW1rH54C4jOsa3NvL/mvsG54bTlVn/Kj1n7pXfJAcNRz5oAqAKxOehGb/81zYACKt7iTSlqBTy+TmfTMqf24ZBq98TR0S7s7FpIAqUFKO6AKy0Vl7voFw=="}</script>
+
+    <script>
+    (function () {
+      var el = document.getElementById('game-film'), pw = null;
+      try { pw = localStorage.getItem('eagles-team-password'); } catch (e) {}
+      if (!el || !pw || !window.crypto || !crypto.subtle) return;
+      var p = JSON.parse(el.textContent);
+      var ICON = "<svg class=\"film-icon\" viewBox=\"0 0 20 14\" width=\"20\" height=\"14\" aria-hidden=\"true\"><rect width=\"20\" height=\"14\" rx=\"4\" fill=\"#ff0000\"/><path d=\"M8 4l5 3-5 3z\" fill=\"#ffffff\"/></svg>";
+      // A mark or row on the game sheet whose moment is placed on the film becomes a link to the video at that second.
+      function link(film) {
+        var at = {};
+        film.moments.forEach(function (m) {
+          var k = m.kind + '|' + m.period + '|' + m.clock;
+          if (typeof m.t === 'number' && m.t >= 0 && !(k in at)) at[k] = Math.floor(m.t);
+        });
+        Array.prototype.forEach.call(document.querySelectorAll('[data-m]'), function (node) {
+          var k = node.getAttribute('data-m');
+          if (!(k in at)) return;
+          var href = film.url + (at[k] > 0 ? (film.url.indexOf('?') < 0 ? '?' : '&') + 't=' + at[k] : '');
+          var row = node.tagName === 'LI', el = row ? node.querySelector('.sheet-what') : node;
+          if (!el) return;
+          var a = document.createElement('a');
+          Array.prototype.forEach.call(el.attributes, function (x) { a.setAttribute(x.name, x.value); });
+          while (el.firstChild) a.appendChild(el.firstChild);
+          a.removeAttribute('role');
+          a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer';
+          a.classList.add('is-film');
+          var tip = a.getAttribute('data-tip'), label = a.getAttribute('aria-label');
+          a.setAttribute('data-tip', (tip ? tip + '||' : '') + 'Video review');
+          a.setAttribute('data-t', at[k]);
+          a.setAttribute('aria-label', (label ? label + ', ' : '') + 'open in video review');
+          if (row) a.insertAdjacentHTML('beforeend', ICON);
+          el.parentNode.replaceChild(a, el);
+        });
+      }
+
+      // The review: the game's goals and penalties beside the film, in a full-screen layer. It is built only when a signed-in viewer
+      // opens it, and the video player's script is loaded then and not before.
+      function review(film) {
+        var id = null;
+        try { var u = new URL(film.url); id = u.searchParams.get('v') || u.pathname.split('/').pop(); } catch (e) {}
+        if (!id || !/^[\w-]{6,}$/.test(id) || typeof film.api !== 'string' || film.api.indexOf('https://') !== 0) return;
+        var at = {}, state = null;
+        film.moments.forEach(function (m) {
+          var k = m.kind + '|' + m.period + '|' + m.clock;
+          if (typeof m.t === 'number' && m.t >= 0 && !(k in at)) at[k] = Math.floor(m.t);
+        });
+        function left(clock) { var x = clock.split(':'); return (+x[0]) * 60 + (+x[1]); }
+        // Goals and penalties that have a placed time and a row on the game sheet, in game order.
+        function events() {
+          var out = [];
+          Array.prototype.forEach.call(document.querySelectorAll('li[data-m]'), function (li) {
+            var k = li.getAttribute('data-m'), x = k.split('|');
+            if (!(k in at) || (x[0] !== 'goal' && x[0] !== 'penalty')) return;
+            var what = li.querySelector('.sheet-what');
+            if (!what) return;
+            out.push({ key: k, t: at[k], p: +x[1], c: left(x[2]), li: li, what: what });
+          });
+          out.sort(function (a, b) { return a.p - b.p || b.c - a.c; });
+          return out;
+        }
+        function el(tag, cls, text) {
+          var n = document.createElement(tag);
+          if (cls) n.className = cls;
+          if (text) n.textContent = text;
+          return n;
+        }
+        function watchUrl(t) { return film.url + (t > 0 ? (film.url.indexOf('?') < 0 ? '?' : '&') + 't=' + Math.floor(t) : ''); }
+        function show(t, trigger) {
+          if (state) return;
+          var list = events(), rows = [], timer = null, player = null, ready = false, pending = null, now = -1;
+          var root = el('div', 'rv'), box = el('div', 'rv-box' + (list.length ? '' : ' rv-solo'));
+          root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', 'Video review');
+          var head = el('div', 'rv-head'), close = el('button', 'rv-close');
+          close.type = 'button'; close.setAttribute('aria-label', 'Close'); close.setAttribute('data-tip', 'Close');
+          close.innerHTML = '<svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
+          head.appendChild(el('span', 'rv-title', 'Video review')); head.appendChild(close);
+          var stage = el('div', 'rv-stage'), frame = el('div', 'rv-frame'), mount = el('div'), ext = el('a', 'rv-open');
+          frame.appendChild(mount); stage.appendChild(frame);
+          ext.target = '_blank'; ext.rel = 'noopener noreferrer'; ext.href = watchUrl(t);
+          ext.setAttribute('data-tip', 'Open on YouTube');
+          ext.insertAdjacentHTML('beforeend', ICON); ext.appendChild(el('span', '', 'Open on YouTube'));
+          stage.appendChild(ext);
+          var ul = el('ul', 'rv-list');
+          list.forEach(function (ev) {
+            var li = el('li'), btn = el('button', 'rv-row'), when = ev.li.querySelector('.sheet-when'), w = el('span', 'sheet-what');
+            btn.type = 'button';
+            var team = ev.what.getAttribute('data-tip') || '';
+            var logo = ev.what.querySelector('.team-logo');
+            if (logo) w.appendChild(logo.cloneNode(true));
+            Array.prototype.forEach.call(ev.what.children, function (c) {
+              if (c.tagName === 'SPAN') w.appendChild(c.cloneNode(true));
+            });
+            btn.appendChild(el('span', 'sheet-when', when ? when.textContent : ''));
+            btn.appendChild(w);
+            btn.setAttribute('aria-label', (when ? when.textContent + ', ' : '') + team + ', ' + w.textContent.replace(/\s+/g, ' ').trim());
+            btn.addEventListener('click', function () { go(ev.t); });
+            li.appendChild(btn); ul.appendChild(li); rows.push({ ev: ev, btn: btn });
+          });
+          if (list.length) box.appendChild(ul);
+          box.appendChild(stage);
+          root.appendChild(head); root.appendChild(box);
+          var page = document.querySelector('.container'), html = document.documentElement, was = [html.style.overflow, document.body.style.overflow];
+          if (page) page.setAttribute('inert', '');
+          html.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
+          document.body.appendChild(root);
+
+          function mark(ct) {
+            var best = -1;
+            rows.forEach(function (r, i) { if (r.ev.t <= ct) best = i; });
+            if (best === now) return;
+            now = best;
+            rows.forEach(function (r, i) {
+              r.btn.classList.toggle('is-now', i === best);
+              if (i === best) r.btn.setAttribute('aria-current', 'true'); else r.btn.removeAttribute('aria-current');
+            });
+            if (best >= 0) {
+              var b = rows[best].btn, top = b.offsetTop - ul.offsetTop;
+              if (top < ul.scrollTop || top + b.offsetHeight > ul.scrollTop + ul.clientHeight) ul.scrollTop = Math.max(0, top - 8);
+            }
+          }
+          function tick() { try { mark(player.getCurrentTime()); } catch (e) {} }
+          function go(s) {
+            ext.href = watchUrl(s);
+            mark(s);
+            if (player && ready) { player.seekTo(s, true); player.playVideo(); } else { pending = s; }
+          }
+          function build() {
+            if (!state) return;
+            player = new YT.Player(mount, {
+              videoId: id, width: '100%', height: '100%',
+              playerVars: Object.assign({ rel: 0, modestbranding: 1, playsinline: 1, autoplay: 1 }, t > 0 ? { start: Math.floor(t) } : {}),
+              events: {
+                onReady: function () {
+                  ready = true;
+                  if (pending !== null) { player.seekTo(pending, true); player.playVideo(); pending = null; }
+                },
+                onStateChange: function (e) {
+                  clearInterval(timer); timer = null;
+                  if (e.data === 1) { timer = setInterval(tick, 500); }
+                  tick();
+                }
+              }
+            });
+          }
+          function shut() {
+            if (!state) return;
+            state = null;
+            clearInterval(timer);
+            try { player && player.destroy(); } catch (e) {}
+            document.removeEventListener('keydown', keys, true);
+            document.removeEventListener('focusin', keep, true);
+            root.remove();
+            if (page) page.removeAttribute('inert');
+            html.style.overflow = was[0]; document.body.style.overflow = was[1];
+            if (trigger && document.contains(trigger)) trigger.focus();
+          }
+          function keys(e) {
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); shut(); return; }
+            if (e.key !== 'Tab') return;
+            var f = Array.prototype.filter.call(root.querySelectorAll('button, a[href], iframe'), function (n) { return n.offsetParent !== null; });
+            if (!f.length) return;
+            var first = f[0], last = f[f.length - 1];
+            if (!root.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+            else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+          }
+          function keep(e) { if (state && !root.contains(e.target)) close.focus(); }
+          state = { shut: shut };
+          close.addEventListener('click', shut);
+          document.addEventListener('keydown', keys, true);
+          document.addEventListener('focusin', keep, true);
+          mark(t);
+          close.focus();
+          if (window.YT && YT.Player) build();
+          else {
+            var prior = window.onYouTubeIframeAPIReady;
+            window.onYouTubeIframeAPIReady = function () { if (prior) prior(); build(); };
+            if (!document.getElementById('rv-api')) {
+              var s = document.createElement('script');
+              s.id = 'rv-api'; s.src = film.api; s.async = true;
+              document.head.appendChild(s);
+            }
+          }
+        }
+        // The schedule's video icon arrives here with #review and opens the review at the start of the film.
+        if (location.hash === '#review') {
+          var opener = document.querySelector('.match-actions a.film');
+          if (opener) show(0, opener);
+        }
+        // A plain click on a mark, a row or the film button opens the review; a modified click or a middle click still goes to the video.
+        document.addEventListener('click', function (e) {
+          if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+          var a = e.target.closest && e.target.closest('a.is-film, .match-actions a.film');
+          if (!a || a.closest('.rv')) return;
+          e.preventDefault();
+          var t = parseFloat(a.getAttribute('data-t'));
+          show(isNaN(t) ? 0 : t, a);
+        });
+      }
+      function b(s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); }
+      crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey'])
+        .then(function (base) {
+          return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b(p.salt), iterations: p.iter, hash: 'SHA-256' },
+                                         base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+        })
+        .then(function (key) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b(p.iv) }, key, b(p.ct)); })
+        .then(function (plain) {
+          var text = new TextDecoder().decode(plain), film = null;
+          try { film = JSON.parse(text); } catch (e) {}
+          var slot = document.querySelector('.match-actions');
+          if (slot) slot.insertAdjacentHTML('afterbegin', film && typeof film.html === 'string' ? film.html : text);
+          if (film && typeof film.url === 'string' && film.url.indexOf('https://') === 0 && Array.isArray(film.moments)) {
+            link(film);
+            review(film);
+          }
+        })
+        .catch(function () {});
+    })();
+    </script>
 
     <script>
     (function () {
