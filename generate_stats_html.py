@@ -207,7 +207,7 @@ def ranked(counts, empty):
     top = items[0][1]
     return '<div class="stat-rank">' + "".join(
         f'<div class="stat-rank-row"><span>{html.escape(name)}</span><b>{n}</b>'
-        f'<i style="width:{100 * n / top:.0f}%"></i></div>' for name, n in items) + "</div>"
+        f'<i style="width:calc((100% - 28px) * {n / top:.3f})"></i></div>' for name, n in items) + "</div>"
 
 
 def tile(label, value, note=""):
@@ -250,10 +250,10 @@ def body(stats):
     parts.append(block("Goals by period", bar_pair(rows, n, "Eagles", "Opponent"), "Per game, with the total"))
     rows = [(period_name(p), stats["pens_by_period"]["taken"].get(p, 0), stats["pens_by_period"]["drawn"].get(p, 0))
             for p in stats["periods"]]
-    parts.append(block("Penalties by period", bar_pair(rows, n, "We take", "We draw"), "Per game, with the total"))
+    parts.append(block("Penalties by period", bar_pair(rows, n, "Eagles", "Opponent"), "Per game, with the total"))
     parts.append('<div class="stat-pair">'
-                 + block("Penalties we take", ranked(stats["names"]["taken"], "No penalties yet."))
-                 + block("Penalties we draw", ranked(stats["names"]["drawn"], "No penalties yet.")) + "</div>")
+                 + block("Eagles penalties", ranked(stats["names"]["taken"], "No penalties yet."))
+                 + block("Opponent penalties", ranked(stats["names"]["drawn"], "No penalties yet.")) + "</div>")
     pp, pk = stats["pp"], stats["pk"]
     parts.append(block("Special teams", '<div class="stat-tiles two">'
                        + tile("Power play", pct_text(pp["pct"]), f'{pp["goals"]} goals on {pp["chances"]} chances')
@@ -326,7 +326,7 @@ STATS_CSS = """
         .stat-rank-row { position: relative; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 10px 14px; font-size: 0.94rem; }
         .stat-rank-row + .stat-rank-row { border-top: 1px solid var(--line); }
         .stat-rank-row b { font-family: var(--display); font-variant-numeric: tabular-nums; }
-        .stat-rank-row i { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--brand); opacity: 0.8; }
+        .stat-rank-row i { position: absolute; left: 14px; bottom: 5px; height: 6px; min-width: 6px; border-radius: 999px; background: var(--brand); opacity: 0.8; }
         .stat-table { background: var(--surface); border: 1px solid var(--line); overflow-x: auto; }
         .stat-table table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         .stat-table th, .stat-table td { padding: 10px 14px; text-align: left; white-space: nowrap; font-variant-numeric: tabular-nums; }
