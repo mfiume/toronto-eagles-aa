@@ -4354,19 +4354,17 @@ GAME_CSS = """
             border-color: var(--ink-3);
         }
 
-        /* The video review is the main thing on a game that has one. */
+        /* The video review is the main thing on a game that has one: larger, with the team's red around it. */
         .match-btn.film {
-            padding: 12px 22px;
-            background: var(--ink);
-            border-color: var(--ink);
-            color: #ffffff;
+            padding: 11px 22px;
+            border: 2px solid var(--brand);
+            color: var(--brand);
             font-size: 0.98rem;
-            box-shadow: 0 2px 10px rgba(17, 18, 20, 0.18);
         }
 
         .match-btn.film:hover {
-            border-color: var(--ink);
-            background: #000000;
+            border-color: var(--brand);
+            background: #fbe9eb;
         }
 
         .match-btn.film .film-icon {
