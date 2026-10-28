@@ -163,6 +163,7 @@ REVIEW_JS = r"""
           var t = m[1] ? at[m[1] + '|' + m[2] + '|' + m[3]] : undefined;
           return { t: typeof t === 'number' ? t : 0 };
         }
+        var LINK_ICON = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.8 9.2a3 3 0 0 0 4.2 0l2.2-2.2a3 3 0 0 0-4.2-4.2L8 3.8"/><path d="M9.2 6.8a3 3 0 0 0-4.2 0L2.8 9a3 3 0 0 0 4.2 4.2L8 12.2"/></g></svg>';
         function copyText(text) {
           function old() {
             var ta = document.createElement('textarea');
@@ -186,7 +187,7 @@ REVIEW_JS = r"""
           close.type = 'button'; close.setAttribute('aria-label', 'Close'); close.setAttribute('data-tip', 'Close');
           close.innerHTML = '<svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
           share.type = 'button'; share.setAttribute('aria-label', 'Copy link'); share.setAttribute('data-tip', 'Copy link');
-          share.innerHTML = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.8 9.2a3 3 0 0 0 4.2 0l2.2-2.2a3 3 0 0 0-4.2-4.2L8 3.8"/><path d="M9.2 6.8a3 3 0 0 0-4.2 0L2.8 9a3 3 0 0 0 4.2 4.2L8 12.2"/></g></svg>';
+          share.innerHTML = LINK_ICON;
           var who = el('div', 'rv-who'), line = el('div', 'rv-line'), tools = el('div', 'rv-tools');
           if (info) {
             line.appendChild(el('span', 'rv-title', info.away + ' at ' + info.home));
@@ -218,7 +219,22 @@ REVIEW_JS = r"""
             btn.appendChild(w);
             btn.setAttribute('aria-label', (when ? when.textContent + ', ' : '') + team + ', ' + w.textContent.replace(/\s+/g, ' ').trim());
             btn.addEventListener('click', function () { go(ev.t); });
-            li.appendChild(btn); ul.appendChild(li); rows.push({ ev: ev, btn: btn });
+            var cp = el('button', 'rv-row-link'), when_ = when ? when.textContent : '';
+            cp.type = 'button'; cp.setAttribute('aria-label', 'Copy link to ' + when_); cp.setAttribute('data-tip', 'Copy link');
+            cp.innerHTML = LINK_ICON;
+            cp.addEventListener('click', function (e) {
+              e.stopPropagation();
+              var url = location.origin + location.pathname + location.search + '#review=' + ev.key.replace(/\|/g, '-');
+              copyText(url).then(function () {
+                cp.setAttribute('data-tip', 'Link copied'); cp.setAttribute('aria-label', 'Link copied');
+                cp.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+                setTimeout(function () {
+                  cp.setAttribute('data-tip', 'Copy link'); cp.setAttribute('aria-label', 'Copy link to ' + when_);
+                  if (document.activeElement === cp || cp.matches(':hover')) cp.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+                }, 2200);
+              }, function () {});
+            });
+            li.appendChild(btn); li.appendChild(cp); ul.appendChild(li); rows.push({ ev: ev, btn: btn });
           });
           if (list.length) box.appendChild(ul);
           box.appendChild(stage);
@@ -4023,6 +4039,51 @@ GAME_CSS = """
 
         .rv-row:hover {
             background: var(--wash);
+        }
+
+        .rv-list li {
+            position: relative;
+        }
+
+        /* Each event has its own link, shown on hover and focus, and always on a touch screen. */
+        .rv-row-link {
+            position: absolute;
+            top: 50%;
+            right: 8px;
+            transform: translateY(-50%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border: 1px solid var(--line);
+            border-radius: 50%;
+            background: var(--surface);
+            color: var(--ink-2);
+            cursor: pointer;
+            opacity: 0;
+        }
+
+        .rv-list li:hover .rv-row-link,
+        .rv-list li:focus-within .rv-row-link,
+        .rv-row-link:focus-visible {
+            opacity: 1;
+        }
+
+        @media (hover: none) {
+            .rv-row-link {
+                opacity: 1;
+            }
+        }
+
+        .rv-row-link:hover {
+            color: var(--ink);
+            border-color: var(--ink-3);
+        }
+
+        .rv-row-link:focus-visible {
+            outline: 2px solid var(--ink);
+            outline-offset: 1px;
         }
 
         .rv-row.is-now {

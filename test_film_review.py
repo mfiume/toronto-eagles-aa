@@ -141,6 +141,12 @@ class Review(unittest.TestCase):
         self.assertNotIn("\u2014", page_common.REVIEW_JS)
         self.assertNotIn("\u2014", page_common.FILM_JS)
 
+class EventLinks(unittest.TestCase):
+    def test_each_event_row_has_its_own_copy_link(self):
+        import page_common
+        self.assertIn("rv-row-link", page_common.FILM_JS)
+        self.assertIn("'#review=' + ev.key", page_common.FILM_JS)
+
 
 if __name__ == "__main__":
     if "--fixture" in sys.argv:

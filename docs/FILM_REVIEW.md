@@ -66,3 +66,9 @@ with the row text cut by an ellipsis when it is too long; the logo and the minut
 "Interference with the goalie" is cut.
 The browser check writes `sheet_lists_<width>.png` and measures row heights and columns at 1100, 1000, 871, 700 and 390 px
 against a fixture game with long penalty names.
+
+## A link to one event
+
+Each event in the review's list has a link button at its right, shown on hover and focus and always on a touch screen. It copies the
+game page's address with `#review=<kind>-<period>-<clock>` for that event, the same form the address bar follows, and its tooltip
+reads "Link copied" for a moment.
