@@ -29,7 +29,7 @@ from html import escape
 import arenas
 import config
 import page_common
-from generate_schedule_html import (countdown_attr, aware, countdown, game_page, game_row, live_flag, load_videos, maps_link,
+from generate_schedule_html import (countdown_attr, aware, countdown, game_page, game_row, live_flag, load_film, maps_link,
                                     stream_state, team_name_html, watch_button)
 from generate_team_pages import (all_games, division_rank, form_chips, number, ordinal,
                                  side_of, team_games)
@@ -336,10 +336,17 @@ def sheet_timeline(sheet):
     # "Toronto Eagles" is "Eagles" in a tooltip: the score line is short enough to read at a glance
     nick = {side: name[side].split()[-1] for side in ("home", "away")}
 
-    def tip(*lines):
-        """What the tooltip says, one line each, as an attribute the page's script reads. The same words label the mark for a screen reader."""
+    def tip(*lines, side=None):
+        """What the tooltip says, one line each, as an attribute the page's script reads. The same words label the mark for a screen reader.
+        With a side, the heading carries that team's logo."""
         text = "||".join(lines)
-        return f'data-tip="{escape(text)}" aria-label="{escape(" - ".join(lines))}" tabindex="0" role="img"'
+        src = page_common.logo_src(name[side]) if side else None
+        logo = f' data-tip-logo="{escape(src)}"' if src else ""
+        return f'data-tip="{escape(text)}"{logo} aria-label="{escape(" - ".join(lines))}" tabindex="0" role="img"'
+
+    def moment(kind, n, clock):
+        """Which moment of the game a mark is, so the film can be matched to it once a signed-in viewer opens it. The league's own sheet already says this publicly."""
+        return f'data-m="{kind}|{n}|{clock}"'
 
     def when(n, clock):
         return f'{period_label(n)} period, {clock} left'
@@ -361,12 +368,12 @@ def sheet_timeline(sheet):
                 head = "Goal, " + name[g["side"]] + kind
                 after = "Score: " + nick["away"] + " " + str(a) + ", " + nick["home"] + " " + str(h)
                 marks += (f'<span class="tl-dot {mine(g["side"])}" style="left:{pos(g["clock"]):.2f}%" '
-                          f'{tip(head, when(n, g["clock"]), after)}></span>')
+                          f'{tip(head, when(n, g["clock"]), after, side=g["side"])} {moment("goal", n, g["clock"])}></span>')
         for t in sheet["timeouts"]:
             if t["period"] == n:
                 head = "Timeout, " + name[t["side"]]
                 marks += (f'<span class="tl-to {mine(t["side"])}" style="left:{pos(t["clock"]):.2f}%" '
-                          f'{tip(head, when(n, t["clock"]), score_at(n, t["clock"]))}></span>')
+                          f'{tip(head, when(n, t["clock"]), score_at(n, t["clock"]), side=t["side"])} {moment("timeout", n, t["clock"])}></span>')
         # penalties, each in the first row under the line where it does not run into one already there
         rows = []
         bars = ""
@@ -382,7 +389,7 @@ def sheet_timeline(sheet):
             head = "Penalty, " + name[t["side"]]
             detail = what + ", " + str(t["minutes"]) + " min"
             bars += (f'<span class="tl-pen {mine(t["side"])}" style="left:{start:.2f}%;width:{end - start:.2f}%;top:{19 + row * 7}px" '
-                     f'{tip(head, detail, when(n, t["clock"]), score_at(n, t["clock"]))}></span>')
+                     f'{tip(head, detail, when(n, t["clock"]), score_at(n, t["clock"]), side=t["side"])} {moment("penalty", n, t["clock"])}></span>')
         height = 19 + max(len(rows), 1) * 7 + 2 if rows else 21
         grid = "".join(f'<span class="tl-tick" style="left:{k * 25}%"></span>' for k in range(1, 4))
         blocks += (f'<div class="tl-period"><div class="tl-name">{period_label(n)}</div>'
@@ -414,10 +421,10 @@ def game_sheet(sheet, shots=None):
     table = (f'<div class="table-wrapper"><table class="sheet-score"><thead><tr><th class="sheet-team"></th>{head}'
              f'<th>Final</th></tr></thead><tbody>{rows}</tbody></table></div>')
 
-    def listing(title, items, line):
+    def listing(title, items, line, kind):
         if not items:
             return ""
-        lis = "".join(f'<li><span class="sheet-when">{period_label(i["period"])} · {i["clock"]}</span>{line(i)}</li>' for i in items)
+        lis = "".join(f'<li data-m="{kind}|{i["period"]}|{i["clock"]}"><span class="sheet-when">{period_label(i["period"])} · {i["clock"]}</span>{line(i)}</li>' for i in items)
         return f'<div class="sheet-list"><h4>{title}</h4><ul>{lis}</ul></div>'
 
     def who(side, text, note="", score=""):
@@ -444,8 +451,8 @@ def game_sheet(sheet, shots=None):
     def timeout(t):
         return who(t["side"], "Timeout")
 
-    lists = (listing("Scoring", sheet["goals"], goal) + listing("Penalties", sheet["penalties"], penalty)
-             + listing("Timeouts", sheet["timeouts"], timeout))
+    lists = (listing("Scoring", sheet["goals"], goal, "goal") + listing("Penalties", sheet["penalties"], penalty, "penalty")
+             + listing("Timeouts", sheet["timeouts"], timeout, "timeout"))
     return f"""
                 <section class="team-block">
                     <div class="block-head"><h3>Game sheet</h3><span>Official, from the league</span></div>
@@ -508,6 +515,15 @@ def film_payload(sealed):
     return f'    <script type="application/json" id="game-film">{data}</script>\n{page_common.FILM_JS}'
 
 
+def film_package(entry):
+    """
+    What is sealed for a game with a film: the button, the address, and the moments of the game sheet that are placed on the film
+    (kind, period, clock, and the second of the video). The script puts the button in place and turns the matching marks and rows
+    into links to the video at that second. Like the button, none of it is in the page unless it is sealed.
+    """
+    return json.dumps({"html": film_button(entry["url"]), "url": entry["url"], "moments": entry["moments"]}, separators=(",", ":"))
+
+
 def film_button(url):
     return (f'<a class="match-btn film" href="{escape(url)}" target="_blank" rel="noopener noreferrer">'
             f'{page_common.FILM_ICON}<span>Watch on YouTube</span></a>')
@@ -528,10 +544,10 @@ def generate(today=None):
     today = today or now.date()
     games = all_games(schedule_data.get("schedule", []))
     sheets = load_sheets()
-    videos = load_videos()
+    films = load_film()
     password = os.environ.get("TEAM_EVENTS_PASSWORD", "")
     sealer = None
-    if videos and password:
+    if films and password:
         import team_crypto
         sealer = team_crypto.Sealer(password)
     written = {}
@@ -540,7 +556,7 @@ def generate(today=None):
         gid = name[len("game-"):-len(".html")]
         with open(name, "w", encoding="utf-8") as f:
             f.write(page(g, standings, games, schedule_data.get("timestamp", ""), today, now, sheets, load_shots(),
-                               film=sealer.seal(film_button(videos[gid])) if sealer and videos.get(gid) else None))
+                               film=sealer.seal(film_package(films[gid])) if sealer and films.get(gid) else None))
         written[name] = True
     # A game the GTHL no longer lists takes its page with it.
     for stale in set(glob.glob("game-*.html")) - set(written):

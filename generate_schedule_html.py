@@ -861,10 +861,12 @@ def season_rows(schedule):
 
 
 
-def load_videos():
+def load_film():
     """
-    Where the team's game films are on YouTube, as {game id: address}, from the GAME_VIDEOS secret or a local game_videos.json.
-    Never read for the public page, and never committed: the addresses only ever reach a page inside the encrypted team version.
+    Where the team's game films are on YouTube, and which moments of the game sheet are placed on them, as
+    {game id: {"url": address, "moments": [{"kind", "period", "clock", "t"}]}}, from the GAME_VIDEOS secret or a local game_videos.json.
+    A game's value is its address alone (the older form) or an object with the address and its moments; t is the second of the video.
+    Never read for the public page, and never committed: the addresses and moments only ever reach a page sealed.
     """
     raw = os.environ.get("GAME_VIDEOS", "")
     if not raw and os.path.exists("game_videos.json"):
@@ -874,7 +876,28 @@ def load_videos():
         found = json.loads(raw) if raw.strip() else {}
     except ValueError:
         return {}
-    return {k: v for k, v in found.items() if isinstance(v, str) and v.startswith("https://")}
+    if not isinstance(found, dict):
+        return {}
+    films = {}
+    for gid, v in found.items():
+        url = v if isinstance(v, str) else v.get("url") if isinstance(v, dict) else None
+        if not isinstance(url, str) or not url.startswith("https://"):
+            continue
+        moments = []
+        for m in (v.get("moments") or []) if isinstance(v, dict) else []:
+            try:
+                if (m["kind"] in ("goal", "penalty", "timeout") and int(m["period"]) >= 1 and re.fullmatch(r"\d{1,2}:\d{2}", m["clock"])
+                        and int(m["t"]) >= 0):
+                    moments.append({"kind": m["kind"], "period": int(m["period"]), "clock": m["clock"], "t": int(m["t"])})
+            except (KeyError, TypeError, ValueError):
+                continue
+        films[gid] = {"url": url, "moments": moments}
+    return films
+
+
+def load_videos():
+    """Where each game's film is, as {game id: address}."""
+    return {gid: f["url"] for gid, f in load_film().items()}
 
 
 def load_team_events():

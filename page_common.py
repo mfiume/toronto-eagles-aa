@@ -5,6 +5,7 @@ filter badges in the header, and the styling for a neutral notice box.
 """
 
 import html
+import json
 import os
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -118,6 +119,33 @@ FILM_JS = """
       try { pw = localStorage.getItem('eagles-team-password'); } catch (e) {}
       if (!el || !pw || !window.crypto || !crypto.subtle) return;
       var p = JSON.parse(el.textContent);
+      var ICON = __FILM_ICON__;
+      // A mark or row on the game sheet whose moment is placed on the film becomes a link to the video at that second.
+      function link(film) {
+        var at = {};
+        film.moments.forEach(function (m) {
+          var k = m.kind + '|' + m.period + '|' + m.clock;
+          if (typeof m.t === 'number' && m.t >= 0 && !(k in at)) at[k] = Math.floor(m.t);
+        });
+        Array.prototype.forEach.call(document.querySelectorAll('[data-m]'), function (node) {
+          var k = node.getAttribute('data-m');
+          if (!(k in at)) return;
+          var href = film.url + (at[k] > 0 ? (film.url.indexOf('?') < 0 ? '?' : '&') + 't=' + at[k] : '');
+          var row = node.tagName === 'LI', el = row ? node.querySelector('.sheet-what') : node;
+          if (!el) return;
+          var a = document.createElement('a');
+          Array.prototype.forEach.call(el.attributes, function (x) { a.setAttribute(x.name, x.value); });
+          while (el.firstChild) a.appendChild(el.firstChild);
+          a.removeAttribute('role');
+          a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer';
+          a.classList.add('is-film');
+          var tip = a.getAttribute('data-tip'), label = a.getAttribute('aria-label');
+          a.setAttribute('data-tip', (tip ? tip + '||' : '') + 'Watch on YouTube');
+          a.setAttribute('aria-label', (label ? label + ', ' : '') + 'watch on YouTube');
+          if (row) a.insertAdjacentHTML('beforeend', ICON);
+          el.parentNode.replaceChild(a, el);
+        });
+      }
       function b(s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); }
       crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey'])
         .then(function (base) {
@@ -126,13 +154,18 @@ FILM_JS = """
         })
         .then(function (key) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b(p.iv) }, key, b(p.ct)); })
         .then(function (plain) {
+          var text = new TextDecoder().decode(plain), film = null;
+          try { film = JSON.parse(text); } catch (e) {}
           var slot = document.querySelector('.match-actions');
-          if (slot) slot.insertAdjacentHTML('afterbegin', new TextDecoder().decode(plain));
+          if (slot) slot.insertAdjacentHTML('afterbegin', film && typeof film.html === 'string' ? film.html : text);
+          if (film && typeof film.url === 'string' && film.url.indexOf('https://') === 0 && Array.isArray(film.moments)) link(film);
         })
         .catch(function () {});
     })();
     </script>
 """
+FILM_JS = FILM_JS.replace("__FILM_ICON__", json.dumps(FILM_ICON))
+
 
 
 _MASTHEAD_CSS = """
@@ -390,6 +423,12 @@ def place_label(row):
     """In words: '5th', or 'T-5th' for a shared place."""
     rank = row.get("Rank", row.get("Position", 0))
     return f"T-{ordinal(rank)}" if row.get("Tied") else ordinal(rank)
+
+
+def logo_src(team):
+    """The path of a team's cached logo, or None when there is none."""
+    filename = f"{slug(team)}.png"
+    return f"assets/logos/{filename}" if os.path.exists(os.path.join(LOGO_DIR, filename)) else None
 
 
 def team_logo(team, fallback_url=None):
@@ -1937,12 +1976,19 @@ SCHEDULE_JS = """
           tipEl.setAttribute('role', 'tooltip');
           document.body.appendChild(tipEl);
         }
-        var lines = el.getAttribute('data-tip').split('||');
+        var lines = el.getAttribute('data-tip').split('||'), logo = el.getAttribute('data-tip-logo');
         tipEl.textContent = '';
         lines.forEach(function (text, i) {
           var row = document.createElement('div');
           if (lines.length > 1 && i === 0) row.className = 'tip-head';
-          row.textContent = text;
+          if (logo && i === 0) {
+            var img = document.createElement('img');
+            img.className = 'tip-logo';
+            img.alt = '';
+            img.src = logo;
+            row.appendChild(img);
+          }
+          row.appendChild(document.createTextNode(text));
           tipEl.appendChild(row);
         });
         tipEl.style.display = 'block';
@@ -3524,6 +3570,40 @@ GAME_CSS = """
             outline: none;
         }
 
+        /* A moment that is on the film opens it. */
+        .tl-track a[data-tip] {
+            cursor: pointer;
+        }
+
+        .tl-track a.tl-dot:hover {
+            transform: scale(1.2);
+        }
+
+        .tl-track a.tl-to:hover {
+            transform: rotate(45deg) scale(1.05);
+        }
+
+        .tl-track a.tl-pen:hover {
+            opacity: 0.8;
+        }
+
+        a.sheet-what.is-film {
+            color: inherit;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        a.sheet-what.is-film:hover > span:not(.sheet-note) {
+            text-decoration: underline;
+        }
+
+        .sheet-what .film-icon {
+            width: 20px;
+            height: 14px;
+            flex: none;
+            margin-left: auto;
+        }
+
         [data-tip]:focus-visible {
             outline: 2px solid var(--ink);
             outline-offset: 3px;
@@ -3542,6 +3622,17 @@ GAME_CSS = """
             line-height: 1.4;
             pointer-events: none;
             box-shadow: 0 6px 20px rgba(17, 18, 20, 0.25);
+        }
+
+        .tip-logo {
+            width: 22px;
+            height: 22px;
+            object-fit: contain;
+            vertical-align: -5px;
+            margin-right: 8px;
+            padding: 2px;
+            border-radius: 4px;
+            background: #fff;
         }
 
         .tip-head {
