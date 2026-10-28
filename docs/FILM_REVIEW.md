@@ -82,6 +82,29 @@ from the player's time alone: a clicked row, highlights, a seek, a new row and n
 (filtered) events count. A paused player holds it. A separate polite live region says "Goal in 20 seconds" once when an event
 starts counting, not every second; the visual bar is hidden from screen readers.
 
+## The score strip
+
+Above the player (inside the right pane, as wide as the video, a full-width band on a phone) a strip shows the score at the player's time:
+both logos, the Eagles first, the score in the site's red (Eagles) and black (opponent) with the team ahead in the heavier weight (700 against
+500, 600 each when level), and under it the period ("1st", "2nd", "3rd", "OT") and "Final" once the game has ended. Before the first goal it
+reads 0-0 and the 1st. Team names show beside the logos and are left out on a phone. It uses the same readings of the player's time as the
+countdown (500 ms, 250 ms in highlights, and on every seek) and does not depend on the list, the filter or highlights. A goal that lands
+during normal playback (the previous reading no more than `BOARD_PLAYING` = 2 s earlier) pops the scorer's number and washes the strip
+for `BOARD_NEW` = 1.6 s; a seek, a clicked row or a jump changes the number quietly. The strip is a single `role="img"` read as
+"Toronto Eagles 2, Mississauga Jets 1, 2nd period" (or "final").
+
+It comes from `score` in the sealed package, built by Film Room (`scoreOf` in `server/video_links.ts`) and cleaned by
+`generate_schedule_html.clean_score`, which drops a malformed line whole (steps out of order, a score that goes down or up by two, negative
+times). `score` is `{steps: [{t, us, them, approx?, hw?}], periods: [{p, t}], end?}`, times in seconds of the video, the Eagles' number first,
+so no home or away is needed. `info` carries `us`, `them`, `usLogo` and `themLogo` for the strip. A game without a score line, or a package
+without those, shows no strip and the stage keeps its earlier size. Like the rest of the package it is never in the public HTML (tested).
+
+How a goal of uncertain time is shown. Film Room marks a step `approx` with `hw`, half the width of the goal's placement limits, when the
+limits are wider than 20 s. Measured on the real games, the best estimate sits at or below the lower limit of wide limits (the clock
+arithmetic gives the earliest the goal can be and stoppages only push it later), so showing the change at the estimate would show the goal
+early, a spoiler. The strip changes at the middle of the limits instead: it is never wrong by more than `hw`, and never before the lower limit,
+and it keeps the previous score until then. The page uses `t` as given and does not look at `approx`.
+
 ## Behaviour of the layer
 
 Closes with Esc or the close button. Focus moves in on open and returns to the mark, row or button that opened it. The page behind is
@@ -90,7 +113,7 @@ Closes with Esc or the close button. Focus moves in on open and returns to the m
 ## Privacy
 
 The video address, id and the player script address exist only in the sealed film package (`generate_game_pages.film_package`, keys
-`url`, `moments`, `api`, `info`, `lead`) and are opened after sign-in with the team password. The public HTML and the shared script contain no video
+`url`, `moments`, `api`, `info`, `lead`, `score`) and are opened after sign-in with the team password. The public HTML and the shared script contain no video
 host text (the unit test searches for `youtu`). Nothing is requested from the video host until the review is opened: the player
 script (`api`, with `enablejsapi` handled by the IFrame Player API) is added to the page then, once, and the player is created with
 `rel=0, modestbranding=1, playsinline=1, autoplay=1` and `start=t`. A package without `api` keeps the old behaviour (links open the
@@ -99,7 +122,7 @@ video in a new tab).
 ## Tests
 
 - `python3 test_film_review.py`: public page has no video host or id, sealed package carries `api` and the moments, no fetch before open, player settings.
-- `node check_film_review.mjs [screenshot dir]`: puppeteer-core against a generated fixture game page with a made-up video id and a stubbed player script; no real request to the video host. Checks the list, seek, highlight while playing, the filters (counts, keyboard, address), highlights (order, seek values, advance at the clip length, pause, previous, next, stop, end, a viewer seek, a filter change, the address forms) and the countdown (values at controlled times), Esc, focus, scroll lock, logged-out page, and writes screenshots at 1100 and 390 px. The stub's `getCurrentTime` returns a time the test sets; its `playVideo` and `pauseVideo` report the state change when `auto` is on. puppeteer-core is found in `PUPPETEER_CORE_DIR` or the Film Room checkout's `node_modules`.
+- `node check_film_review.mjs [screenshot dir]`: puppeteer-core against a generated fixture game page with a made-up video id and a stubbed player script; no real request to the video host. Checks the list, seek, highlight while playing, the filters (counts, keyboard, address), highlights (order, seek values, advance at the clip length, pause, previous, next, stop, end, a viewer seek, a filter change, the address forms) the countdown (values at controlled times), the score strip (score and period at times around each goal, the approximate goal, Final, colours and weights, emphasis on a goal while playing and none on a jump or a clicked row, no strip for a game without a score line, geometry at 1100 and 390 px), Esc, focus, scroll lock, logged-out page, and writes screenshots at 1100 and 390 px. The stub's `getCurrentTime` returns a time the test sets; its `playVideo` and `pauseVideo` report the state change when `auto` is on. puppeteer-core is found in `PUPPETEER_CORE_DIR` or the Film Room checkout's `node_modules`.
 
 Rows of the game sheet that open the film are links with a pointer cursor, a hover underline and the tooltip "Video review"; they carry
 no icon. The sheet's Scoring, Penalties and Timeouts lists use columns of at least 250 px (three across from about 870 px wide),

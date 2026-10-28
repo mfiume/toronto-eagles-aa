@@ -864,8 +864,9 @@ def season_rows(schedule):
 def load_film():
     """
     Where the team's game films are on YouTube, and which moments of the game sheet are placed on them, as
-    {game id: {"url": address, "moments": [{"kind", "period", "clock", "t"}]}}, from the GAME_VIDEOS secret or a local game_videos.json.
-    A game's value is its address alone (the older form) or an object with the address and its moments; t is the second of the video.
+    {game id: {"url": address, "moments": [{"kind", "period", "clock", "t"}], "lead": seconds, "score": {...}}}, from the GAME_VIDEOS secret or a local
+    game_videos.json. A game's value is its address alone (the older form) or an object with the address, its moments, and optionally the lead-in
+    the moments carry and the score line; t is the second of the video. `lead` and `score` are left out of the entry when absent or malformed.
     Never read for the public page, and never committed: the addresses and moments only ever reach a page sealed.
     """
     raw = os.environ.get("GAME_VIDEOS", "")
@@ -891,8 +892,53 @@ def load_film():
                     moments.append({"kind": m["kind"], "period": int(m["period"]), "clock": m["clock"], "t": int(m["t"])})
             except (KeyError, TypeError, ValueError):
                 continue
-        films[gid] = {"url": url, "moments": moments}
+        film = {"url": url, "moments": moments}
+        if isinstance(v, dict):
+            lead = v.get("lead")
+            if isinstance(lead, (int, float)) and not isinstance(lead, bool) and 0 <= lead <= 120:
+                film["lead"] = lead
+            score = clean_score(v.get("score"))
+            if score:
+                film["score"] = score
+        films[gid] = film
     return films
+
+
+def clean_score(raw):
+    """
+    The score line of a game's film, as Film Room sends it, or None when it is not usable:
+    {"steps": [{"t", "us", "them", "approx"?, "hw"?}], "periods": [{"p", "t"}], "end"?}, all times in seconds of the video, the Eagles' number first.
+    The goals only ever count up and the steps are in time order; anything else is dropped whole, because half a score line would show a wrong score.
+    """
+    def num(x):
+        return isinstance(x, (int, float)) and not isinstance(x, bool) and x >= 0 and x < 1e6
+
+    def whole(x):
+        return isinstance(x, int) and not isinstance(x, bool) and 0 <= x < 100
+
+    if not isinstance(raw, dict) or not isinstance(raw.get("steps"), list) or not raw["steps"]:
+        return None
+    steps, us, them, last = [], 0, 0, 0
+    for st in raw["steps"]:
+        if not isinstance(st, dict) or not num(st.get("t")) or not whole(st.get("us")) or not whole(st.get("them")):
+            return None
+        grew = (st["us"] - us, st["them"] - them)
+        if st["t"] < last or sorted(grew) != [0, 1]:
+            return None
+        us, them, last = st["us"], st["them"], st["t"]
+        out = {"t": st["t"], "us": us, "them": them}
+        if st.get("approx") is True and num(st.get("hw")):
+            out["approx"], out["hw"] = True, st["hw"]
+        steps.append(out)
+    periods = []
+    for pe in raw.get("periods") or []:
+        if isinstance(pe, dict) and whole(pe.get("p")) and pe["p"] >= 2 and num(pe.get("t")):
+            periods.append({"p": pe["p"], "t": pe["t"]})
+    periods.sort(key=lambda x: x["p"])
+    score = {"steps": steps, "periods": periods}
+    if num(raw.get("end")):
+        score["end"] = raw["end"]
+    return score
 
 
 def load_videos():

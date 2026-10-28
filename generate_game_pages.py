@@ -538,7 +538,14 @@ def film_info(g):
     place = arena["name"] if arena else row.get("Arena", "")
     when = " · ".join(x for x in (f'{g["day"].strftime("%A, %B")} {g["day"].day}', row.get("Time", ""), place) if x)
     score = f'{g["score"]["away"]}\u2013{g["score"]["home"]}' if g.get("score") else ""
-    return {"away": row.get("Away", ""), "home": row.get("Home", ""), "score": score, "when": when}
+    info = {"away": row.get("Away", ""), "home": row.get("Home", ""), "score": score, "when": when}
+    # The score strip names the Eagles and their opponent, the Eagles first, each with their logo.
+    teams = (row.get("Away", ""), row.get("Home", ""))
+    if config.TEAM_NAME in teams:
+        them = teams[0] if teams[1] == config.TEAM_NAME else teams[1]
+        info.update({"us": config.TEAM_NAME, "them": them, "usLogo": page_common.logo_src(config.TEAM_NAME) or "",
+                     "themLogo": page_common.logo_src(them) or ""})
+    return info
 
 
 # Seconds the moments' times on the film run ahead of the play (Film Room places each moment this long before it).
@@ -549,10 +556,12 @@ def film_package(entry, g=None):
     """
     What is sealed for a game with a film: the button, the address, and the moments of the game sheet that are placed on the film
     (kind, period, clock, and the second of the video), and the address of the video player's script. The script puts the button in place and turns the matching marks and rows
-    into links to the video at that second. Like the button, none of it is in the page unless it is sealed.
+    into links to the video at that second. Like the button, none of it is in the page unless it is sealed. A game with a score line (the steps of
+    the score in seconds of the video, where the periods begin and where the game ends) carries it as `score`, for the review's score strip.
     """
     return json.dumps({"html": film_button(entry["url"]), "url": entry["url"], "moments": entry["moments"], "api": PLAYER_API,
                        "lead": entry.get("lead", DEFAULT_LEAD),
+                       **({"score": entry["score"]} if entry.get("score") else {}),
                        **({"info": film_info(g)} if g else {})},
                       separators=(",", ":"))
 

@@ -292,6 +292,88 @@ for (const [name, w, h] of [['desktop', 1100, 800], ['phone', 390, 800]]) {
   ok(name + ': Esc closes the review during highlights', (await p.$('.rv')) === null);
   await p.close();
 }
+// The score above the player, from the player's own time. The fixture's Eagles are the away team: the Jets score first (play at 120 s), then the Eagles
+// score four; the goal whose moment is at 755 s (play at 775 s) is approximate (40 s either way); the 2nd period starts at 1000 s, the 3rd at 1900 s, the game ends at 3000 s.
+const sbState = (p) => p.evaluate(() => {
+  const b = document.querySelector('.rv-sb'); if (!b) return null;
+  const us = b.querySelector('.rv-sb-us'), them = b.querySelector('.rv-sb-them');
+  return { us: us.textContent, them: them.textContent, per: b.querySelector('.rv-sb-per').textContent, usColor: getComputedStyle(us).color, themColor: getComputedStyle(them).color,
+    usW: getComputedStyle(us).fontWeight, themW: getComputedStyle(them).fontWeight, tied: b.classList.contains('is-tied'), final: b.classList.contains('is-final'),
+    newUs: us.classList.contains('is-new'), newThem: them.classList.contains('is-new'), aria: b.getAttribute('aria-label'), logos: b.querySelectorAll('.team-logo').length,
+    names: [...b.querySelectorAll('.rv-sb-name')].map((n) => n.textContent), namesShown: getComputedStyle(b.querySelector('.rv-sb-name')).display !== 'none' };
+});
+for (const [name, w, h] of [['desktop', 1100, 800], ['phone', 390, 800]]) {
+  const p = await newPage(w, h, true);
+  await p.open(info.moments);
+  await p.waitForSelector('a.is-film', { timeout: 8000 });
+  await p.click('.match-actions a.film');
+  await p.waitForSelector('.rv #stub-player');
+  await p.evaluate(() => { window.__yt.auto = true; });
+  const setCt = async (c, ms = 450) => { await p.evaluate((x) => { window.__yt.ct = x; window.__yt.opts.events.onStateChange({ data: 1 }); }, c); await wait(ms); };
+  const at = async (c) => { await setCt(c, 60); const x = await sbState(p); return `${x.us}-${x.them} ${x.per}`; };
+  let s = await sbState(p);
+  ok(name + ': score strip is there with both logos and the teams named', !!s && s.logos === 2 && s.names.join('|') === 'Toronto Eagles|Mississauga Jets', JSON.stringify(s));
+  ok(name + ': before the game it reads 0-0 in the 1st', s.us === '0' && s.them === '0' && s.per === '1st' && s.tied && !s.final, JSON.stringify(s));
+  const g = await p.evaluate(() => { const r = (q) => document.querySelector(q).getBoundingClientRect(), sb = r('.rv-sb'), f = r('.rv-frame'); return { sbBottom: sb.bottom, fy: f.top, sw: sb.width, fw: f.width, sx: sb.x, fx: f.x, sh: sb.height, over: document.documentElement.scrollWidth > innerWidth, head: r('.rv-head').bottom, inStage: document.querySelector('.rv-stage').contains(document.querySelector('.rv-sb')), fh: f.height }; });
+  ok(name + ': strip sits above the video, outside it, as wide as the video', g.inStage && g.sbBottom <= g.fy + 0.5 && Math.abs(g.sw - g.fw) < 1.5 && Math.abs(g.sx - g.fx) < 1.5 && g.head <= g.sbBottom && !g.over, JSON.stringify(g));
+  ok(name + ': video still 16:9 and strip compact', Math.abs(g.fw / g.fh - 16 / 9) < 0.02 && g.sh <= 64, 'strip height ' + g.sh);
+  if (w > 760) ok(name + ': names shown beside the logos', s.namesShown); else ok(name + ': names left out on a phone, logos stay', !s.namesShown && s.logos === 2);
+  await p.screenshot({ path: path.join(shots, `score_${name}_start.png`) });
+  const readings = [[0, '0-0 1st'], [119.9, '0-0 1st'], [120, '0-1 1st'], [734, '0-1 1st'], [774.9, '0-1 1st'], [775, '1-1 1st'], [999, '1-1 1st'], [1000, '1-1 2nd'], [1419.9, '1-1 2nd'],
+    [1420, '2-1 2nd'], [1899, '2-1 2nd'], [1900, '2-1 3rd'], [2020, '3-1 3rd'], [2519, '3-1 3rd'], [2520, '4-1 3rd'], [2999, '4-1 3rd'], [3000, '4-1 Final'], [3600, '4-1 Final']];
+  for (const [ct, want] of readings) { const got = await at(ct); ok(`${name}: at ${ct} s the strip reads ${want}`, got === want, got); }
+  // Going back shows the earlier score again; the approximate goal is held back until its time and not before its lower limit (735 s).
+  ok(name + ': back to 700 s reads 0-1 1st', (await at(700)) === '0-1 1st');
+  ok(name + ': back to 5 s reads 0-0 1st', (await at(5)) === '0-0 1st');
+  // Colours and weight: red for the Eagles, black for the opponent, the team ahead in heavier type, level scores equal.
+  await at(2100); s = await sbState(p);
+  ok(name + ': Eagles in red, opponent in black', s.usColor === 'rgb(196, 21, 32)' && s.themColor === 'rgb(17, 18, 20)', s.usColor + ' ' + s.themColor);
+  ok(name + ': the Eagles ahead (3-1): heavier type for them', +s.usW > +s.themW && !s.tied, s.usW + ' ' + s.themW);
+  await at(300); s = await sbState(p);
+  ok(name + ': the opponent ahead (0-1): heavier type for them', +s.themW > +s.usW, s.usW + ' ' + s.themW);
+  await at(800); s = await sbState(p);
+  ok(name + ': level (1-1): equal weight', s.usW === s.themW && s.tied, s.usW + ' ' + s.themW);
+  await at(1500); s = await sbState(p);
+  ok(name + ': read out as the teams, score and period', s.aria === 'Toronto Eagles 2, Mississauga Jets 1, 2nd period', s.aria);
+  await at(3100); s = await sbState(p);
+  ok(name + ': read out as final at the end', s.aria === 'Toronto Eagles 4, Mississauga Jets 1, final' && s.final, s.aria);
+  // A goal that lands while the game plays on is emphasised for a moment, on the scorer's number; a jump changes the score quietly.
+  await at(1419.5); await wait(500);
+  await setCt(1420.6, 120);
+  s = await sbState(p);
+  ok(name + ': a goal while playing emphasises the Eagles number', s.newUs && !s.newThem && s.us === '2', JSON.stringify(s));
+  await p.screenshot({ path: path.join(shots, `score_${name}_goal.png`) });
+  await wait(1900);
+  s = await sbState(p);
+  ok(name + ': the emphasis is short', !s.newUs && !s.newThem);
+  await at(119.5); await wait(500);
+  await setCt(120.4, 120);
+  s = await sbState(p);
+  ok(name + ': an opponent goal emphasises their number', s.newThem && !s.newUs && s.them === '1', JSON.stringify(s));
+  await wait(1900);
+  await at(1000); await setCt(2600, 120);
+  s = await sbState(p);
+  ok(name + ': a jump forward changes the score without emphasis', s.us === '4' && !s.newUs && !s.newThem, JSON.stringify(s));
+  await (await p.$$('.rv-row'))[4].click();   // the goal at 1400: the film is taken to the lead-in, 20 s before the play
+  await wait(200);
+  s = await sbState(p);
+  ok(name + ': a clicked row shows the score of that time, without emphasis', s.us === '1' && s.them === '1' && s.per === '2nd' && !s.newUs, JSON.stringify(s));
+  await setCt(1419.5, 60); await setCt(1420.5, 120);
+  ok(name + ': then the goal lands with emphasis', (await sbState(p)).newUs, JSON.stringify(await sbState(p)));
+  // Paused: it holds. Filters and highlights leave it alone.
+  await p.evaluate(() => window.__yt.opts.events.onStateChange({ data: 2 }));
+  await wait(300);
+  const before = await sbState(p);
+  await chip(p, 'goals-for'); await wait(100);
+  const after = await sbState(p);
+  ok(name + ': a filter does not change it', before.us === after.us && before.them === after.them && before.per === after.per, JSON.stringify(after));
+  await p.evaluate(() => { window.__yt.ct = 3200; window.__yt.opts.events.onStateChange({ data: 1 }); });
+  await wait(700);
+  await p.screenshot({ path: path.join(shots, `score_${name}_final.png`) });
+  const tipFocus = await p.evaluate(() => document.querySelector('.rv').contains(document.activeElement));
+  ok(name + ': focus stays in the dialog and the strip takes no focus', tipFocus );
+  await p.close();
+}
 // The countdown to the play, from the player's own time.
 const cdState = (p) => p.evaluate(() => { const c = document.querySelector('.rv-cd'); return { on: c.classList.contains('is-on'), here: c.classList.contains('is-here'), text: c.querySelector('.rv-cd-label').textContent, w: c.querySelector('.rv-cd-bar i').style.width, logo: !!c.querySelector('.team-logo'), live: document.querySelector('.rv-sr').textContent, vis: getComputedStyle(c).visibility }; });
 for (const [name, w, h] of [['desktop', 1100, 800], ['phone', 390, 800]]) {
@@ -521,6 +603,7 @@ for (const [name, w, h] of [['desktop', 1100, 800], ['phone', 390, 800]]) {
   await p.click('.match-actions a.film');
   await p.waitForSelector('.rv #stub-player');
   ok('plain ' + name + ': player only, no list', (await p.$('.rv-list')) === null && (await p.$('.rv-solo')) !== null);
+  ok('plain ' + name + ': a game without a score line shows no strip', (await p.$('.rv-sb')) === null && (await p.$('.has-sb')) === null);
   const g = await p.evaluate(() => { const f = document.querySelector('.rv-frame').getBoundingClientRect(); return f.width / f.height; });
   ok('plain ' + name + ': 16:9', Math.abs(g - 16 / 9) < 0.02);
   await wait(400);

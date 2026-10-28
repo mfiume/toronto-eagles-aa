@@ -35,7 +35,14 @@ MOMENTS = [
     {"kind": "penalty", "period": 3, "clock": "7:28", "t": 2200},
     {"kind": "goal", "period": 3, "clock": "4:16", "t": 2500},
 ]
-SECRET = {WITH_MOMENTS: {"url": f"https://youtu.be/{VIDEO_ID}", "moments": MOMENTS}, PLAIN: f"https://youtu.be/{VIDEO_ID}"}
+# The Eagles are the away team of this game: the Jets score first, then the Eagles score four. The 755 s goal is only known to within 40 s either way.
+SCORE = {"steps": [{"t": 120, "us": 0, "them": 1},
+                   {"t": 775, "us": 1, "them": 1, "approx": True, "hw": 40},
+                   {"t": 1420, "us": 2, "them": 1},
+                   {"t": 2020, "us": 3, "them": 1},
+                   {"t": 2520, "us": 4, "them": 1}],
+         "periods": [{"p": 2, "t": 1000}, {"p": 3, "t": 1900}], "end": 3000}
+SECRET = {WITH_MOMENTS: {"url": f"https://youtu.be/{VIDEO_ID}", "moments": MOMENTS, "lead": 20, "score": SCORE}, PLAIN: f"https://youtu.be/{VIDEO_ID}"}
 
 
 def write_fixture(out):
@@ -151,9 +158,73 @@ class Review(unittest.TestCase):
         self.assertEqual(self.page.count('data-side="us"') + self.page.count('data-side="them"'), self.page.count('<li data-m="goal') + self.page.count('<li data-m="penalty') + self.page.count('<li data-m="timeout'))
         self.assertIn('data-side="us"', self.page)
 
+    def test_package_carries_the_score_line_and_the_public_page_does_not(self):
+        inner = self.sealed(self.page)
+        self.assertEqual(inner["score"], SCORE)
+        self.assertNotIn("score", self.sealed(self.plain))
+        for page in (self.page, self.plain):
+            self.assertNotIn('"approx"', page)
+            self.assertNotIn('"hw"', page)
+            self.assertNotIn('"steps"', page)
+            self.assertNotIn('"us":', page)
+            self.assertNotIn('"them":', page)
+            self.assertNotIn('"periods"', page)
+
+    def test_package_carries_the_teams_for_the_score_strip(self):
+        info = self.sealed(self.page)["info"]
+        self.assertEqual((info["us"], info["them"]), ("Toronto Eagles", "Mississauga Jets"))
+        self.assertTrue(info["usLogo"].startswith("assets/logos/"))
+        info = self.sealed(self.plain)["info"]
+        self.assertEqual((info["us"], info["them"]), ("Toronto Eagles", "The Attack"))
+
     def test_no_em_dash_in_the_review(self):
         self.assertNotIn("\u2014", page_common.REVIEW_JS)
         self.assertNotIn("\u2014", page_common.FILM_JS)
+
+class ScoreLine(unittest.TestCase):
+    """What the site accepts of the score line Film Room sends: all of it or none of it."""
+
+    def load(self, value):
+        old = os.environ.get("GAME_VIDEOS")
+        os.environ["GAME_VIDEOS"] = json.dumps({"g": value})
+        try:
+            return gp.load_film().get("g")
+        finally:
+            if old is None:
+                os.environ.pop("GAME_VIDEOS", None)
+            else:
+                os.environ["GAME_VIDEOS"] = old
+
+    def test_the_older_forms_have_no_score_and_no_lead(self):
+        self.assertEqual(self.load("https://youtu.be/x"), {"url": "https://youtu.be/x", "moments": []})
+        self.assertEqual(self.load({"url": "https://youtu.be/x", "moments": []}), {"url": "https://youtu.be/x", "moments": []})
+
+    def test_lead_and_score_pass_through(self):
+        film = self.load({"url": "https://youtu.be/x", "moments": [], "lead": 20, "score": SCORE})
+        self.assertEqual(film["lead"], 20)
+        self.assertEqual(film["score"], SCORE)
+        self.assertEqual(json.loads(gp.film_package(film))["score"], SCORE)
+
+    def test_a_malformed_score_line_is_dropped_whole(self):
+        step = lambda t, us, them: {"t": t, "us": us, "them": them}
+        bad = [
+            "x", {}, {"steps": []}, {"steps": "x"},
+            {"steps": [step(10, 0, 2)]},                      # two goals at once
+            {"steps": [step(10, 1, 0), step(5, 1, 1)]},        # out of order
+            {"steps": [step(10, 1, 0), step(20, 0, 1)]},       # the score went down
+            {"steps": [step(10, 1, 0), step(20, 1, 0)]},       # no goal
+            {"steps": [step(-1, 1, 0)]},
+            {"steps": [{"t": "10", "us": 1, "them": 0}]},
+        ]
+        for score in bad:
+            self.assertNotIn("score", self.load({"url": "https://youtu.be/x", "moments": [], "score": score}), score)
+        self.assertNotIn("lead", self.load({"url": "https://youtu.be/x", "moments": [], "lead": -5}))
+        self.assertNotIn("lead", self.load({"url": "https://youtu.be/x", "moments": [], "lead": "20"}))
+
+    def test_periods_and_end_are_kept_when_valid_and_ignored_when_not(self):
+        film = self.load({"url": "https://youtu.be/x", "moments": [], "score": {"steps": [{"t": 1, "us": 1, "them": 0}], "periods": [{"p": 3, "t": 9}, {"p": 2, "t": 5}, {"p": 1, "t": 0}, {"p": "2", "t": 1}], "end": "x"}})
+        self.assertEqual(film["score"], {"steps": [{"t": 1, "us": 1, "them": 0}], "periods": [{"p": 2, "t": 5}, {"p": 3, "t": 9}]})
+
 
 class EventLinks(unittest.TestCase):
     def test_each_event_row_has_its_own_copy_link(self):
