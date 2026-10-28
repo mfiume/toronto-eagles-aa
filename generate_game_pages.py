@@ -238,19 +238,30 @@ def load_shots():
         return {}
 
 
-def shots_block(sheet, shots):
-    """Shots for each team as two numbers over a bar split in proportion, ours in red. Only when someone tracked them."""
-    if not shots or config.TEAM_NAME not in (sheet["home"], sheet["away"]):
-        return ""
-    ours = shots["eagles"]
-    theirs = shots["opponent"]
-    other = sheet["away"] if sheet["home"] == config.TEAM_NAME else sheet["home"]
+def compare_block(title, ours, theirs, ours_name, their_name):
+    """One comparison: each team's number either side of the title, over a bar split in proportion, ours in red."""
     total = max(ours + theirs, 1)
-    return (f'<div class="shots"><div class="shots-head"><span class="shots-n us">{ours}</span>'
-            f'<span class="shots-title">Shots</span>'
-            f'<span class="shots-n">{theirs}</span></div>'
-            f'<div class="shots-bar" role="img" aria-label="Shots: {escape(config.TEAM_NAME)} {ours}, {escape(other)} {theirs}">'
+    return (f'<div class="compare"><div class="compare-head"><span class="compare-n us">{ours}</span>'
+            f'<span class="compare-title">{title}</span>'
+            f'<span class="compare-n">{theirs}</span></div>'
+            f'<div class="compare-bar" role="img" aria-label="{title}: {escape(ours_name)} {ours}, {escape(their_name)} {theirs}">'
             f'<i class="us" style="flex:{ours / total:.4f}"></i><i style="flex:{theirs / total:.4f}"></i></div></div>')
+
+
+def comparisons(sheet, shots):
+    """Goals and penalties from the sheet, and shots when someone tracked them, for our games."""
+    if config.TEAM_NAME not in (sheet["home"], sheet["away"]):
+        return ""
+    us = "home" if sheet["home"] == config.TEAM_NAME else "away"
+    them = "away" if us == "home" else "home"
+    names = (sheet[us], sheet[them])
+    count = lambda items, side: sum(1 for i in items if i["side"] == side)
+    blocks = [compare_block("Goals", sheet["final"][us], sheet["final"][them], *names)]
+    if shots:
+        blocks.append(compare_block("Shots", shots["eagles"], shots["opponent"], *names))
+    if sheet["penalties"]:
+        blocks.append(compare_block("Penalties", count(sheet["penalties"], us), count(sheet["penalties"], them), *names))
+    return "".join(blocks)
 
 
 def load_sheets():
@@ -404,7 +415,7 @@ def game_sheet(sheet, shots=None):
                     <div class="block-head"><h3>Game sheet</h3><span>Official, from the league</span></div>
                     <div class="sheet-card">
                         {table}
-                        {shots_block(sheet, shots)}
+                        {comparisons(sheet, shots)}
                         {sheet_timeline(sheet)}
                         <div class="sheet-lists">{lists}</div>
                     </div>

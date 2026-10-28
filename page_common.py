@@ -3341,15 +3341,23 @@ TEAM_CSS = """
 
 # The game pages (generate_game_pages.py), on top of TEAM_CSS.
 GAME_CSS = """
-        /* --- Shots, when a parent tracked them --- */
-        .shots-head {
+        /* --- Team comparisons: goals, shots and penalties, two numbers over a bar --- */
+        .compare {
+            margin-top: 18px;
+        }
+
+        .compare + :not(.compare) {
+            margin-top: 22px;
+        }
+
+        .compare-head {
             display: grid;
             grid-template-columns: 1fr auto 1fr;
             align-items: baseline;
             gap: 10px;
         }
 
-        .shots-n {
+        .compare-n {
             font-family: var(--display);
             font-weight: 600;
             font-size: 1.5rem;
@@ -3358,12 +3366,12 @@ GAME_CSS = """
             font-variant-numeric: tabular-nums;
         }
 
-        .shots-n.us {
+        .compare-n.us {
             color: var(--brand);
             text-align: left;
         }
 
-        .shots-title {
+        .compare-title {
             display: grid;
             justify-items: center;
             font-family: var(--display);
@@ -3374,7 +3382,7 @@ GAME_CSS = """
             color: var(--ink-2);
         }
 
-        .shots-note {
+        .compare-note {
             font-family: var(--body);
             font-weight: 400;
             font-size: 0.68rem;
@@ -3383,21 +3391,21 @@ GAME_CSS = """
             color: var(--ink-3);
         }
 
-        .shots-bar {
+        .compare-bar {
             display: flex;
             gap: 3px;
             height: 8px;
             margin-top: 8px;
         }
 
-        .shots-bar i {
+        .compare-bar i {
             display: block;
             border-radius: 4px;
             background: var(--ink);
             opacity: 0.35;
         }
 
-        .shots-bar i.us {
+        .compare-bar i.us {
             background: var(--brand);
             opacity: 1;
         }
