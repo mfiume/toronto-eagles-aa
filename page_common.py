@@ -115,11 +115,18 @@ FILM_ICON = ('<svg class="film-icon" viewBox="0 0 20 14" width="20" height="14" 
 REVIEW_JS = r"""
       // The review: the game's goals and penalties beside the film, in a full-screen layer. It is built only when a signed-in viewer
       // opens it, and the video player's script is loaded then and not before.
+      // A clip of the highlights runs from the event's moment on the film (which starts `lead` seconds before the play) to this many
+      // seconds after the play. The countdown under the player shows the play coming and stays for COUNTDOWN_AFTER seconds once it is here.
+      var CLIP_AFTER = { goal: 12, penalty: 8 };
+      var COUNTDOWN_AFTER = 4;
+      var FILTERS = [['all', 'All'], ['goals', 'Goals'], ['goals-for', 'Goals for'], ['goals-against', 'Goals against'], ['penalties', 'Penalties']];
       function review(film) {
         var id = null;
         try { var u = new URL(film.url); id = u.searchParams.get('v') || u.pathname.split('/').pop(); } catch (e) {}
         if (!id || !/^[\w-]{6,}$/.test(id) || typeof film.api !== 'string' || film.api.indexOf('https://') !== 0) return;
         var at = {}, state = null, info = null;
+        // Seconds between the moment's time on the film and the play itself; the sealed package carries it, 20 when it does not.
+        var lead = typeof film.lead === 'number' && film.lead >= 0 && film.lead <= 120 ? film.lead : 20;
         var fi = film.info;
         if (fi && typeof fi.away === 'string' && typeof fi.home === 'string' && fi.away && fi.home) {
           info = { away: fi.away, home: fi.home, score: typeof fi.score === 'string' ? fi.score : '', when: typeof fi.when === 'string' ? fi.when : '' };
@@ -137,7 +144,7 @@ REVIEW_JS = r"""
             if (!(k in at) || (x[0] !== 'goal' && x[0] !== 'penalty')) return;
             var what = li.querySelector('.sheet-what');
             if (!what) return;
-            out.push({ key: k, t: at[k], p: +x[1], c: left(x[2]), li: li, what: what });
+            out.push({ key: k, kind: x[0], side: li.getAttribute('data-side') || '', t: at[k], p: +x[1], c: left(x[2]), li: li, what: what });
           });
           out.sort(function (a, b) { return a.p - b.p || b.c - a.c; });
           return out;
@@ -149,8 +156,9 @@ REVIEW_JS = r"""
           return n;
         }
         // The address follows the review: #review at the start of the film, #review=goal-2-10:11 at a moment. No new history entries.
-        function setHash(key) {
-          var h = key ? '#review=' + key.replace(/\|/g, '-') : '#review';
+        // The filter rides along as #review=goal-2-10:11&filter=goals-for; #review=highlights plays the visible list as highlights.
+        function setHash(key, f) {
+          var h = '#review' + (key === 'highlights' ? '=highlights' : key ? '=' + key.replace(/\|/g, '-') : '') + (f && f !== 'all' ? '&filter=' + f : '');
           if (location.hash !== h) { try { history.replaceState(null, '', location.pathname + location.search + h); } catch (e) {} }
         }
         function clearHash() {
@@ -158,10 +166,11 @@ REVIEW_JS = r"""
         }
         // '#review=goal-2-10:11' names a moment placed on the film: kind, period, clock. Anything else opens at the start.
         function fromHash() {
-          var m = /^#review(?:=([a-z]+)-(\d+)-(\d+:\d\d))?$/.exec(location.hash);
+          var m = /^#review(?:=(highlights|([a-z]+)-(\d+)-(\d+:\d\d)))?(?:&filter=([a-z-]+))?$/.exec(location.hash);
           if (!m) return null;
-          var t = m[1] ? at[m[1] + '|' + m[2] + '|' + m[3]] : undefined;
-          return { t: typeof t === 'number' ? t : 0 };
+          var t = m[2] ? at[m[2] + '|' + m[3] + '|' + m[4]] : undefined;
+          var f = FILTERS.some(function (x) { return x[0] === m[5]; }) ? m[5] : 'all';
+          return { t: typeof t === 'number' ? t : 0, filter: f, hl: m[1] === 'highlights' };
         }
         var LINK_ICON = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.8 9.2a3 3 0 0 0 4.2 0l2.2-2.2a3 3 0 0 0-4.2-4.2L8 3.8"/><path d="M9.2 6.8a3 3 0 0 0-4.2 0L2.8 9a3 3 0 0 0 4.2 4.2L8 12.2"/></g></svg>';
         function copyText(text) {
@@ -178,9 +187,23 @@ REVIEW_JS = r"""
           return old();
         }
         function watchUrl(t) { return film.url + (t > 0 ? (film.url.indexOf('?') < 0 ? '?' : '&') + 't=' + Math.floor(t) : ''); }
-        function show(t, trigger) {
+        var ICONS = {
+          play: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4.5 2.5v11l9-5.5z" fill="currentColor"/></svg>',
+          pause: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 2.5h3v11H4zM9 2.5h3v11H9z" fill="currentColor"/></svg>',
+          prev: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 2.5h2v11H3zM13 2.5v11L6 8z" fill="currentColor"/></svg>',
+          next: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M11 2.5h2v11h-2zM3 2.5v11L10 8z" fill="currentColor"/></svg>',
+          stop: '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><rect x="3" y="3" width="10" height="10" rx="1.5" fill="currentColor"/></svg>'
+        };
+        function tipButton(cls, label, icon) {
+          var b = el('button', cls);
+          b.type = 'button'; b.setAttribute('aria-label', label); b.setAttribute('data-tip', label); b.innerHTML = icon;
+          return b;
+        }
+        function show(t, trigger, opening) {
           if (state) return;
-          var shared = null, list = events(), rows = [], timer = null, player = null, ready = false, pending = null, now = -1;
+          opening = opening || {};
+          var shared = null, list = events(), rows = [], timer = null, player = null, ready = false, pending = null, now = -1, cur = t;
+          var filter = opening.filter || 'all', hl = null, playing = false, doneTimer = null;
           var root = el('div', 'rv'), box = el('div', 'rv-box' + (list.length ? '' : ' rv-solo'));
           root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', info ? 'Video review, ' + info.away + ' at ' + info.home : 'Video review');
           var head = el('div', 'rv-head'), close = el('button', 'rv-close'), share = el('button', 'rv-share');
@@ -204,8 +227,24 @@ REVIEW_JS = r"""
           ext.target = '_blank'; ext.rel = 'noopener noreferrer'; ext.href = watchUrl(t);
           ext.setAttribute('data-tip', 'Open on YouTube');
           ext.insertAdjacentHTML('beforeend', ICON); ext.appendChild(el('span', '', 'Open on YouTube'));
-          stage.appendChild(ext);
-          var ul = el('ul', 'rv-list');
+          // Under the player: the highlights controls while they play, and the link to the video.
+          var foot = el('div', 'rv-foot'), hlbar = el('div', 'rv-hl'), hlPrev = tipButton('rv-ctl', 'Previous clip', ICONS.prev), hlToggle = tipButton('rv-ctl rv-ctl-main', 'Pause', ICONS.pause),
+              hlNext = tipButton('rv-ctl', 'Next clip', ICONS.next), hlCount = el('span', 'rv-hl-n'), hlStop = el('button', 'rv-hl-stop');
+          hlbar.hidden = true; hlCount.setAttribute('role', 'status');
+          hlStop.type = 'button'; hlStop.setAttribute('data-tip', 'Stop highlights'); hlStop.setAttribute('aria-label', 'Stop highlights');
+          hlStop.innerHTML = ICONS.stop + '<span>Stop</span>';
+          [hlPrev, hlToggle, hlNext, hlCount, hlStop].forEach(function (n) { hlbar.appendChild(n); });
+          // Under the player: the time until the play, from the player's own clock.
+          var cd = el('div', 'rv-cd'), cdBar = el('div', 'rv-cd-bar'), cdFill = el('i'), cdText = el('div', 'rv-cd-text'), cdLogo = el('span', 'rv-cd-logo'), cdLabel = el('span', 'rv-cd-label'), cdLive = el('div', 'rv-sr');
+          cdBar.appendChild(cdFill); cdText.appendChild(cdLogo); cdText.appendChild(cdLabel); cd.appendChild(cdBar); cd.appendChild(cdText);
+          cd.setAttribute('aria-hidden', 'true'); cdLive.setAttribute('role', 'status'); cdLive.setAttribute('aria-live', 'polite');
+          foot.appendChild(hlbar); foot.appendChild(ext);
+          if (list.length) { stage.appendChild(cd); stage.appendChild(cdLive); }
+          stage.appendChild(foot);
+          var side = el('div', 'rv-side'), bar = el('div', 'rv-bar'), seg = el('div', 'rv-seg'), hlBtn = el('button', 'rv-hlbtn'), ul = el('ul', 'rv-list');
+          seg.setAttribute('role', 'radiogroup'); seg.setAttribute('aria-label', 'Show');
+          hlBtn.type = 'button'; hlBtn.setAttribute('data-tip', 'Play highlights'); hlBtn.setAttribute('aria-pressed', 'false');
+          hlBtn.innerHTML = ICONS.play + '<span>Highlights</span>';
           list.forEach(function (ev) {
             var li = el('li'), btn = el('button', 'rv-row'), when = ev.li.querySelector('.sheet-when'), w = el('span', 'sheet-what');
             btn.type = 'button';
@@ -218,7 +257,6 @@ REVIEW_JS = r"""
             btn.appendChild(el('span', 'sheet-when', when ? when.textContent : ''));
             btn.appendChild(w);
             btn.setAttribute('aria-label', (when ? when.textContent + ', ' : '') + team + ', ' + w.textContent.replace(/\s+/g, ' ').trim());
-            btn.addEventListener('click', function () { go(ev.t); });
             var cp = el('button', 'rv-row-link'), when_ = when ? when.textContent : '';
             cp.type = 'button'; cp.setAttribute('aria-label', 'Copy link to ' + when_); cp.setAttribute('data-tip', 'Copy link');
             cp.innerHTML = LINK_ICON;
@@ -234,9 +272,42 @@ REVIEW_JS = r"""
                 }, 2200);
               }, function () {});
             });
-            li.appendChild(btn); li.appendChild(cp); ul.appendChild(li); rows.push({ ev: ev, btn: btn });
+            li.appendChild(btn); li.appendChild(cp); ul.appendChild(li);
+            var row = { ev: ev, btn: btn, li: li };
+            btn.addEventListener('click', function () { if (hl) clip(visible().indexOf(row), true); else go(ev.t); });
+            rows.push(row);
           });
-          if (list.length) box.appendChild(ul);
+          // Goals and penalties are counted from the whole list; "for" and "against" are the Eagles' goals and the other team's.
+          function matches(f, ev) {
+            if (f === 'goals') return ev.kind === 'goal';
+            if (f === 'goals-for') return ev.kind === 'goal' && ev.side === 'us';
+            if (f === 'goals-against') return ev.kind === 'goal' && ev.side === 'them';
+            if (f === 'penalties') return ev.kind === 'penalty';
+            return true;
+          }
+          var chips = [];
+          FILTERS.forEach(function (f) {
+            var n = list.filter(function (ev) { return matches(f[0], ev); }).length;
+            if (f[0] !== 'all' && (!n || n === list.length)) return;
+            var c = el('button', 'rv-chip', f[1]);
+            c.type = 'button'; c.setAttribute('role', 'radio'); c.setAttribute('data-f', f[0]);
+            c.appendChild(el('small', '', String(n)));
+            c.addEventListener('click', function () { choose(f[0]); });
+            c.addEventListener('keydown', function (e) {
+              var d = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : e.key === 'Home' ? -Infinity : e.key === 'End' ? Infinity : 0;
+              if (!d) return;
+              e.preventDefault();
+              var i = chips.indexOf(c), j = d === Infinity ? chips.length - 1 : d === -Infinity ? 0 : Math.max(0, Math.min(chips.length - 1, i + d));
+              chips[j].focus(); choose(chips[j].getAttribute('data-f'));
+            });
+            seg.appendChild(c); chips.push(c);
+          });
+          if (list.length) {
+            bar.appendChild(seg);
+            if (chips.length < 2) seg.hidden = true;
+            bar.appendChild(hlBtn);
+            side.appendChild(bar); side.appendChild(ul); box.appendChild(side);
+          }
           box.appendChild(stage);
           root.appendChild(head); root.appendChild(box);
           var page = document.querySelector('.container'), html = document.documentElement, was = [html.style.overflow, document.body.style.overflow];
@@ -244,12 +315,12 @@ REVIEW_JS = r"""
           html.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
           document.body.appendChild(root);
 
-          function mark(ct) {
-            var best = -1;
-            rows.forEach(function (r, i) { if (r.ev.t <= ct) best = i; });
+          function visible() { return rows.filter(function (r) { return !r.li.hidden; }); }
+          function hash() { setHash(hl ? 'highlights' : now >= 0 ? rows[now].ev.key : null, filter); }
+          function setNow(best) {
             if (best === now) return;
             now = best;
-            setHash(best >= 0 ? rows[best].ev.key : null);
+            hash();
             rows.forEach(function (r, i) {
               r.btn.classList.toggle('is-now', i === best);
               if (i === best) r.btn.setAttribute('aria-current', 'true'); else r.btn.removeAttribute('aria-current');
@@ -259,12 +330,134 @@ REVIEW_JS = r"""
               if (top < ul.scrollTop || top + b.offsetHeight > ul.scrollTop + ul.clientHeight) ul.scrollTop = Math.max(0, top - 8);
             }
           }
-          function tick() { try { mark(player.getCurrentTime()); } catch (e) {} }
-          function go(s) {
-            ext.href = watchUrl(s);
-            mark(s);
+          // The current row is the latest visible event at or before the time.
+          function mark(ct) {
+            var best = -1;
+            rows.forEach(function (r, i) { if (!r.li.hidden && r.ev.t <= ct) best = i; });
+            setNow(best);
+          }
+          function time() { try { return player && ready ? player.getCurrentTime() : cur; } catch (e) { return cur; } }
+          function poll() {
+            clearInterval(timer); timer = null;
+            if (playing) timer = setInterval(tick, hl ? 250 : 500);
+          }
+          // The countdown: an event whose play has just happened, else the first visible one whose play is still ahead (within the lead-in).
+          var cdRow = null;
+          function countdown(ct) {
+            var pick = null, vis = visible();
+            vis.forEach(function (r) { if (!pick && ct >= r.ev.t + lead && ct < r.ev.t + lead + COUNTDOWN_AFTER) pick = r; });
+            vis.forEach(function (r) { if (!pick && ct >= r.ev.t - 1.5 && ct < r.ev.t + lead) pick = r; });
+            if (!pick) { cd.classList.remove('is-on', 'is-here'); cdRow = null; return; }
+            var ev = pick.ev, left = ev.t + lead - ct, word = ev.kind === 'goal' ? 'Goal' : 'Penalty';
+            if (pick !== cdRow) {
+              cdRow = pick;
+              cdLogo.textContent = '';
+              var lg = pick.btn.querySelector('.team-logo');
+              if (lg) cdLogo.appendChild(lg.cloneNode(true));
+              cdLive.textContent = word + ' in ' + Math.max(1, Math.ceil(left)) + ' seconds';
+            }
+            var here = left <= 0;
+            cd.classList.add('is-on'); cd.classList.toggle('is-here', here);
+            cdFill.style.width = Math.max(0, Math.min(100, (ct - ev.t) / lead * 100)) + '%';
+            if (here) {
+              var w = pick.btn.querySelector('.sheet-what > span:not(.sheet-note):not(.sheet-score-now)'), n = pick.btn.querySelector('.sheet-note'), sc = pick.btn.querySelector('.sheet-score-now');
+              cdLabel.textContent = (w ? w.textContent : word) + (sc ? ' ' + sc.textContent.replace(/\s+/g, '') : '') + (n ? ', ' + n.textContent : '');
+            } else cdLabel.textContent = word + ' in ' + Math.max(1, Math.ceil(left)) + ' s';
+          }
+          function tick() { try { var ct = player.getCurrentTime(); cur = ct; countdown(ct); if (hl) light(ct); else mark(ct); } catch (e) {} }
+          function seek(s) {
+            cur = s; ext.href = watchUrl(s); countdown(s);
             if (player && ready) { player.seekTo(s, true); player.playVideo(); } else { pending = s; }
           }
+          function go(s) { seek(s); mark(s); }
+
+          // Highlights: the visible events' clips one after another. Each clip starts at the event's moment and plays for its length
+          // (CLIP_SECONDS), or until the next clip starts when that comes first.
+          function end(i, seq) {
+            var ev = seq[i].ev, e = ev.t + lead + (CLIP_AFTER[ev.kind] || 8), n = seq[i + 1];
+            return n && n.ev.t < e ? Math.max(ev.t, n.ev.t) : e;
+          }
+          function paint() {
+            clearTimeout(doneTimer);
+            hlBtn.setAttribute('aria-pressed', hl ? 'true' : 'false');
+            hlBtn.classList.toggle('is-on', !!hl);
+            hlbar.hidden = !hl;
+            foot.classList.toggle('is-hl', !!hl);
+            [hlPrev, hlToggle, hlNext, hlStop].forEach(function (n) { n.hidden = false; });
+            if (!hl) return;
+            hlCount.textContent = (hl.i + 1) + ' of ' + hl.seq.length;
+            hlPrev.disabled = hl.i === 0;
+            var label = hl.paused ? 'Resume' : 'Pause';
+            hlToggle.setAttribute('data-tip', label); hlToggle.setAttribute('aria-label', label);
+            hlToggle.innerHTML = hl.paused ? ICONS.play : ICONS.pause;
+          }
+          function clip(i, jump) {
+            var seq = hl ? hl.seq : visible();
+            if (i < 0) i = 0;
+            if (i >= seq.length) { finish(); return; }
+            var ev = seq[i].ev;
+            hl.seq = seq; hl.i = i; hl.start = ev.t; hl.end = end(i, seq); hl.settled = !jump; hl.since = Date.now(); hl.paused = false;
+            setNow(rows.indexOf(seq[i]));
+            if (jump) seek(ev.t);
+            paint(); poll();
+          }
+          function begin() {
+            var seq = visible();
+            if (!seq.length) return;
+            hl = { seq: seq, i: 0 };
+            hash();
+            clip(0, true);
+          }
+          function leave() {
+            if (!hl) return;
+            hl = null; paint(); poll(); hash();
+          }
+          function finish() {
+            hl = null; poll();
+            try { player && ready && player.pauseVideo(); } catch (e) {}
+            paint();
+            hlbar.hidden = false;
+            [hlPrev, hlToggle, hlNext, hlStop].forEach(function (n) { n.hidden = true; });
+            hlCount.textContent = 'End of highlights';
+            hash();
+            doneTimer = setTimeout(paint, 2500);
+          }
+          // Called on every poll while highlights play: next clip at the end of this one, normal review when the viewer moves the video.
+          function light(ct) {
+            if (!hl.settled) {
+              if (ct >= hl.start - 1.5 && ct <= hl.end + 1.5) hl.settled = true;
+              else if (Date.now() - hl.since < 5000) return;
+              else hl.settled = true;
+            }
+            if (ct < hl.start - 2 || ct > hl.end + 3) { leave(); mark(ct); return; }
+            if (ct >= hl.end) { var next = hl.i + 1; if (next >= hl.seq.length) finish(); else clip(next, hl.seq[next].ev.t !== hl.end); }
+          }
+          hlBtn.addEventListener('click', function () { if (hl) leave(); else begin(); });
+          hlStop.addEventListener('click', function () { leave(); });
+          hlPrev.addEventListener('click', function () { if (hl) clip(hl.i - 1, true); });
+          hlNext.addEventListener('click', function () { if (hl) clip(hl.i + 1, true); });
+          hlToggle.addEventListener('click', function () {
+            if (!hl) return;
+            try { if (hl.paused) player.playVideo(); else player.pauseVideo(); } catch (e) {}
+          });
+          function choose(f) {
+            if (f === filter) return;
+            filter = f;
+            rows.forEach(function (r) { r.li.hidden = !matches(f, r.ev); });
+            cdRow = null;
+            chips.forEach(function (c) {
+              var on = c.getAttribute('data-f') === f;
+              c.setAttribute('aria-checked', on ? 'true' : 'false'); c.tabIndex = on ? 0 : -1; c.classList.toggle('is-on', on);
+            });
+            ul.scrollTop = 0;
+            now = -2;
+            if (hl) { hl = null; begin(); } else { mark(time()); hash(); }
+          }
+          // The filter from the address, if the list has it, else everything.
+          var first_f = chips.some(function (c) { return c.getAttribute('data-f') === filter; }) ? filter : 'all';
+          filter = '';
+          choose(first_f);
+          now = -1;
           function build() {
             if (!state) return;
             player = new YT.Player(mount, {
@@ -276,9 +469,11 @@ REVIEW_JS = r"""
                   if (pending !== null) { player.seekTo(pending, true); player.playVideo(); pending = null; }
                 },
                 onStateChange: function (e) {
-                  clearInterval(timer); timer = null;
-                  if (e.data === 1) { timer = setInterval(tick, 500); }
+                  playing = e.data === 1;
+                  if (hl && (e.data === 1 || e.data === 2)) { hl.paused = e.data === 2; paint(); }
+                  poll();
                   tick();
+                  if (hl && e.data === 0) { var nx = hl.i + 1; if (nx >= hl.seq.length) finish(); else clip(nx, true); }
                 }
               }
             });
@@ -286,7 +481,7 @@ REVIEW_JS = r"""
           function shut() {
             if (!state) return;
             state = null;
-            clearInterval(timer); clearTimeout(shared);
+            clearInterval(timer); clearTimeout(shared); clearTimeout(doneTimer);
             clearHash();
             try { player && player.destroy(); } catch (e) {}
             document.removeEventListener('keydown', keys, true);
@@ -299,7 +494,7 @@ REVIEW_JS = r"""
           function keys(e) {
             if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); shut(); return; }
             if (e.key !== 'Tab') return;
-            var f = Array.prototype.filter.call(root.querySelectorAll('button, a[href], iframe'), function (n) { return n.offsetParent !== null; });
+            var f = Array.prototype.filter.call(root.querySelectorAll('button, a[href], iframe'), function (n) { return n.offsetParent !== null && !n.disabled && n.tabIndex >= 0; });
             if (!f.length) return;
             var first = f[0], last = f[f.length - 1];
             if (!root.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
@@ -323,8 +518,11 @@ REVIEW_JS = r"""
           });
           document.addEventListener('keydown', keys, true);
           document.addEventListener('focusin', keep, true);
+          if (opening.hl && list.length) { var first = visible()[0]; if (first) { t = cur = first.ev.t; ext.href = watchUrl(t); } }
           mark(t);
-          setHash(now >= 0 ? rows[now].ev.key : null);
+          countdown(t);
+          hash();
+          if (opening.hl && list.length) begin();
           close.focus();
           if (window.YT && YT.Player) build();
           else {
@@ -341,7 +539,7 @@ REVIEW_JS = r"""
         var want = fromHash();
         if (want) {
           var opener = document.querySelector('.match-actions a.film');
-          if (opener) show(want.t, opener);
+          if (opener) show(want.t, opener, { filter: want.filter, hl: want.hl });
         }
         // A plain click on a mark, a row or the film button opens the review; a modified click or a middle click still goes to the video.
         document.addEventListener('click', function (e) {
@@ -451,7 +649,7 @@ __REVIEW__
         if (d.showModal) d.showModal(); else d.setAttribute('open', '');
         input.focus();
       }
-      var wanted = /^#review(=|$)/.test(location.hash);
+      var wanted = /^#review(=|&|$)/.test(location.hash);
       if (!pw) { if (wanted) signIn(); return; }
       attempt(pw).then(apply, function () {
         if (!wanted) return;
@@ -4008,15 +4206,291 @@ GAME_CSS = """
             flex: 1;
             min-height: 0;
             display: grid;
-            grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+            grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+        }
+
+        .rv-side {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            min-width: 0;
+            border-right: 1px solid var(--line);
+        }
+
+        /* The filters and the highlights button stay at the top of the list's pane while the list scrolls. */
+        .rv-bar {
+            flex: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px 12px 10px 13px;
+            border-bottom: 1px solid var(--line);
+            background: var(--surface);
+        }
+
+        .rv-seg {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            margin: 0 -12px 0 -13px;
+            padding: 2px 12px 2px 13px;
+        }
+
+        @media (min-width: 761px) {
+            .rv-seg {
+                flex-wrap: wrap;
+                overflow: visible;
+            }
+        }
+
+        .rv-seg::-webkit-scrollbar {
+            display: none;
+        }
+
+        .rv-chip,
+        .rv-hlbtn {
+            flex: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: var(--surface);
+            color: var(--ink);
+            font: inherit;
+            font-size: 0.8rem;
+            font-weight: 600;
+            line-height: 1;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .rv-chip {
+            padding: 8px 10px;
+            gap: 5px;
+        }
+
+        .rv-chip small {
+            font-size: 0.74rem;
+            font-weight: 500;
+            color: var(--ink-3);
+        }
+
+        .rv-chip:hover {
+            border-color: var(--ink-3);
+        }
+
+        .rv-chip.is-on {
+            background: var(--ink);
+            border-color: var(--ink);
+            color: var(--surface);
+        }
+
+        .rv-chip.is-on small {
+            color: inherit;
+            opacity: 0.75;
+        }
+
+        .rv-hlbtn {
+            align-self: flex-start;
+            padding: 9px 14px 9px 12px;
+            background: var(--brand);
+            border-color: var(--brand);
+            color: #ffffff;
+            font-family: var(--display);
+            font-size: 0.78rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .rv-hlbtn:hover {
+            background: var(--brand-dark);
+            border-color: var(--brand-dark);
+        }
+
+        .rv-hlbtn.is-on {
+            background: var(--crest-wash);
+            border-color: var(--brand);
+            color: var(--brand-dark);
+        }
+
+        .rv-chip:focus-visible,
+        .rv-hlbtn:focus-visible,
+        .rv-ctl:focus-visible,
+        .rv-hl-stop:focus-visible {
+            outline: 2px solid var(--ink);
+            outline-offset: 2px;
         }
 
         .rv-list {
             list-style: none;
             overflow-y: auto;
-            border-right: 1px solid var(--line);
+            flex: 1;
             padding: 6px 0;
             min-height: 0;
+        }
+
+        .rv-list li[hidden] {
+            display: none;
+        }
+
+        .rv-cd {
+            width: min(100%, calc((100vh - 170px) * 16 / 9));
+            margin: 0 auto;
+            visibility: hidden;
+        }
+
+        .rv-cd.is-on {
+            visibility: visible;
+        }
+
+        .rv-cd-bar {
+            height: 3px;
+            background: var(--line);
+            overflow: hidden;
+        }
+
+        .rv-cd-bar i {
+            display: block;
+            height: 100%;
+            width: 0;
+            background: var(--brand);
+            transition: width 0.25s linear;
+        }
+
+        .rv-cd-text {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 28px;
+            padding-top: 4px;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.82rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ink-2);
+        }
+
+        .rv-cd-logo {
+            display: inline-flex;
+            flex: none;
+        }
+
+        .rv-cd-label {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .rv-cd.is-here .rv-cd-text {
+            color: var(--brand-dark);
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .rv-cd.is-here .rv-cd-label {
+                animation: rv-here 0.6s ease-out;
+            }
+
+            @keyframes rv-here {
+                from { transform: translateX(-6px); opacity: 0.2; }
+                to { transform: none; opacity: 1; }
+            }
+        }
+
+        .rv-sr {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
+
+        .rv-open span {
+            white-space: nowrap;
+        }
+
+        .rv-foot {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 36px;
+        }
+
+        .rv-hl {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .rv-hl[hidden] {
+            display: none;
+        }
+
+        .rv-ctl {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: none;
+            width: 34px;
+            height: 34px;
+            border: 1px solid var(--line);
+            border-radius: 50%;
+            background: var(--surface);
+            color: var(--ink);
+            cursor: pointer;
+        }
+
+        .rv-ctl:hover:not(:disabled) {
+            border-color: var(--ink-3);
+        }
+
+        .rv-ctl:disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
+
+        .rv-ctl-main {
+            background: var(--brand);
+            border-color: var(--brand);
+            color: #ffffff;
+        }
+
+        .rv-ctl-main:hover:not(:disabled) {
+            background: var(--brand-dark);
+            border-color: var(--brand-dark);
+        }
+
+        .rv-hl-n {
+            margin: 0 6px;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .rv-hl-stop {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 10px;
+            border: 0;
+            background: transparent;
+            color: var(--ink-2);
+            font: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .rv-hl-stop:hover {
+            color: var(--ink);
         }
 
         .rv-row {
@@ -4109,6 +4583,7 @@ GAME_CSS = """
         }
 
         .rv-stage {
+            position: relative;
             min-width: 0;
             min-height: 0;
             display: flex;
@@ -4137,7 +4612,7 @@ GAME_CSS = """
         }
 
         .rv-open {
-            align-self: flex-end;
+            margin-left: auto;
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -4179,15 +4654,35 @@ GAME_CSS = """
                 width: 100%;
             }
 
-            .rv-open {
-                align-self: flex-end;
-                padding: 8px 12px;
+            .rv-foot {
+                padding: 0 6px 0 12px;
+                gap: 6px;
             }
 
-            .rv-list {
+            .rv-open {
+                padding: 8px 6px;
+            }
+
+            .rv-foot.is-hl .rv-open span {
+                display: none;
+            }
+
+            .rv-cd {
+                width: 100%;
+                padding: 0;
+            }
+
+            .rv-cd-text {
+                padding-left: 12px;
+            }
+
+            .rv-side {
                 flex: 1;
                 border-right: 0;
                 border-top: 1px solid var(--line);
+            }
+
+            .rv-list {
                 -webkit-overflow-scrolling: touch;
             }
 

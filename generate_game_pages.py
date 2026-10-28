@@ -424,7 +424,7 @@ def game_sheet(sheet, shots=None):
     def listing(title, items, line, kind):
         if not items:
             return ""
-        lis = "".join(f'<li data-m="{kind}|{i["period"]}|{i["clock"]}"><span class="sheet-when">{period_label(i["period"])} · {i["clock"]}</span>{line(i)}</li>' for i in items)
+        lis = "".join(f'<li data-m="{kind}|{i["period"]}|{i["clock"]}"{side_of(i)}><span class="sheet-when">{period_label(i["period"])} · {i["clock"]}</span>{line(i)}</li>' for i in items)
         return f'<div class="sheet-list"><h4>{title}</h4><ul>{lis}</ul></div>'
 
     def who(side, text, note="", score=""):
@@ -437,6 +437,13 @@ def game_sheet(sheet, shots=None):
 
     # The score after each goal, ours first, counted in the order the goals were scored.
     mine = "home" if sheet["home"] == config.TEAM_NAME else "away"
+
+    def side_of(i):
+        """Whose event a row is, for the film review's goal filters: only a game the Eagles play has one."""
+        if config.TEAM_NAME not in (sheet["home"], sheet["away"]):
+            return ""
+        return ' data-side="us"' if i["side"] == mine else ' data-side="them"'
+
     theirs_name = sheet["away" if mine == "home" else "home"]
     running, after = {"home": 0, "away": 0}, {}
     for g in sorted(sheet["goals"], key=lambda g: (g["period"], -clock_seconds(g["clock"]))):
@@ -534,6 +541,10 @@ def film_info(g):
     return {"away": row.get("Away", ""), "home": row.get("Home", ""), "score": score, "when": when}
 
 
+# Seconds the moments' times on the film run ahead of the play (Film Room places each moment this long before it).
+DEFAULT_LEAD = 20
+
+
 def film_package(entry, g=None):
     """
     What is sealed for a game with a film: the button, the address, and the moments of the game sheet that are placed on the film
@@ -541,6 +552,7 @@ def film_package(entry, g=None):
     into links to the video at that second. Like the button, none of it is in the page unless it is sealed.
     """
     return json.dumps({"html": film_button(entry["url"]), "url": entry["url"], "moments": entry["moments"], "api": PLAYER_API,
+                       "lead": entry.get("lead", DEFAULT_LEAD),
                        **({"info": film_info(g)} if g else {})},
                       separators=(",", ":"))
 

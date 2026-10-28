@@ -27,7 +27,9 @@ window.YT = { Player: function (mount, opts) {
   mount.parentNode.replaceChild(d, mount);
   window.__yt.created++; window.__yt.opts = opts;
   this.seekTo = function (s, a) { window.__yt.seeks.push([s, a]); window.__yt.ct = s; };
-  this.playVideo = function () { window.__yt.plays++; };
+  var self = this, fire = function (d) { if (window.__yt.auto) setTimeout(function () { opts.events.onStateChange({ data: d }); }, 0); };
+  this.playVideo = function () { window.__yt.plays++; fire(1); };
+  this.pauseVideo = function () { window.__yt.pauses = (window.__yt.pauses || 0) + 1; fire(2); };
   this.getCurrentTime = function () { return window.__yt.ct; };
   this.destroy = function () { window.__yt.destroyed++; };
   setTimeout(function () { opts.events.onReady({}); }, 0);
@@ -138,7 +140,7 @@ for (const [name, w, h] of [['desktop', 1100, 800], ['phone', 390, 800]]) {
   // Reopen from a list row on the sheet and from the film button; close button works.
   await p.$eval('li[data-m="penalty|2|4:02"] a.sheet-what', (e) => e.click());
   await p.waitForSelector('.rv');
-  ok(name + ': a sheet row opens at its moment', (await nowIndex(p)) === 5 && (await p.evaluate(() => window.__yt.opts.playerVars.start)) === 1450);
+  ok(name + ': a sheet row opens at its moment', (await nowIndex(p)) === 5 && (await p.evaluate(() => window.__yt.opts.playerVars.start)) === 1420);
   await p.click('.rv-close');
   ok(name + ': close button closes', (await p.$('.rv')) === null);
   await p.$eval('.match-actions a.film', (e) => e.click());
@@ -151,6 +153,242 @@ for (const [name, w, h] of [['desktop', 1100, 800], ['phone', 390, 800]]) {
   await p.close();
 }
 
+
+// Filters and highlights. The fixture game: nine placed events (five goals, four penalties); seconds are the sealed moments' t.
+// Seconds: 100 755 1400 2000 2500 (goals), 300 1000 1420 2200 (penalties). The goal at 1400 runs into the penalty at 1420.
+const chipTexts = (p) => p.$$eval('.rv-chip', (e) => e.map((x) => x.textContent.replace(/\s+/g, ' ').trim()));
+const visTimes = (p) => p.$$eval('.rv-list li:not([hidden]) .sheet-when', (e) => e.map((x) => x.textContent.trim()));
+const chip = (p, f) => p.$eval(`.rv-chip[data-f="${f}"]`, (e) => e.click());
+const seeks = (p) => p.evaluate(() => window.__yt.seeks.map((x) => x[0]));
+const hlText = (p) => p.$eval('.rv-hl-n', (e) => e.textContent);
+for (const [name, w, h] of [['desktop', 1100, 800], ['phone', 390, 800]]) {
+  const p = await newPage(w, h, true);
+  await p.open(info.moments);
+  await p.waitForSelector('a.is-film', { timeout: 8000 });
+  await p.click('.tl-dot[data-m="goal|1|3:16"]');
+  await p.waitForSelector('.rv #stub-player');
+  const counts = await chipTexts(p);
+  console.log('  chips', JSON.stringify(counts));
+  ok(name + ': filters in order with counts', counts[0] === 'All9' && counts.length === 5 && counts[1] === 'Goals5' && counts[2].startsWith('Goals for') && counts[3].startsWith('Goals against') && counts[4] === 'Penalties4', JSON.stringify(counts));
+  const n = counts.map((c) => +c.match(/(\d+)$/)[1]);
+  ok(name + ': goals for + goals against = goals; goals + penalties = all', n[2] + n[3] === n[1] && n[1] + n[4] === n[0] && n[1] === 5, JSON.stringify(n));
+  ok(name + ': All is selected at first and the list is whole', (await p.$eval('.rv-chip[data-f="all"]', (e) => e.getAttribute('aria-checked'))) === 'true' && (await visTimes(p)).length === 9);
+  const seekBefore = (await seeks(p)).length, createdBefore = await p.evaluate(() => window.__yt.created);
+  for (const [f, cnt] of [['goals', n[1]], ['goals-for', n[2]], ['goals-against', n[3]], ['penalties', n[4]], ['all', 9]]) {
+    await chip(p, f);
+    const labels = await p.$$eval('.rv-list li:not([hidden]) .rv-row', (e) => e.map((x) => x.getAttribute('aria-label')));
+    const kinds = labels.map((l) => (/Goal/.test(l) ? 'goal' : 'penalty'));
+    ok(name + ': filter ' + f + ' lists ' + cnt, labels.length === cnt && (f === 'penalties' ? kinds.every((k) => k === 'penalty') : f === 'all' || kinds.every((k) => k === 'goal')), labels.length + ' rows');
+    if (f === 'goals-for' || f === 'goals-against') {
+      const want = f === 'goals-for' ? 'us' : 'them';
+      const got = await p.$$eval('.rv-list li:not([hidden])', (e) => e.length);
+      const sheet = await p.evaluate(() => Array.from(document.querySelectorAll('li[data-m^="goal"]')).map((l) => l.getAttribute('data-m') + '=' + l.getAttribute('data-side')));
+      ok(name + ': ' + f + ' matches the sheet side', sheet.filter((x) => x.endsWith('=' + want)).length === got, JSON.stringify(sheet));
+    }
+  }
+  ok(name + ': filtering does not touch the video', (await seeks(p)).length === seekBefore && (await p.evaluate(() => window.__yt.created)) === createdBefore && (await p.evaluate(() => window.__yt.destroyed)) === 0);
+  // Keyboard: arrows move the selection, only the selected chip is a tab stop.
+  await p.$eval('.rv-chip[data-f="all"]', (e) => e.focus());
+  await p.keyboard.press('ArrowRight');
+  ok(name + ': ArrowRight selects the next filter', (await p.$eval('.rv-chip.is-on', (e) => e.getAttribute('data-f'))) === 'goals' && (await visTimes(p)).length === 5);
+  ok(name + ': one chip is a tab stop', (await p.$$eval('.rv-chip', (e) => e.filter((x) => x.tabIndex === 0).length)) === 1);
+  await p.keyboard.press('End');
+  ok(name + ': End selects Penalties', (await p.$eval('.rv-chip.is-on', (e) => e.getAttribute('data-f'))) === 'penalties');
+  await p.keyboard.press('Home');
+  ok(name + ': address carries the filter, then drops it for All', (await p.evaluate(() => location.hash)).indexOf('filter') < 0);
+  await chip(p, 'goals-for');
+  ok(name + ': #review=<moment>&filter=goals-for', /^#review(=(goal|penalty)-\d-\d+:\d\d)?&filter=goals-for$/.test(await p.evaluate(() => location.hash)), await p.evaluate(() => location.hash));
+  // Playback highlight is restricted to the visible rows.
+  await p.evaluate((ts) => { window.__yt.ct = ts; window.__yt.opts.events.onStateChange({ data: 1 }); }, 2500);
+  await wait(700);
+  const cur = await p.$$eval('.rv-list li:not([hidden]) .rv-row', (e) => e.map((x) => x.classList.contains('is-now')));
+  ok(name + ': current row is among the visible rows (exactly one)', cur.filter(Boolean).length === 1 && (await p.$$eval('.rv-row.is-now', (e) => e.every((x) => !x.closest('li').hidden))));
+  await p.evaluate(() => window.__yt.opts.events.onStateChange({ data: 2 }));
+  await chip(p, 'all');
+  // The bar stays at the top of the pane while the list scrolls.
+  const stick = await p.evaluate(() => { const b = document.querySelector('.rv-bar').getBoundingClientRect(), l = document.querySelector('.rv-list'); l.scrollTop = 9999; const b2 = document.querySelector('.rv-bar').getBoundingClientRect(); return [b.top, b2.top, document.querySelector('.rv-side').scrollHeight <= document.querySelector('.rv-side').clientHeight + 1]; });
+  ok(name + ': filter bar stays put while the list scrolls', stick[0] === stick[1] && stick[2], JSON.stringify(stick));
+  await wait(200);
+  await p.screenshot({ path: path.join(shots, `review_${name}_filters.png`) });
+
+  // Highlights over everything.
+  await p.evaluate(() => { window.__yt.auto = true; window.__yt.seeks = []; window.__yt.ct = 0; });
+  await p.click('.rv-hlbtn');
+  await wait(300);
+  const S = async () => (await seeks(p));
+  ok(name + ': Highlights starts at the first clip', JSON.stringify(await S()) === '[100]' && (await hlText(p)) === '1 of 9' && (await nowIndex(p)) === 0);
+  ok(name + ': controls shown, button pressed, address is #review=highlights', (await p.$eval('.rv-hl', (e) => !e.hidden)) && (await p.$eval('.rv-hlbtn', (e) => e.getAttribute('aria-pressed'))) === 'true' && (await p.evaluate(() => location.hash)) === '#review=highlights');
+  await p.screenshot({ path: path.join(shots, `review_${name}_highlights.png`) });
+  const drive = async (ct) => { await p.evaluate((c) => { window.__yt.ct = c; }, ct); await wait(450); };
+  await drive(120);
+  ok(name + ': mid-clip nothing changes', (await hlText(p)) === '1 of 9' && (await S()).length === 1);
+  await drive(132);
+  ok(name + ': after 32 s (goal, 20 s lead-in and 12 s after) the penalty clip is sought', JSON.stringify(await S()) === '[100,300]' && (await hlText(p)) === '2 of 9' && (await nowIndex(p)) === 1);
+  await drive(328);
+  ok(name + ': after 28 s (penalty, 20 and 8) the next goal clip is sought', JSON.stringify(await S()) === '[100,300,755]' && (await hlText(p)) === '3 of 9');
+  // Pause by the viewer: the bar shows Resume and the sequence holds.
+  await p.evaluate(() => window.__yt.opts.events.onStateChange({ data: 2 }));
+  ok(name + ': viewer pause shows Resume', (await p.$eval('.rv-ctl-main', (e) => e.getAttribute('aria-label'))) === 'Resume');
+  await drive(770);
+  ok(name + ': paused, the clip does not advance', (await hlText(p)) === '3 of 9');
+  await p.$eval('.rv-ctl-main', (e) => e.click());
+  await wait(100);
+  ok(name + ': Resume plays the video and shows Pause', (await p.$eval('.rv-ctl-main', (e) => e.getAttribute('aria-label'))) === 'Pause' && (await hlText(p)) === '3 of 9');
+  await p.$eval('.rv-ctl-main', (e) => e.click());
+  await wait(100);
+  ok(name + ': Pause pauses the video', (await p.evaluate(() => window.__yt.pauses)) >= 1 && (await p.$eval('.rv-ctl-main', (e) => e.getAttribute('aria-label'))) === 'Resume');
+  await p.$eval('.rv-ctl-main', (e) => e.click());
+  await wait(100);
+  await drive(787);
+  ok(name + ': next clip', JSON.stringify(await S()) === '[100,300,755,1000]' && (await hlText(p)) === '4 of 9');
+  // Skip and previous.
+  await p.$eval('.rv-ctl[data-tip="Next clip"]', (e) => e.click());
+  await wait(100);
+  ok(name + ': Next jumps to clip 5', (await S()).slice(-1)[0] === 1400 && (await hlText(p)) === '5 of 9' && (await nowIndex(p)) === 4);
+  await p.$eval('.rv-ctl[data-tip="Previous clip"]', (e) => e.click());
+  await wait(100);
+  ok(name + ': Previous returns to clip 4', (await S()).slice(-1)[0] === 1000 && (await hlText(p)) === '4 of 9');
+  await p.$eval('.rv-ctl[data-tip="Next clip"]', (e) => e.click()); await wait(100);
+  // Clip 5 (goal at 1400) is cut where the penalty at 1420 starts: that advance does not seek again.
+  const before = (await S()).length;
+  await drive(1420);
+  ok(name + ': a clip that runs into the next one carries on without a seek', (await hlText(p)) === '6 of 9' && (await S()).length === before, (await hlText(p)) + ' ' + before + ' ' + JSON.stringify(await S()));
+  await drive(1448);
+  ok(name + ': then the goal at 2000', (await S()).slice(-1)[0] === 2000 && (await hlText(p)) === '7 of 9');
+  // The viewer seeks: highlights end, normal review follows.
+  await drive(100);
+  ok(name + ': a viewer seek leaves highlights', (await p.$('.rv-hl:not([hidden])')) === null && (await p.$eval('.rv-hlbtn', (e) => e.getAttribute('aria-pressed'))) === 'false' && !(await p.evaluate(() => location.hash)).includes('highlights'));
+  ok(name + ': and the current row follows the video', (await nowIndex(p)) === 0, 'index ' + await nowIndex(p));
+  // Filter change restarts on the new list; stop leaves the video where it is.
+  await p.click('.rv-hlbtn');
+  await wait(300);
+  await chip(p, 'penalties');
+  await wait(300);
+  ok(name + ': a filter change restarts highlights on the new list', (await hlText(p)) === '1 of 4' && (await S()).slice(-1)[0] === 300 && (await p.evaluate(() => location.hash)) === '#review=highlights&filter=penalties');
+  await drive(328); await drive(1028);
+  ok(name + ': penalties only: 300, 1000, 1420, 2200', JSON.stringify((await S()).slice(-3)) === '[300,1000,1420]' && (await hlText(p)) === '3 of 4', JSON.stringify(await S()));
+  const seekN = (await S()).length;
+  await p.evaluate(() => { window.__yt.ct = 1425; });
+  await p.click('.rv-hl-stop');
+  await wait(300);
+  ok(name + ': Stop returns to normal review and leaves the video alone', (await p.$('.rv-hl:not([hidden])')) === null && (await S()).length === seekN && (await p.$eval('.rv-chip.is-on', (e) => e.getAttribute('data-f'))) === 'penalties');
+  // The end of the sequence.
+  await chip(p, 'goals-for');
+  await p.click('.rv-hlbtn'); await wait(300);
+  const last = (await visTimes(p)).length;
+  ok(name + ': goals for highlights count', (await hlText(p)) === '1 of ' + last);
+  for (let i = 1; i < last; i++) { await p.$eval('.rv-ctl[data-tip="Next clip"]', (e) => e.click()); await wait(60); }
+  ok(name + ': Next reaches the last clip', (await hlText(p)) === last + ' of ' + last);
+  const pa = await p.evaluate(() => window.__yt.pauses || 0);
+  await p.evaluate(() => { const l = window.__yt; window.__yt.ct = l.seeks[l.seeks.length - 1][0] + 32; });
+  await wait(450);
+  ok(name + ': the end says so', (await hlText(p)) === 'End of highlights' && (await p.evaluate(() => window.__yt.pauses || 0)) === pa + 1, (await hlText(p)) + ' ' + pa + ' ' + (await p.evaluate(() => window.__yt.pauses || 0)) + ' ' + JSON.stringify(await S()));
+  await p.screenshot({ path: path.join(shots, `review_${name}_end.png`) });
+  await wait(2800);
+  ok(name + ': then returns to normal', (await p.$('.rv-hl:not([hidden])')) === null && (await p.$eval('.rv-hlbtn', (e) => e.getAttribute('aria-pressed'))) === 'false');
+  // Esc during highlights closes everything.
+  await chip(p, 'all'); await p.click('.rv-hlbtn'); await wait(200);
+  await p.keyboard.press('Escape');
+  ok(name + ': Esc closes the review during highlights', (await p.$('.rv')) === null);
+  await p.close();
+}
+// The countdown to the play, from the player's own time.
+const cdState = (p) => p.evaluate(() => { const c = document.querySelector('.rv-cd'); return { on: c.classList.contains('is-on'), here: c.classList.contains('is-here'), text: c.querySelector('.rv-cd-label').textContent, w: c.querySelector('.rv-cd-bar i').style.width, logo: !!c.querySelector('.team-logo'), live: document.querySelector('.rv-sr').textContent, vis: getComputedStyle(c).visibility }; });
+for (const [name, w, h] of [['desktop', 1100, 800], ['phone', 390, 800]]) {
+  const p = await newPage(w, h, true);
+  await p.open(info.moments);
+  await p.waitForSelector('a.is-film', { timeout: 8000 });
+  await p.click('.match-actions a.film');
+  await p.waitForSelector('.rv #stub-player');
+  await p.evaluate(() => { window.__yt.auto = true; });
+  const setCt = async (c, ms = 450) => { await p.evaluate((x) => { window.__yt.ct = x; window.__yt.opts.events.onStateChange({ data: 1 }); }, c); await wait(ms); };
+  let c = await cdState(p);
+  ok(name + ': countdown hidden at the start of the film', !c.on && c.vis === 'hidden');
+  await (await p.$$('.rv-row'))[6].click();   // goal at 2000, the play is at 2020
+  await wait(200);
+  c = await cdState(p);
+  ok(name + ': clicking a goal row starts the countdown at 20 s', c.on && !c.here && c.text === 'Goal in 20 s' && c.w === '0%' && c.logo && c.vis === 'visible' && c.live === 'Goal in 20 seconds', JSON.stringify(c));
+  await setCt(2008);
+  c = await cdState(p);
+  ok(name + ': at 2008 s: Goal in 12 s, bar 40%', c.text === 'Goal in 12 s' && c.w === '40%' && c.live === 'Goal in 20 seconds', JSON.stringify(c));
+  await setCt(2011.5);
+  c = await cdState(p);
+  ok(name + ': at 2011.5 s: 9 s left (rounded up)', c.text === 'Goal in 9 s', c.text);
+  await p.screenshot({ path: path.join(shots, `review_${name}_countdown.png`) });
+  await p.evaluate(() => window.__yt.opts.events.onStateChange({ data: 2 }));
+  await wait(300);
+  c = await cdState(p);
+  ok(name + ': paused, it holds', c.on && c.text === 'Goal in 9 s');
+  await setCt(2020.2);
+  c = await cdState(p);
+  ok(name + ': at the play it names the event and is emphasised', c.here && /^Goal \d.\d$/.test(c.text) && c.w === '100%', JSON.stringify(c));
+  await p.screenshot({ path: path.join(shots, `review_${name}_countdown_here.png`) });
+  await setCt(2023);
+  ok(name + ': still shown 3 s after', (await cdState(p)).here);
+  await setCt(2025);
+  c = await cdState(p);
+  ok(name + ': settles (hidden) after the play', !c.on && c.vis === 'hidden');
+  // A new row resets it; a penalty reads its own word.
+  await (await p.$$('.rv-row'))[3].click();   // penalty at 1000, play at 1020
+  await wait(300);
+  c = await cdState(p);
+  ok(name + ': another row resets to its own countdown', c.text === 'Penalty in 20 s' && c.w === '0%' && c.live === 'Penalty in 20 seconds', JSON.stringify(c));
+  await setCt(1020.1);
+  c = await cdState(p);
+  ok(name + ': a penalty names itself at the play', c.here && /^Slashing|^Hooking|^[A-Z]/.test(c.text) && /min/.test(c.text), c.text);
+  // A viewer seek away hides it; filtered-out events are not counted down.
+  await setCt(600);
+  ok(name + ': seeking elsewhere hides it', !(await cdState(p)).on);
+  await chip(p, 'goals');
+  await setCt(1010);
+  ok(name + ': with Goals only, a penalty is not counted down', !(await cdState(p)).on);
+  await chip(p, 'all');
+  // The live region is not rewritten every second.
+  await setCt(1400); await setCt(1405); await setCt(1410);
+  ok(name + ': announced once per event', (await cdState(p)).live === 'Goal in 20 seconds');
+  // Highlights: the countdown follows each clip.
+  await chip(p, 'all');
+  await p.click('.rv-hlbtn'); await wait(300);
+  ok(name + ': highlights clip 1 starts with Goal in 20 s', (await cdState(p)).text === 'Goal in 20 s');
+  await p.$eval('.rv-ctl[data-tip="Next clip"]', (e) => e.click()); await wait(200);
+  ok(name + ': next clip resets to Penalty in 20 s', (await cdState(p)).text === 'Penalty in 20 s' && (await hlText(p)) === '2 of 9');
+  await p.screenshot({ path: path.join(shots, `review_${name}_highlights_countdown.png`) });
+  await p.close();
+}
+
+// Shared links: filter, highlights, and a signed-out visitor who then signs in.
+{
+  const p = await newPage(1100, 800, true);
+  await p.open(info.moments);
+  await p.goto('file://' + path.join(dir, info.moments) + '#review=goal-2-4:33&filter=goals'); await p.reload();
+  await p.waitForSelector('.rv #stub-player', { timeout: 8000 });
+  ok('link with a moment and a filter', (await visTimes(p)).length === 5 && (await p.$eval('.rv-chip.is-on', (e) => e.getAttribute('data-f'))) === 'goals' && (await p.evaluate(() => window.__yt.opts.playerVars.start)) === 1400 && (await p.evaluate(() => location.hash)) === '#review=goal-2-4:33&filter=goals', await p.evaluate(() => location.hash));
+  await p.close();
+  const q = await newPage(1100, 800, true);
+  await q.open(info.moments);
+  await q.goto('file://' + path.join(dir, info.moments) + '#review&filter=nonsense'); await q.reload();
+  await q.waitForSelector('.rv #stub-player', { timeout: 8000 });
+  ok('an unknown filter shows everything', (await visTimes(q)).length === 9 && (await q.evaluate(() => location.hash)) === '#review');
+  await q.close();
+  const r = await newPage(1100, 800, true);
+  await r.evaluateOnNewDocument(() => { window.__yt_auto = 1; });
+  await r.open(info.moments);
+  await r.goto('file://' + path.join(dir, info.moments) + '#review=highlights&filter=penalties'); await r.reload();
+  await r.waitForSelector('.rv #stub-player', { timeout: 8000 });
+  await wait(300);
+  ok('#review=highlights&filter=penalties starts highlights on penalties', (await hlText(r)) === '1 of 4' && (await r.evaluate(() => window.__yt.opts.playerVars.start)) === 300 && (await r.evaluate(() => location.hash)) === '#review=highlights&filter=penalties', await r.evaluate(() => location.hash + ' ' + JSON.stringify(window.__yt.opts.playerVars)));
+  await r.close();
+  const o = await newPage(390, 800, false);
+  await o.goto('file://' + path.join(dir, info.moments));
+  await o.evaluate(() => localStorage.clear());
+  await o.goto('file://' + path.join(dir, info.moments) + '#review=highlights'); await o.reload();
+  await o.waitForSelector('dialog.login-dialog[open]', { timeout: 8000 });
+  await o.type('#login-password', info.password); await o.keyboard.press('Enter');
+  await o.waitForSelector('.rv #stub-player', { timeout: 8000 });
+  await wait(300);
+  ok('signed-out #review=highlights: sign in, then highlights', (await hlText(o)) === '1 of 9');
+  await o.close();
+}
 
 // Header, shared link, sign-in.
 for (const [name, w, h] of [['desktop', 1100, 800], ['phone', 390, 800]]) {

@@ -30,7 +30,7 @@ MOMENTS = [
     {"kind": "goal", "period": 1, "clock": "3:16", "t": 755},
     {"kind": "penalty", "period": 2, "clock": "11:46", "t": 1000},
     {"kind": "goal", "period": 2, "clock": "4:33", "t": 1400},
-    {"kind": "penalty", "period": 2, "clock": "4:02", "t": 1450},
+    {"kind": "penalty", "period": 2, "clock": "4:02", "t": 1420},
     {"kind": "goal", "period": 3, "clock": "9:35", "t": 2000},
     {"kind": "penalty", "period": 3, "clock": "7:28", "t": 2200},
     {"kind": "goal", "period": 3, "clock": "4:16", "t": 2500},
@@ -136,6 +136,20 @@ class Review(unittest.TestCase):
         for part in ("history.replaceState", "'#review='", "Copy link", "Link copied", "navigator.clipboard"):
             self.assertIn(part, js)
         self.assertNotIn("pushState", js)
+
+    def test_package_carries_the_lead_in(self):
+        self.assertEqual(self.sealed(self.page)["lead"], 20)
+        self.assertEqual(json.loads(gp.film_package({"url": f"https://youtu.be/{VIDEO_ID}", "moments": [], "lead": 15}))["lead"], 15)
+        self.assertIn("film.lead", page_common.REVIEW_JS)
+
+    def test_filters_highlights_and_countdown_in_the_script(self):
+        js = page_common.REVIEW_JS
+        for part in ("'goals-for'", "'goals-against'", "'penalties'", "CLIP_AFTER", "COUNTDOWN_AFTER", "&filter=", "#review=highlights", "highlights", "role', 'radiogroup'"):
+            self.assertIn(part, js.replace("'highlights'", "highlights"))
+
+    def test_sheet_rows_say_whose_event_they_are(self):
+        self.assertEqual(self.page.count('data-side="us"') + self.page.count('data-side="them"'), self.page.count('<li data-m="goal') + self.page.count('<li data-m="penalty') + self.page.count('<li data-m="timeout'))
+        self.assertIn('data-side="us"', self.page)
 
     def test_no_em_dash_in_the_review(self):
         self.assertNotIn("\u2014", page_common.REVIEW_JS)
