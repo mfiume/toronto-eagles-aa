@@ -373,7 +373,7 @@ def sheet_timeline(sheet):
                 rows.append(end)
             else:
                 rows[row] = end
-            what = PENALTIES.get(t["code"], t["code"]) or "Penalty"
+            what = penalty_name(t["code"]) or "Penalty"
             head = "Penalty, " + name[t["side"]]
             detail = what + ", " + str(t["minutes"]) + " min"
             bars += (f'<span class="tl-pen {mine(t["side"])}" style="left:{start:.2f}%;width:{end - start:.2f}%;top:{19 + row * 7}px" '
