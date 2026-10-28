@@ -137,8 +137,8 @@ def form_chips(played, team):
         s = side_of(g, team)
         word = {"W": "Win", "L": "Loss", "T": "Tie"}[s["result"]]
         lines = [f"{word} {s['gf']}\u2013{s['ga']}", f"{'vs' if s['home'] else 'at'} {s['opponent']}", f"{g['day'].strftime('%b')} {g['day'].day}"]
-        chips += (f'<span class="form-chip form-{s["result"].lower()}" data-tip="{escape("||".join(lines))}" '
-                  f'aria-label="{escape(", ".join(lines))}" tabindex="0" role="img">{s["result"]}</span>')
+        chips += (f'<a class="form-chip form-{s["result"].lower()}" href="{game_page(g["row"])}" data-tip="{escape("||".join(lines))}" '
+                  f'aria-label="{escape(", ".join(lines))}">{s["result"]}</a>')
     return chips
 
 

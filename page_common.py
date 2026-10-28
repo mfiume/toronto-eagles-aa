@@ -3366,6 +3366,15 @@ TEAM_CSS = """
             font-size: 1.05rem;
         }
 
+        a.form-chip {
+            text-decoration: none;
+            transition: box-shadow 0.12s;
+        }
+
+        a.form-chip:hover {
+            box-shadow: 0 0 0 2px currentColor;
+        }
+
         .form-w {
             background: #e5f4ea;
             color: #0a7a33;
