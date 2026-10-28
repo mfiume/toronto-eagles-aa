@@ -149,11 +149,11 @@ REVIEW_JS = r"""
           if (state) return;
           var list = events(), rows = [], timer = null, player = null, ready = false, pending = null, now = -1;
           var root = el('div', 'rv'), box = el('div', 'rv-box' + (list.length ? '' : ' rv-solo'));
-          root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', 'Game film');
+          root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', 'Video review');
           var head = el('div', 'rv-head'), close = el('button', 'rv-close');
           close.type = 'button'; close.setAttribute('aria-label', 'Close'); close.setAttribute('data-tip', 'Close');
           close.innerHTML = '<svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
-          head.appendChild(el('span', 'rv-title', 'Game film')); head.appendChild(close);
+          head.appendChild(el('span', 'rv-title', 'Video review')); head.appendChild(close);
           var stage = el('div', 'rv-stage'), frame = el('div', 'rv-frame'), mount = el('div'), ext = el('a', 'rv-open');
           frame.appendChild(mount); stage.appendChild(frame);
           ext.target = '_blank'; ext.rel = 'noopener noreferrer'; ext.href = watchUrl(t);
@@ -262,6 +262,11 @@ REVIEW_JS = r"""
             }
           }
         }
+        // The schedule's video icon arrives here with #review and opens the review at the start of the film.
+        if (location.hash === '#review') {
+          var opener = document.querySelector('.match-actions a.film');
+          if (opener) show(0, opener);
+        }
         // A plain click on a mark, a row or the film button opens the review; a modified click or a middle click still goes to the video.
         document.addEventListener('click', function (e) {
           if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -302,9 +307,9 @@ FILM_JS = """
           a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer';
           a.classList.add('is-film');
           var tip = a.getAttribute('data-tip'), label = a.getAttribute('aria-label');
-          a.setAttribute('data-tip', (tip ? tip + '||' : '') + 'Watch on YouTube');
+          a.setAttribute('data-tip', (tip ? tip + '||' : '') + 'Video review');
           a.setAttribute('data-t', at[k]);
-          a.setAttribute('aria-label', (label ? label + ', ' : '') + 'watch on YouTube');
+          a.setAttribute('aria-label', (label ? label + ', ' : '') + 'open in video review');
           if (row) a.insertAdjacentHTML('beforeend', ICON);
           el.parentNode.replaceChild(a, el);
         });
@@ -4338,6 +4343,26 @@ GAME_CSS = """
 
         .match-btn:hover {
             border-color: var(--ink-3);
+        }
+
+        /* The video review is the main thing on a game that has one. */
+        .match-btn.film {
+            padding: 12px 22px;
+            background: var(--ink);
+            border-color: var(--ink);
+            color: #ffffff;
+            font-size: 0.98rem;
+            box-shadow: 0 2px 10px rgba(17, 18, 20, 0.18);
+        }
+
+        .match-btn.film:hover {
+            border-color: var(--ink);
+            background: #000000;
+        }
+
+        .match-btn.film .film-icon {
+            width: 26px;
+            height: 18px;
         }
 
         .match-btn img {

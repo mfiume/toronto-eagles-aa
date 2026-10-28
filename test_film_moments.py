@@ -76,7 +76,7 @@ class Page(unittest.TestCase):
         inner = json.loads(team_crypto.decrypt(sealed, "pw"))
         self.assertEqual(inner["url"], URL)
         self.assertEqual(inner["moments"], SECRET["g1"]["moments"])
-        self.assertIn("Watch on YouTube", inner["html"])
+        self.assertIn("Video review", inner["html"])
 
     def test_no_film_adds_nothing(self):
         self.assertEqual(gp.film_payload(None), "")

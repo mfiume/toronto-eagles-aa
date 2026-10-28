@@ -215,12 +215,12 @@ def live_flag(start, now):
 
 
 def video_link(url, game):
-    """The game's film on YouTube, for the team version of the page only: a link a parent could pass on is not for a public page."""
+    """The game's video review, for the team version of the page only: the link opens the game page's review, never the YouTube address itself."""
     if not url:
         return ''
-    label = f"{game.get('Away', '')} at {game.get('Home', '')} on YouTube"
-    return (f'<a class="icon-btn game-video" href="{escape(url)}" target="_blank" rel="noopener noreferrer" '
-            f'aria-label="Watch: {escape(label)}" data-tip="Watch on YouTube">{page_common.FILM_ICON}</a>')
+    label = f"{game.get('Away', '')} at {game.get('Home', '')}"
+    return (f'<a class="icon-btn game-video" href="{escape(game_page(game))}#review" '
+            f'aria-label="Video review: {escape(label)}" data-tip="Video review">{page_common.FILM_ICON}</a>')
 
 
 def row_icons(watch):

@@ -532,7 +532,7 @@ def film_package(entry):
 
 def film_button(url):
     return (f'<a class="match-btn film" href="{escape(url)}" target="_blank" rel="noopener noreferrer">'
-            f'{page_common.FILM_ICON}<span>Watch on YouTube</span></a>')
+            f'{page_common.FILM_ICON}<span>Video review</span></a>')
 
 
 def generate(today=None):

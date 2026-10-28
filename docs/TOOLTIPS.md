@@ -33,7 +33,7 @@ unstyled, and does not work on a phone.
 On a game page, a signed-in viewer can open the film at a goal, penalty or timeout. The marks on the game sheet timeline and the rows
 in its lists carry `data-m="kind|period|clock"`. When the sealed film package is opened (`FILM_JS` in `page_common.py`), each mark or
 row whose moment is placed on the film becomes a link to the video at that second, in a new tab. Moments with no placed time stay as
-they were. The tooltip gains a last line, "Watch on YouTube", and a row gets the red play button at its right edge.
+they were. The tooltip gains a last line, "Video review", and a row gets the red play button at its right edge.
 
 The moments come from Film Room in the `GAME_VIDEOS` secret: a game's value is an address alone, or
 `{"url", "moments": [{"kind", "period", "clock", "t"}]}`, where `t` is the second of the YouTube video. The package is sealed with the

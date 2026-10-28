@@ -5,7 +5,7 @@ on the left, the video on the right. On a phone the video sits on top and the li
 
 ## What opens it
 
-A plain click on a timeline mark, a row of the game sheet lists, or the "Watch on YouTube" button. A middle click or a click with a
+A plain click on a timeline mark, a row of the game sheet lists, or the "Video review" button. A middle click or a click with a
 modifier key still goes to the video in a new tab (those links keep their `href`). A mark or row opens the review at its moment
 (`data-t`, the second of the video); the button opens it at the start. A game with a film and no placed moments opens the player alone.
 
