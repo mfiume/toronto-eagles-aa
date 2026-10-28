@@ -318,8 +318,8 @@ STATS_CSS = """
         .stat-side.us b { display: inline-flex; justify-content: flex-end; align-items: baseline; }
         .stat-track { flex: 1; display: flex; min-width: 0; }
         .stat-side.us .stat-track { justify-content: flex-end; }
-        .stat-track i { display: block; height: 16px; min-width: 2px; background: var(--ink); opacity: 0.35; border-radius: 0 4px 4px 0; }
-        .stat-track i.us { background: var(--brand); opacity: 1; border-radius: 4px 0 0 4px; }
+        .stat-track i { display: block; height: 8px; min-width: 8px; background: var(--ink); opacity: 0.35; border-radius: 999px; }
+        .stat-track i.us { background: var(--brand); opacity: 1; }
         .stat-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 24px; align-items: start; }
         .stat-rank { background: var(--surface); border: 1px solid var(--line); }
         .stat-pair .team-block, .stat-pair .team-block + .team-block { margin-top: 0; }
