@@ -323,7 +323,7 @@ STATS_CSS = """
         .stat-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 24px; align-items: start; }
         .stat-rank { background: var(--surface); border: 1px solid var(--line); }
         .stat-pair .team-block, .stat-pair .team-block + .team-block { margin-top: 0; }
-        .stat-rank-row { position: relative; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 10px 14px; font-size: 0.94rem; }
+        .stat-rank-row { position: relative; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 10px 14px 16px; font-size: 0.94rem; }
         .stat-rank-row + .stat-rank-row { border-top: 1px solid var(--line); }
         .stat-rank-row b { font-family: var(--display); font-variant-numeric: tabular-nums; }
         .stat-rank-row i { position: absolute; left: 14px; bottom: 5px; height: 6px; min-width: 6px; border-radius: 999px; background: var(--brand); opacity: 0.8; }
