@@ -3769,8 +3769,7 @@ GAME_CSS = """
         }
 
         .sheet-score-now {
-            margin-left: auto;
-            padding-left: 8px;
+            margin-left: 6px;
             font-family: var(--display);
             font-weight: 600;
             font-variant-numeric: tabular-nums;
