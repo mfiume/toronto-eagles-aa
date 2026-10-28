@@ -45,6 +45,14 @@ def write_fixture(out):
     for name in ("standings.json", "schedule.json", "game_sheets.json", "game_shots.json", "team_scores.json"):
         if os.path.exists(os.path.join(here, name)):
             shutil.copy(os.path.join(here, name), work)
+    # Long names for the layout check: two real penalty names and one far longer than any code the league uses.
+    sheets = json.load(open(os.path.join(work, "game_sheets.json")))
+    sheets[WITH_MOMENTS]["penalties"] += [
+        {"clock": "1:20", "code": "INTGT", "minutes": 2, "period": 3, "side": "home"},
+        {"clock": "1:10", "code": "RAW", "minutes": 2, "period": 3, "side": "away"},
+        {"clock": "0:40", "code": "Unsportsmanlike conduct and misconduct", "minutes": 10, "period": 3, "side": "home"}]
+    sheets[WITH_MOMENTS]["timeouts"] = [{"clock": "4:53", "period": 3, "side": "home"}, {"clock": "2:05", "period": 3, "side": "away"}]
+    json.dump(sheets, open(os.path.join(work, "game_sheets.json"), "w"))
     os.symlink(os.path.join(here, "assets"), os.path.join(work, "assets"))
     old = os.getcwd(), os.environ.get("GAME_VIDEOS"), os.environ.get("TEAM_EVENTS_PASSWORD")
     os.chdir(work)
@@ -104,8 +112,34 @@ class Review(unittest.TestCase):
             self.assertIn(part, js)
         self.assertNotIn("setPlaybackQuality", js)
 
+    def sealed(self, page):
+        s = json.loads(re.search(r'id="game-film">(.*?)</script>', page, re.S).group(1).replace("<\\/", "</"))
+        return json.loads(team_crypto.decrypt(s, PASSWORD))
+
+    def test_package_carries_the_game_info(self):
+        info = self.sealed(self.plain)["info"]
+        self.assertEqual(info["away"], "The Attack")
+        self.assertEqual(info["home"], "Toronto Eagles")
+        self.assertEqual(info["score"], "3\u20133")
+        self.assertEqual(info["when"], "Sunday, October 25 \u00b7 12:10 PM \u00b7 Lambton Arena")
+
+    def test_package_without_info_is_still_valid(self):
+        entry = {"url": f"https://youtu.be/{VIDEO_ID}", "moments": []}
+        self.assertNotIn("info", json.loads(gp.film_package(entry)))
+        self.assertIn("'Video review'", page_common.REVIEW_JS)
+
+    def test_rows_carry_no_play_icon(self):
+        self.assertNotIn("insertAdjacentHTML('beforeend', ICON)", page_common.FILM_JS.split("function review")[0])
+
+    def test_hash_scheme_and_share_in_the_script(self):
+        js = page_common.REVIEW_JS
+        for part in ("history.replaceState", "'#review='", "Copy link", "Link copied", "navigator.clipboard"):
+            self.assertIn(part, js)
+        self.assertNotIn("pushState", js)
+
     def test_no_em_dash_in_the_review(self):
-        self.assertNotIn("—", page_common.REVIEW_JS)
+        self.assertNotIn("\u2014", page_common.REVIEW_JS)
+        self.assertNotIn("\u2014", page_common.FILM_JS)
 
 
 if __name__ == "__main__":

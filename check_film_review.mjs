@@ -151,6 +151,130 @@ for (const [name, w, h] of [['desktop', 1100, 800], ['phone', 390, 800]]) {
   await p.close();
 }
 
+
+// Header, shared link, sign-in.
+for (const [name, w, h] of [['desktop', 1100, 800], ['phone', 390, 800]]) {
+  const p = await newPage(w, h, true);
+  await p.evaluateOnNewDocument(() => {
+    window.__copied = [];
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: (t) => { window.__copied.push(t); return Promise.resolve(); } }, configurable: true });
+    window.__hist = 0; const rs = history.replaceState.bind(history), ps = history.pushState.bind(history);
+    history.pushState = function () { window.__hist++; return ps.apply(this, arguments); };
+  });
+  await p.open(info.moments);
+  await p.waitForSelector('a.is-film', { timeout: 8000 });
+  ok(name + ': rows on the sheet carry no play icon', (await p.$$('li[data-m] a.sheet-what .film-icon')).length === 0);
+  await p.goto('file://' + path.join(dir, info.moments) + '#review=goal-2-4:33');
+  await p.reload();
+  await p.waitForSelector('.rv #stub-player', { timeout: 8000 });
+  const head = await p.evaluate(() => ({ title: document.querySelector('.rv-title').textContent, score: document.querySelector('.rv-score') && document.querySelector('.rv-score').textContent, sub: document.querySelector('.rv-sub').textContent, label: document.querySelector('.rv').getAttribute('aria-label'), h: document.querySelector('.rv-head').getBoundingClientRect().height, sw: document.documentElement.scrollWidth, iw: innerWidth }));
+  console.log('  header', JSON.stringify(head));
+  ok(name + ': header shows teams, score and the date line', / at /.test(head.title) && /^\d.\d\s*Final$/.test(head.score) && /^\w+day, \w+ \d+ · .* · .+/.test(head.sub), JSON.stringify(head));
+  ok(name + ': dialog label names the game', head.label === 'Video review, ' + head.title, head.label);
+  ok(name + ': header compact, no overflow', head.h < 80 && head.sw <= head.iw, 'height ' + head.h);
+  ok(name + ': #review=goal-2-4:33 opens at that moment', (await nowIndex(p)) === 4 && (await p.evaluate(() => window.__yt.opts.playerVars.start)) === 1400);
+  ok(name + ': address keeps the moment', (await p.evaluate(() => location.hash)) === '#review=goal-2-4:33');
+  await wait(300);
+  await p.screenshot({ path: path.join(shots, `review_${name}_header.png`) });
+  const btns = await p.$$('.rv-row');
+  await btns[1].click();
+  ok(name + ': hash follows a clicked row', (await p.evaluate(() => location.hash)) === '#review=penalty-1-7:10', await p.evaluate(() => location.hash));
+  await p.evaluate(() => { window.__yt.ct = 3000; window.__yt.opts.events.onStateChange({ data: 1 }); });
+  await wait(900);
+  ok(name + ': hash follows playback', (await p.evaluate(() => location.hash)) === '#review=goal-3-4:16', await p.evaluate(() => location.hash));
+  await p.evaluate(() => window.__yt.opts.events.onStateChange({ data: 2 }));
+  const hl = await p.evaluate(() => history.length);
+  await p.$eval('.rv-share', (e) => e.focus());
+  const href = await p.evaluate(() => location.href);
+  await p.click('.rv-share');
+  const cp = await p.evaluate(() => ({ copied: window.__copied, tip: document.querySelector('.rv-share').getAttribute('data-tip'), shown: (document.querySelector('.tip') || {}).textContent, vis: (document.querySelector('.tip') || {style:{}}).style.display, hist: window.__hist }));
+  ok(name + ': copy link writes the current address', cp.copied.length === 1 && cp.copied[0] === href && href.endsWith('#review=goal-3-4:16'), JSON.stringify(cp));
+  ok(name + ': tooltip says Link copied', cp.tip === 'Link copied' && cp.shown === 'Link copied' && cp.vis === 'block', JSON.stringify(cp));
+  await p.screenshot({ path: path.join(shots, `review_${name}_copied.png`) });
+  await wait(2500);
+  ok(name + ': tooltip returns to Copy link', (await p.$eval('.rv-share', (e) => e.getAttribute('data-tip'))) === 'Copy link');
+  ok(name + ': no history entries added', cp.hist === 0 && (await p.evaluate(() => history.length)) === hl);
+  await p.keyboard.press('Escape');
+  ok(name + ': closing removes the hash', (await p.evaluate(() => location.hash)) === '' && (await p.$('.rv')) === null);
+  await p.close();
+}
+{
+  const p = await newPage(1100, 800, true);
+  await p.open(info.moments);
+  await p.goto('file://' + path.join(dir, info.moments) + '#review=goal-9-9:99'); await p.reload();
+  await p.waitForSelector('.rv #stub-player', { timeout: 8000 });
+  ok('unknown moment opens at the start', (await nowIndex(p)) === -1 && !(await p.evaluate(() => 'start' in window.__yt.opts.playerVars)) && (await p.evaluate(() => location.hash)) === '#review');
+  await p.close();
+  const q = await newPage(1100, 800, true);
+  await q.open(info.moments);
+  await q.goto('file://' + path.join(dir, info.moments) + '#review'); await q.reload();
+  await q.waitForSelector('.rv #stub-player', { timeout: 8000 });
+  ok('#review opens at the start of the film', (await nowIndex(q)) === -1 && (await q.evaluate(() => location.hash)) === '#review');
+  await q.close();
+}
+
+// Game sheet lists: three columns where they fit, rows one line high, no overflow, long names cut with an ellipsis.
+for (const signedIn of [false, true]) for (const w of [1100, 1000, 871, 700, 390]) {
+  const p = await newPage(w, 900, signedIn);
+  await p.open(info.moments);
+  if (signedIn) await p.waitForSelector('a.is-film', { timeout: 8000 });
+  const r = await p.evaluate(() => {
+    const lists = document.querySelector('.sheet-lists');
+    const nl = lists.querySelectorAll('.sheet-list').length, cols = new Set(Array.from(lists.querySelectorAll('.sheet-list')).map((x) => Math.round(x.getBoundingClientRect().left))).size;
+    const lis = Array.from(lists.querySelectorAll('li'));
+    const hs = lis.map((l) => Math.round(l.getBoundingClientRect().height));
+    const cut = lis.filter((l) => { const n = l.querySelector('.sheet-what > span'); return n && n.scrollWidth > n.clientWidth; }).map((l) => l.textContent.replace(/\s+/g, ' ').trim());
+    const notes = Array.from(lists.querySelectorAll('.sheet-note')).every((n) => n.getBoundingClientRect().width > 25 && n.getBoundingClientRect().right <= n.closest('li').getBoundingClientRect().right + 0.5);
+    const logos = Array.from(lists.querySelectorAll('.team-logo')).every((n) => Math.round(n.getBoundingClientRect().width) === 20);
+    return { cols, nl, n: lis.length, hmin: Math.min(...hs), hmax: Math.max(...hs), cut, notes, logos, width: lists.getBoundingClientRect().width, sw: document.documentElement.scrollWidth, iw: innerWidth };
+  });
+  const tag = (signedIn ? 'links ' : 'plain ') + w;
+  console.log('  lists', tag, JSON.stringify(r));
+  ok(tag + ': all ' + r.n + ' rows the same height', r.hmin === r.hmax, r.hmin + '-' + r.hmax);
+  ok(tag + ': no horizontal overflow', r.sw <= r.iw);
+  ok(tag + ': logos 20px and minutes visible inside the row', r.notes && r.logos);
+  ok(tag + ': columns', r.cols === Math.min(r.nl, r.width >= 3 * 250 + 36 ? 3 : r.width >= 2 * 250 + 18 ? 2 : 1), r.cols + ' of ' + r.nl + ' lists at list width ' + Math.round(r.width));
+  ok(tag + ': the unusually long name is cut with an ellipsis, nothing wraps', r.cut.some((c) => /Unsportsmanlike/.test(c)), JSON.stringify(r.cut));
+  if (signedIn) {
+    await p.$eval('.sheet-lists', (e) => e.scrollIntoView());
+    await p.screenshot({ path: path.join(shots, `sheet_lists_${w}.png`) });
+  }
+  await p.close();
+}
+
+// A package without info falls back to the plain heading.
+{
+  const p = await newPage(1100, 800, true);
+  await p.evaluateOnNewDocument(() => { const f = JSON.parse; JSON.parse = function (t) { const o = f(t); if (o && o.moments && o.info) delete o.info; return o; }; });
+  await p.open(info.moments);
+  await p.waitForSelector('.match-actions a.film', { timeout: 8000 });
+  await p.click('.match-actions a.film');
+  await p.waitForSelector('.rv');
+  ok('no info: plain Video review heading', (await p.$eval('.rv-title', (e) => e.textContent)) === 'Video review' && (await p.$('.rv-sub')) === null && (await p.$eval('.rv', (e) => e.getAttribute('aria-label'))) === 'Video review');
+  await p.close();
+}
+// Signed out (none, then wrong) with a shared link: the sign-in box, no film data, and the review after a good password.
+for (const [label, wrong] of [['signed out', false], ['wrong password', true]]) {
+  const p = await newPage(390, 800, false);
+  await p.goto('file://' + path.join(dir, info.moments));
+  await p.evaluate((w) => { localStorage.clear(); if (w) localStorage.setItem('eagles-team-password', 'nope'); }, wrong);
+  await p.goto('file://' + path.join(dir, info.moments) + '#review=goal-2-4:33'); await p.reload();
+  await p.waitForSelector('dialog.login-dialog[open]', { timeout: 8000 });
+  ok(label + ': sign-in box shown', true);
+  const c = await p.content();
+  ok(label + ': no review, film button or film words', (await p.$('.rv')) === null && (await p.$('.match-actions a.film')) === null && !/youtu|Video review/i.test(c.replace(/<(script|style)[\s\S]*?<\/\1>/g, '')) && p.hostRequests.length === 0);
+  ok(label + ': box has focus in the password field', await p.evaluate(() => document.activeElement.id === 'login-password'));
+  await p.screenshot({ path: path.join(shots, `review_phone_signin_${wrong ? 'wrong' : 'out'}.png`) });
+  await p.type('#login-password', 'bad-guess'); await p.keyboard.press('Enter');
+  await p.waitForFunction(() => /didn/.test(document.querySelector('.login-msg').textContent), { timeout: 8000 });
+  ok(label + ': a bad password is refused and no review opens', (await p.$('.rv')) === null);
+  await p.$eval('#login-password', (e) => { e.value = ''; });
+  await p.type('#login-password', info.password); await p.keyboard.press('Enter');
+  await p.waitForSelector('.rv #stub-player', { timeout: 8000 });
+  ok(label + ': after sign-in the review opens at the moment', (await nowIndex(p)) === 4 && (await p.evaluate(() => localStorage.getItem('eagles-team-password'))) === info.password);
+  await p.close();
+}
+
 // Signed in, a film with no placed moments: the player alone.
 for (const [name, w, h] of [['desktop', 1100, 800], ['phone', 390, 800]]) {
   const p = await newPage(w, h, true);

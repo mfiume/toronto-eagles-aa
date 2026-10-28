@@ -524,13 +524,24 @@ def film_payload(sealed):
 PLAYER_API = "https://www.youtube.com/iframe_api"
 
 
-def film_package(entry):
+def film_info(g):
+    """The game as the page shows it, for the review's header: teams, final score, and the date, time and place on one line."""
+    row = g["row"]
+    arena = arenas.find(row.get("Arena", ""))
+    place = arena["name"] if arena else row.get("Arena", "")
+    when = " · ".join(x for x in (f'{g["day"].strftime("%A, %B")} {g["day"].day}', row.get("Time", ""), place) if x)
+    score = f'{g["score"]["away"]}\u2013{g["score"]["home"]}' if g.get("score") else ""
+    return {"away": row.get("Away", ""), "home": row.get("Home", ""), "score": score, "when": when}
+
+
+def film_package(entry, g=None):
     """
     What is sealed for a game with a film: the button, the address, and the moments of the game sheet that are placed on the film
     (kind, period, clock, and the second of the video), and the address of the video player's script. The script puts the button in place and turns the matching marks and rows
     into links to the video at that second. Like the button, none of it is in the page unless it is sealed.
     """
-    return json.dumps({"html": film_button(entry["url"]), "url": entry["url"], "moments": entry["moments"], "api": PLAYER_API},
+    return json.dumps({"html": film_button(entry["url"]), "url": entry["url"], "moments": entry["moments"], "api": PLAYER_API,
+                       **({"info": film_info(g)} if g else {})},
                       separators=(",", ":"))
 
 
@@ -566,7 +577,7 @@ def generate(today=None):
         gid = name[len("game-"):-len(".html")]
         with open(name, "w", encoding="utf-8") as f:
             f.write(page(g, standings, games, schedule_data.get("timestamp", ""), today, now, sheets, load_shots(),
-                               film=sealer.seal(film_package(films[gid])) if sealer and films.get(gid) else None))
+                               film=sealer.seal(film_package(films[gid], g)) if sealer and films.get(gid) else None))
         written[name] = True
     # A game the GTHL no longer lists takes its page with it.
     for stale in set(glob.glob("game-*.html")) - set(written):
