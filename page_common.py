@@ -4114,7 +4114,7 @@ GAME_CSS = """
 
         .sheet-lists {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
             gap: 18px;
         }
 
@@ -4160,6 +4160,15 @@ GAME_CSS = """
             font-weight: 600;
             font-variant-numeric: tabular-nums;
             color: var(--ink-2);
+        }
+
+        .sheet-what > span {
+            white-space: nowrap;
+        }
+
+        .sheet-what .team-logo,
+        .sheet-what .film-icon {
+            flex: none;
         }
 
         .sheet-what .team-logo {
