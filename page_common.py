@@ -860,7 +860,11 @@ NAV_PAGES = [
     ("index.html", "Standings"),
     ("schedule.html", "Schedule"),
     ("playoffs.html", "Playoffs"),
+    ("statistics.html", "Statistics"),
 ]
+
+# Pages that only exist for the team: with no team password there is nothing to build, so there is no tab.
+TEAM_ONLY_PAGES = {"statistics.html"}
 
 
 def masthead(active_page, meta_main, meta_sub):
@@ -890,6 +894,8 @@ def masthead(active_page, meta_main, meta_sub):
         # A hidden page still shows its own tab if that is where you are, so
         # arriving by direct link does not leave the nav lying about it.
         if href in config.HIDDEN_PAGES and href != active_page:
+            continue
+        if href in TEAM_ONLY_PAGES and not auth_enabled():
             continue
         active = ' class="active"' if href == active_page else ""
         html += f'            <a href="{href}"{active}>{label}</a>\n'

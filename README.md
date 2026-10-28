@@ -11,6 +11,8 @@ and schedule from the GTHL (Greater Toronto Hockey League).
 - Schedule for our region only, grouped by week, with the next Eagles game on top
   and club logos on every game
 - Playoff seeding picture, once the GTHL publishes the format for the season
+- Statistics tab for the team: goals and penalties by period, the penalties we take, power play and penalty kill,
+  shots and how games unfold. Team figures only, and only behind the team login (see `docs/STATISTICS.md`)
 - Rebuilt hourly by GitHub Actions, published by GitHub Pages, no server to run
 
 ## Configuration
