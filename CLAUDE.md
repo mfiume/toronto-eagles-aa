@@ -20,3 +20,4 @@ The full rules are in docs/TOOLTIPS.md. In short:
 - Any new interface element is built to the standard of the existing ones before it ships: consistent spacing, alignment with its
   neighbours, light and dark, phone width, keyboard focus. Check it in a screenshot at desktop and phone width and look at it.
 - Document a new shared behaviour in docs/ in the same change.
+- Team logos are square images without transparency, so every place a logo is shown rounds its corners (`.team-logo`, `.tip-logo`). A new place that shows a logo rounds it too, in proportion to its size (5 px at 22 px, more on the larger logos in the score strip and headers).
