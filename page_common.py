@@ -1397,6 +1397,7 @@ _SCHEDULE_CSS = """
         .face-team .team-logo {
             width: 32px;
             height: 32px;
+            border-radius: 7px;
         }
 
         .face-role {
@@ -2007,6 +2008,7 @@ _SCHEDULE_CSS = """
         .game-team .team-logo {
             width: 18px;
             height: 18px;
+            border-radius: 4px;
         }
 
         .game-rink {
@@ -3660,6 +3662,7 @@ TEAM_CSS = """
         .team-hero-id .team-logo {
             width: 68px;
             height: 68px;
+            border-radius: 15px;
         }
 
         .team-hero-id .team-mono {
@@ -4523,6 +4526,7 @@ GAME_CSS = """
         .rv-sb .team-logo {
             width: 30px;
             height: 30px;
+            border-radius: 7px;
         }
 
         .rv-sb-name {
@@ -4959,7 +4963,7 @@ GAME_CSS = """
             vertical-align: -5px;
             margin-right: 8px;
             padding: 2px;
-            border-radius: 4px;
+            border-radius: 5px;
             background: #fff;
         }
 
