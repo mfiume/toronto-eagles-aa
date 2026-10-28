@@ -2435,6 +2435,211 @@
             margin-left: auto;
         }
 
+        /* --- Film review: the game's goals and penalties beside the film --- */
+        .rv {
+            position: fixed;
+            inset: 0;
+            z-index: 40;
+            display: flex;
+            flex-direction: column;
+            background: var(--surface);
+            color: var(--ink);
+        }
+
+        .rv-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 8px 12px 8px 18px;
+            border-bottom: 1px solid var(--line);
+            border-top: 3px solid var(--brand);
+            flex: none;
+        }
+
+        .rv-title {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .rv-close {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--line);
+            border-radius: 50%;
+            background: var(--surface);
+            color: var(--ink);
+            cursor: pointer;
+        }
+
+        .rv-close:hover {
+            border-color: var(--ink-3);
+        }
+
+        .rv-box {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+        }
+
+        .rv-list {
+            list-style: none;
+            overflow-y: auto;
+            border-right: 1px solid var(--line);
+            padding: 6px 0;
+            min-height: 0;
+        }
+
+        .rv-row {
+            display: grid;
+            grid-template-columns: 5.4em 1fr;
+            gap: 2px 8px;
+            width: 100%;
+            padding: 10px 16px 10px 13px;
+            border: 0;
+            border-left: 3px solid transparent;
+            border-bottom: 1px solid var(--line-soft);
+            background: transparent;
+            color: inherit;
+            font: inherit;
+            font-size: 0.88rem;
+            line-height: 1.35;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .rv-row:hover {
+            background: var(--wash);
+        }
+
+        .rv-row.is-now {
+            background: var(--crest-wash);
+            border-left-color: var(--brand);
+        }
+
+        .rv-row.is-now .sheet-when {
+            color: var(--brand-dark);
+        }
+
+        .rv-close:focus-visible,
+        .rv-row:focus-visible,
+        .rv-open:focus-visible {
+            outline: 2px solid var(--ink);
+            outline-offset: -2px;
+        }
+
+        .rv-close:focus-visible {
+            outline-offset: 2px;
+        }
+
+        .rv-stage {
+            min-width: 0;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 16px 20px;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        .rv-frame {
+            position: relative;
+            width: min(100%, calc((100vh - 170px) * 16 / 9));
+            margin: 0 auto;
+            aspect-ratio: 16 / 9;
+            background: #000000;
+        }
+
+        .rv-frame > *,
+        .rv-frame iframe {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        .rv-open {
+            align-self: flex-end;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--ink-2);
+            text-decoration: none;
+        }
+
+        .rv-open:hover {
+            color: var(--ink);
+        }
+
+        .rv-open .film-icon {
+            width: 20px;
+            height: 14px;
+            flex: none;
+        }
+
+        .rv-solo {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        @media (max-width: 760px) {
+            .rv-box {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .rv-stage {
+                order: -1;
+                flex: none;
+                padding: 0;
+                gap: 0;
+            }
+
+            .rv-frame {
+                width: 100%;
+            }
+
+            .rv-open {
+                align-self: flex-end;
+                padding: 8px 12px;
+            }
+
+            .rv-list {
+                flex: 1;
+                border-right: 0;
+                border-top: 1px solid var(--line);
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .rv-solo .rv-stage {
+                order: 0;
+                flex: 1;
+                justify-content: flex-start;
+            }
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .rv {
+                animation: rv-in 0.16s ease-out;
+            }
+
+            @keyframes rv-in {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+        }
+
         [data-tip]:focus-visible {
             outline: 2px solid var(--ink);
             outline-offset: 3px;
@@ -3122,7 +3327,7 @@
                         <img class="team-logo" src="assets/logos/mississauga-rattlers.png" alt="" loading="lazy">
                         <span class="match-name"><a class="team-link" href="team-mississauga-rattlers.html">Mississauga Rattlers</a></span>
                         <span class="match-role">Home</span>
-                        <span class="match-record">T-5th · 2-2-0</span>
+                        <span class="match-record">6th · 2-2-0</span>
                     </div>
                     </div>
                 </section>
@@ -3139,7 +3344,7 @@
                     <div class="tape">
                         <div class="tape-row tape-head"><span class="tape-val"><a class="team-link" href="team-mississauga-north-stars.html">Mississauga North Stars</a></span>
                             <span class="tape-label"></span><span class="tape-val right"><a class="team-link" href="team-mississauga-rattlers.html">Mississauga Rattlers</a></span></div>
-                        <div class="tape-row"><span class="tape-val">1st</span><span class="tape-label">Place</span><span class="tape-val right">T-5th</span></div><div class="tape-row"><span class="tape-val">5-1-0</span><span class="tape-label">Record</span><span class="tape-val right">2-2-0</span></div><div class="tape-row"><span class="tape-val better">10</span><span class="tape-label">Points</span><span class="tape-val right">4</span></div><div class="tape-row"><span class="tape-val better">.833</span><span class="tape-label">Win %</span><span class="tape-val right">.500</span></div><div class="tape-row"><span class="tape-val better">4.50</span><span class="tape-label">Goals for / game</span><span class="tape-val right">2.50</span></div><div class="tape-row"><span class="tape-val">3.00</span><span class="tape-label">Goals against / game</span><span class="tape-val right better">2.50</span></div><div class="tape-row"><span class="tape-val">2-1-0</span><span class="tape-label">Road / home record</span><span class="tape-val right">1-2-0</span></div><div class="tape-row"><span class="tape-val">Won 1</span><span class="tape-label">Streak</span><span class="tape-val right">Lost 1</span></div><div class="tape-row"><span class="tape-val form"><span class="form-chip form-w" data-tip="Win 4–2||vs Streetsville Tigers||Oct 13" aria-label="Win 4–2, vs Streetsville Tigers, Oct 13" tabindex="0" role="img">W</span><span class="form-chip form-w" data-tip="Win 3–2||at Mississauga Jets||Oct 15" aria-label="Win 3–2, at Mississauga Jets, Oct 15" tabindex="0" role="img">W</span><span class="form-chip form-w" data-tip="Win 8–4||vs Mississauga Terriers||Oct 20" aria-label="Win 8–4, vs Mississauga Terriers, Oct 20" tabindex="0" role="img">W</span><span class="form-chip form-w" data-tip="Win 3–2||at Mississauga Beast||Oct 22" aria-label="Win 3–2, at Mississauga Beast, Oct 22" tabindex="0" role="img">W</span></span><span class="tape-label">Last 5 before</span><span class="tape-val right form"><span class="form-chip form-l" data-tip="Loss 0–3||vs Vaughan Rangers||Oct 18" aria-label="Loss 0–3, vs Vaughan Rangers, Oct 18" tabindex="0" role="img">L</span><span class="form-chip form-w" data-tip="Win 4–2||at The Attack||Oct 22" aria-label="Win 4–2, at The Attack, Oct 22" tabindex="0" role="img">W</span></span></div>
+                        <div class="tape-row"><span class="tape-val">1st</span><span class="tape-label">Place</span><span class="tape-val right">6th</span></div><div class="tape-row"><span class="tape-val">5-1-0</span><span class="tape-label">Record</span><span class="tape-val right">2-2-0</span></div><div class="tape-row"><span class="tape-val better">10</span><span class="tape-label">Points</span><span class="tape-val right">4</span></div><div class="tape-row"><span class="tape-val better">.833</span><span class="tape-label">Win %</span><span class="tape-val right">.500</span></div><div class="tape-row"><span class="tape-val better">4.50</span><span class="tape-label">Goals for / game</span><span class="tape-val right">2.50</span></div><div class="tape-row"><span class="tape-val">3.00</span><span class="tape-label">Goals against / game</span><span class="tape-val right better">2.50</span></div><div class="tape-row"><span class="tape-val">2-1-0</span><span class="tape-label">Road / home record</span><span class="tape-val right">1-2-0</span></div><div class="tape-row"><span class="tape-val">Won 1</span><span class="tape-label">Streak</span><span class="tape-val right">Lost 1</span></div><div class="tape-row"><span class="tape-val form"><span class="form-chip form-w" data-tip="Win 4–2||vs Streetsville Tigers||Oct 13" aria-label="Win 4–2, vs Streetsville Tigers, Oct 13" tabindex="0" role="img">W</span><span class="form-chip form-w" data-tip="Win 3–2||at Mississauga Jets||Oct 15" aria-label="Win 3–2, at Mississauga Jets, Oct 15" tabindex="0" role="img">W</span><span class="form-chip form-w" data-tip="Win 8–4||vs Mississauga Terriers||Oct 20" aria-label="Win 8–4, vs Mississauga Terriers, Oct 20" tabindex="0" role="img">W</span><span class="form-chip form-w" data-tip="Win 3–2||at Mississauga Beast||Oct 22" aria-label="Win 3–2, at Mississauga Beast, Oct 22" tabindex="0" role="img">W</span></span><span class="tape-label">Last 5 before</span><span class="tape-val right form"><span class="form-chip form-l" data-tip="Loss 0–3||vs Vaughan Rangers||Oct 18" aria-label="Loss 0–3, vs Vaughan Rangers, Oct 18" tabindex="0" role="img">L</span><span class="form-chip form-w" data-tip="Win 4–2||at The Attack||Oct 22" aria-label="Win 4–2, at The Attack, Oct 22" tabindex="0" role="img">W</span></span></div>
                     </div>
                 </section>
 
@@ -3149,7 +3354,7 @@
                     </div>
                 </section>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-28T02:30:22.103372+00:00" title="Oct 27, 10:30 PM ET · Refreshes hourly">just now</time></p>
+            <p class="content-meta">Updated <time datetime="2026-10-28T02:36:57.312321+00:00" title="Oct 27, 10:36 PM ET · Refreshes hourly">just now</time></p>
         </div>
 
     </div>

@@ -2436,6 +2436,211 @@
             margin-left: auto;
         }
 
+        /* --- Film review: the game's goals and penalties beside the film --- */
+        .rv {
+            position: fixed;
+            inset: 0;
+            z-index: 40;
+            display: flex;
+            flex-direction: column;
+            background: var(--surface);
+            color: var(--ink);
+        }
+
+        .rv-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 8px 12px 8px 18px;
+            border-bottom: 1px solid var(--line);
+            border-top: 3px solid var(--brand);
+            flex: none;
+        }
+
+        .rv-title {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .rv-close {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--line);
+            border-radius: 50%;
+            background: var(--surface);
+            color: var(--ink);
+            cursor: pointer;
+        }
+
+        .rv-close:hover {
+            border-color: var(--ink-3);
+        }
+
+        .rv-box {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+        }
+
+        .rv-list {
+            list-style: none;
+            overflow-y: auto;
+            border-right: 1px solid var(--line);
+            padding: 6px 0;
+            min-height: 0;
+        }
+
+        .rv-row {
+            display: grid;
+            grid-template-columns: 5.4em 1fr;
+            gap: 2px 8px;
+            width: 100%;
+            padding: 10px 16px 10px 13px;
+            border: 0;
+            border-left: 3px solid transparent;
+            border-bottom: 1px solid var(--line-soft);
+            background: transparent;
+            color: inherit;
+            font: inherit;
+            font-size: 0.88rem;
+            line-height: 1.35;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .rv-row:hover {
+            background: var(--wash);
+        }
+
+        .rv-row.is-now {
+            background: var(--crest-wash);
+            border-left-color: var(--brand);
+        }
+
+        .rv-row.is-now .sheet-when {
+            color: var(--brand-dark);
+        }
+
+        .rv-close:focus-visible,
+        .rv-row:focus-visible,
+        .rv-open:focus-visible {
+            outline: 2px solid var(--ink);
+            outline-offset: -2px;
+        }
+
+        .rv-close:focus-visible {
+            outline-offset: 2px;
+        }
+
+        .rv-stage {
+            min-width: 0;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 16px 20px;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        .rv-frame {
+            position: relative;
+            width: min(100%, calc((100vh - 170px) * 16 / 9));
+            margin: 0 auto;
+            aspect-ratio: 16 / 9;
+            background: #000000;
+        }
+
+        .rv-frame > *,
+        .rv-frame iframe {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        .rv-open {
+            align-self: flex-end;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--ink-2);
+            text-decoration: none;
+        }
+
+        .rv-open:hover {
+            color: var(--ink);
+        }
+
+        .rv-open .film-icon {
+            width: 20px;
+            height: 14px;
+            flex: none;
+        }
+
+        .rv-solo {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        @media (max-width: 760px) {
+            .rv-box {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .rv-stage {
+                order: -1;
+                flex: none;
+                padding: 0;
+                gap: 0;
+            }
+
+            .rv-frame {
+                width: 100%;
+            }
+
+            .rv-open {
+                align-self: flex-end;
+                padding: 8px 12px;
+            }
+
+            .rv-list {
+                flex: 1;
+                border-right: 0;
+                border-top: 1px solid var(--line);
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .rv-solo .rv-stage {
+                order: 0;
+                flex: 1;
+                justify-content: flex-start;
+            }
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .rv {
+                animation: rv-in 0.16s ease-out;
+            }
+
+            @keyframes rv-in {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+        }
+
         [data-tip]:focus-visible {
             outline: 2px solid var(--ink);
             outline-offset: 3px;
@@ -3210,8 +3415,8 @@
                 </section>
 </div>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-10-28T02:30:22.103372+00:00" title="Oct 27, 10:30 PM ET · Refreshes hourly">just now</time></p>
-            <script type="application/json" id="team-events">{"v": 1, "iter": 600000, "salt": "VcsAFJ3Zg98RKwkCZSEB8g==", "iv": "NmDuaxbpFNtq0T6s", "ct": "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"}</script>
+            <p class="content-meta">Updated <time datetime="2026-10-28T02:36:57.312321+00:00" title="Oct 27, 10:36 PM ET · Refreshes hourly">just now</time></p>
+            <script type="application/json" id="team-events">{"v": 1, "iter": 600000, "salt": "xyVmttqkcbEbZxoGeT7pmg==", "iv": "0Wri9wkNhtyBFbcK", "ct": "R1+/2W4rNGoC0OH5pF6TOU0yNozqW3qmT55rAbXJJ9bQeN5oR/DClivexAzIOBPELne72XOLjOEARIbJdQpW1OYiaMURzWbNyOjWsRWYkauH/296He4KLeCIPnJWA9R4h3RZJwkZKS0XqNquvjHufPk6wbup8TVIbYgUSaGRude+NIbfY8LT6GkXIUtfBoTJ9+phjiGhE7g7tyPInLA5n6vSwyC6f1ikyMKWOKwT/R48DjDDtvD0cLOXt2B7rodwX5fJ44tgFkR9tVMHGLhwEWlKV1+Kn/lxwCesDkE79uqChTj34SgMdfRQSR9J1etAT5Z08f1ZQpv6zVG9T2c9TAm2lxZTo7gC7b7qEFjL7dkjWvJICB7FTYZplmPuoZrTZl6eUd54+cVe9dygMRrqGpUCGu4BbCxJlE4/5PvvSPIZCc6MN6ah735UFDxUt4IfVKDjBW602sox07kWiRxKYVl58F5Oqz3ALAzTPnYhDzxJgo2Q82LvyePWvz7QkVKmrepxzMH28aKhgVdut7dMlOyS/951/2Z5KzjQn/mhyhTU4XAFAPerKiMnIoN7w6ZrHqGIc5BPFpfwqS+lX+hmZUgK66mKEPHl3v3TGyw1ndmMLNTirc48cQVz8EVNSqFac/4uAZPo/OiJsUxGzSRs1ci8VcC+PYpKzUw5ZKt0Ct9zjy/FEXK5SguOpUrk0SJGXLMOuhDrEwjo6rgmHaC2pzYyPsjWQoMXVHbvQ0hFATcQp+46mEAGTKiEIWnyuqLe52O4vQAUxTu4ccJ+q7YCM04xE1pFf0HIwZq+aOOArnq+H+aEd1byjUBN+l1pfpgy+xvwtnG8pTQRToMzEzgJqfcD2vqx6ambAulOnx62ctHoj/pnLHxVnTTCC/ULizR3QACBnysNWzUO1rjjCeUFyvQ0yarHKuIzpvmSCdVgwsbHiBg2NK2+iK7XZrDhWKg1JceoZqKuWFB5KTUtsquonUu3WeHco4LwqwWJSypTYRNNE5N89ID0ZReETj7iRUBsgNSyth9pJTr1AtfhZib/7iavXfw++z8dNSsslzfxFdT/mqVp7WbCIKZdWvtBtguCUg5yenxaDLzfWWMMdAQRNN+RXY9CB0nKewxIELzMTe7K7nBPM0a2u3G7jiqBxuq1NJf+rZgfGDmOZ72gI/fJ3+/ZXzzFp832f9hHqwBuGlgIv2k/ZJK2v4wbvtKoPkxIEEn3zAR8/STiBkmNth4r0m2VdZgPSvIewePH40lqeEIX+HTQmq2TcMHD/m80Lkj1e1BCjXDFQCvGAqplV5ESN6bPNnxrRdIQxuBdnoM238TqsNhH3LgD7H/53LUiq458E3BFeZXg2sR0OIDF3G8FwiH9ziXHhW7cZfI2l0q5VlN1l2n7JuEo6qaWxXLGVkVPa5MalZLAw4+6V+U1XG+k0WD89ayfeazu6XNKcpqR44MO9+nctSTZ8FXI+avOU7g1ZGgGVXNxtQS/FYbRRS+aWdQiDx2RZtdXaCNJA+StY6SLlTyMycBpIWD5zu83spu8cR5dyKTCPUK/cw1z3HZvr5cV6jGD1IrKhVv0Q1YfXv//YYGjo/2MPFD9ksJi+/leOCtxEE/i2/baXmlwnafcUOT7B1Q5B11zj9ycGLERPiKgSacjsjo0j0Uek7d/uRQSFmumaE5S1FJPrK4KbFgH+M6dGwDMNmFPEmX1OPJCn+i9VJbHzVqvqudfVCtAwh6b9aS89GBv+MGwskEmvAe4pIViTPg3IO+zg9KJKOkGpu+/ke9Jxe7+U1iG3X2URiCTgaM26idkkE0UYlnfHkqzY3da4/fRC69OZIjdiRmXOqcu8SK5PkT/vw1pBgpPhLKOxgMpyByUhZyzDEljWNR1OPp41gGdGq/6TBASc7fAv3ssL6mDQvBaaIa+EXuYBIkGSM5XKEeypoCOICDzLR10i6b5YWtcUVlDnOcplS9SQxUU55suG2iYsQ4PTvmyYyJPGiDjqOXNtzqG5aOZnS5NZHuCPdPcADO/Si3nBGiDl0NcpT+A2HjAIaQLV1EpNnYuYNfAgmCnI0awuywkFqPl7sRQl9uN13fZJoIg+BQeJzq0ktbhidqHsisnnv2EUMK+BN81NGHLRgtR5BGSfzDQfgMrs53YCQJjsQIZo++E8amchkKuJ/XIxFQhKwZkKmRpQSBeopxs4wOHxR+jP2i/rcDXFav5zf8o+zRBPAdoCsec986iK7tuq2pPONzTtJ0GLgVVJgtAXiGhOuOlTgA+wCDiRYenez7RuZFrC8vZgXCYLn08q7BFoI6JF3XTCjZP2MtHL4/bGAmczzzCPLqBHBGgZXFXmx9JE00OENNBe6uVETRgYLQcXxSAGBWAwC+4j7FgLLz4M75QFiJxMwQfvjpzjhmpWVxIV8Wna9jgH9PgV9ck1Y+wONupuxaaNjBqFH7wl2ixXnYUZzr+Anh6VFcMdo5JbPuL9w2XAYDpAAWbbqrY9VVBbMSQ+UOJXTAxH00t/8hMGpb0bcvdRWJB1zSLvmhOJdSb6idoS0kchxaJClwHYrMPl57pSxpH5RBBSBvd5cZYdvKWhMluGv3P15wP6/wPD1TmXj+gognIy6dlkQAjsKi5Bc9YRgZoi+OubMJSRhPfx9XqWDBbYAcHRwfcNmPnTvbrGrxTn4W9Hs97U8ZYvbsxRmDEzCz0EfQc7K4BwhY+JiWc7s30+WAF6lZahcqAtHbPUwPeiroYz2Ue1u4CXd+4XzEFCWyDW7K5NlZnDohdy1MZEU5OLF8Z1Tc7H5Eym5YaZ/Xv9ASZzGltx/iLiTErHqbmIApZ/g5lYMxUCDsD5iemCW7bY41MgAeWFhbefWorCBijFh8NIG/RFcv7LwWfkPY8BITW1qvCe5xsIFDaOBUov6AHBsnrKIF4fJaZtNqmbLZIKpiqUGax5M8vZnC/Hcfvcep+h1z82z/EfycV1KYms2006aEq7NAgo+K3IwiQioEuxFRDTVyLrCx11MevK/+24uJNyoi8MwEWZU65z+hGeUMGAR2r"}</script>
 
             <dialog class="login-dialog" id="login-dialog" aria-labelledby="login-title">
                 <form method="dialog">
