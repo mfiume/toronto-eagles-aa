@@ -290,6 +290,11 @@ def load_sheets():
         return {}
 
 
+def clock_seconds(clock):
+    m, sec = clock.split(":")
+    return int(m) * 60 + int(sec)
+
+
 def period_label(n):
     return {1: "1st", 2: "2nd", 3: "3rd"}.get(n, "OT" if n == 4 else f"P{n}")
 
@@ -415,15 +420,23 @@ def game_sheet(sheet, shots=None):
         lis = "".join(f'<li><span class="sheet-when">{period_label(i["period"])} · {i["clock"]}</span>{line(i)}</li>' for i in items)
         return f'<div class="sheet-list"><h4>{title}</h4><ul>{lis}</ul></div>'
 
-    def who(side, text, note=""):
+    def who(side, text, note="", score=""):
         """The team's logo with what happened beside it; the team's name is in the tooltip and read out for a screen reader."""
         team = sheet[side]
         extra = f' <span class="sheet-note">{escape(note)}</span>' if note else ""
         return (f'<span class="sheet-what" data-tip="{escape(team)}" aria-label="{escape(team)}: {escape(text)}" tabindex="0">'
-                f'{page_common.team_logo(team)}<span>{escape(text)}</span>{extra}</span>')
+                f'{page_common.team_logo(team)}<span>{escape(text)}</span>{extra}'
+                + (f'<span class="sheet-score-now">{score}</span>' if score else "") + '</span>')
+
+    # The score after each goal, ours first, counted in the order the goals were scored.
+    mine = "home" if sheet["home"] == config.TEAM_NAME else "away"
+    running, after = {"home": 0, "away": 0}, {}
+    for g in sorted(sheet["goals"], key=lambda g: (g["period"], -clock_seconds(g["clock"]))):
+        running[g["side"]] += 1
+        after[id(g)] = f'{running[mine]}\u2013{running["home" if mine == "away" else "away"]}'
 
     def goal(g):
-        return who(g["side"], "Goal", g.get("kind") or "")
+        return who(g["side"], "Goal", g.get("kind") or "", after[id(g)])
 
     def penalty(p):
         return who(p["side"], penalty_name(p["code"]) or "Penalty", f'{p["minutes"]} min')

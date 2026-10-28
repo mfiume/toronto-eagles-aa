@@ -3677,6 +3677,15 @@ GAME_CSS = """
             min-width: 0;
         }
 
+        .sheet-score-now {
+            margin-left: auto;
+            padding-left: 8px;
+            font-family: var(--display);
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            color: var(--ink-2);
+        }
+
         .sheet-what .team-logo {
             width: 20px;
             height: 20px;
