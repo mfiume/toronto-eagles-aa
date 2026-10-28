@@ -222,8 +222,26 @@ def series(g, games, now):
 # --- The league's game sheet --------------------------------------------------------
 
 SHEETS_FILE = "game_sheets.json"
-# The league's penalty codes we can say in words. Any other code is shown as the league wrote it.
-PENALTIES = {"TR": "Tripping", "HKG": "Hooking", "SL": "Slashing", "BC": "Body checking"}
+# The league's penalty codes in words: the Ontario Hockey Federation's list of minor and major penalty abbreviations, and the
+# Hockey Canada rule number the league sometimes writes in place of one (8.6 is tripping). A code not here is shown as written.
+PENALTIES = {
+    "AGG": "Aggressor", "BC": "Body checking", "BDG": "Boarding", "BM": "Bench minor", "BRS": "Broken stick",
+    "BUTT": "Butt ending", "CC": "Cross checking", "CFB": "Checking from behind", "CHG": "Charging",
+    "DE": "Dangerous equipment", "DG": "Delay of game", "ELB": "Elbowing", "FI": "Fighting", "FMSK": "Face masking",
+    "FOP": "Falling on the puck", "GLC": "Goalie leaving crease", "HB": "Head butting", "HC": "Head contact",
+    "HKG": "Hooking", "HO": "Holding", "HP": "Handling the puck", "HS": "High sticking", "IE": "Illegal equipment",
+    "IP": "Ineligible player", "INS": "Instigator", "INT": "Interference", "INTGT": "Interference with the goalie",
+    "KNE": "Kneeing", "LPB": "Leaving the penalty bench", "RAW": "Roughing after the whistle", "RH": "Removing helmet",
+    "RO": "Roughing", "SL": "Slashing", "SP": "Spearing", "TMP": "Too many players", "TR": "Tripping",
+    "TS": "Throwing the stick", "USC": "Unsportsmanlike conduct",
+}
+
+
+def penalty_name(code):
+    code = (code or "").strip()
+    if code.startswith("8.6"):
+        return "Tripping"
+    return PENALTIES.get(code.upper(), code)
 
 
 SHOTS_FILE = "game_shots.json"
@@ -402,7 +420,7 @@ def game_sheet(sheet, shots=None):
         return f'<span class="sheet-what">{name[g["side"]]} goal{extra}</span>'
 
     def penalty(p):
-        what = PENALTIES.get(p["code"], p["code"]) or "Penalty"
+        what = penalty_name(p["code"]) or "Penalty"
         return f'<span class="sheet-what">{name[p["side"]]}</span><span class="sheet-note">{escape(what)}, {p["minutes"]} min</span>'
 
     def timeout(t):
