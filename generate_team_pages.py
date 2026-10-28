@@ -135,9 +135,10 @@ def form_chips(played, team):
     chips = ""
     for g in played[-5:]:
         s = side_of(g, team)
-        tip = (f"{s['result']} {s['gf']}–{s['ga']} {'vs' if s['home'] else 'at'} {s['opponent']}, "
-               f"{g['day'].strftime('%b')} {g['day'].day}")
-        chips += f'<span class="form-chip form-{s["result"].lower()}" title="{escape(tip)}">{s["result"]}</span>'
+        word = {"W": "Win", "L": "Loss", "T": "Tie"}[s["result"]]
+        lines = [f"{word} {s['gf']}\u2013{s['ga']}", f"{'vs' if s['home'] else 'at'} {s['opponent']}", f"{g['day'].strftime('%b')} {g['day'].day}"]
+        chips += (f'<span class="form-chip form-{s["result"].lower()}" data-tip="{escape("||".join(lines))}" '
+                  f'aria-label="{escape(", ".join(lines))}" tabindex="0" role="img">{s["result"]}</span>')
     return chips
 
 
