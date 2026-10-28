@@ -277,8 +277,9 @@ REVIEW_JS = r"""
           hlStop.innerHTML = ICONS.stop + '<span>Stop</span>';
           [hlPrev, hlToggle, hlNext, hlCount, hlStop].forEach(function (n) { hlbar.appendChild(n); });
           // Under the player: the time until the play, from the player's own clock.
-          var cd = el('div', 'rv-cd'), cdBar = el('div', 'rv-cd-bar'), cdFill = el('i'), cdText = el('div', 'rv-cd-text'), cdLogo = el('span', 'rv-cd-logo'), cdLabel = el('span', 'rv-cd-label'), cdLive = el('div', 'rv-sr');
-          cdBar.appendChild(cdFill); cdText.appendChild(cdLogo); cdText.appendChild(cdLabel); cd.appendChild(cdBar); cd.appendChild(cdText);
+          var cd = el('div', 'rv-cd'), cdRing = el('span', 'rv-cd-ring'), cdText = el('div', 'rv-cd-text'), cdLogo = el('span', 'rv-cd-logo'), cdLabel = el('span', 'rv-cd-label'), cdLive = el('div', 'rv-sr');
+          cdRing.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true"><circle class="rv-cd-track" cx="24" cy="24" r="21"/><circle class="rv-cd-arc" cx="24" cy="24" r="21" transform="rotate(-90 24 24)"/></svg>';
+          var cdArc = cdRing.querySelector('.rv-cd-arc'); cdRing.appendChild(cdLogo); cdText.appendChild(cdRing); cdText.appendChild(cdLabel); cd.appendChild(cdText);
           cd.setAttribute('aria-hidden', 'true'); cdLive.setAttribute('role', 'status'); cdLive.setAttribute('aria-live', 'polite');
           foot.appendChild(hlbar); foot.appendChild(ext);
           if (list.length) { stage.appendChild(cd); stage.appendChild(cdLive); }
@@ -384,7 +385,7 @@ REVIEW_JS = r"""
             if (playing) timer = setInterval(tick, hl ? 250 : 500);
           }
           // The countdown: an event whose play has just happened, else the first visible one whose play is still ahead (within the lead-in).
-          var cdRow = null;
+          var cdRow = null, CD_CIRC = 2 * Math.PI * 21;
           function countdown(ct) {
             var pick = null, vis = visible();
             vis.forEach(function (r) { if (!pick && ct >= r.ev.t + lead && ct < r.ev.t + lead + COUNTDOWN_AFTER) pick = r; });
@@ -400,7 +401,7 @@ REVIEW_JS = r"""
             }
             var here = left <= 0;
             cd.classList.add('is-on'); cd.classList.toggle('is-here', here);
-            cdFill.style.width = Math.max(0, Math.min(100, (ct - ev.t) / lead * 100)) + '%';
+            cdArc.style.strokeDashoffset = String(CD_CIRC * (1 - Math.max(0, Math.min(1, (ct - ev.t) / lead))));
             if (here) {
               var w = pick.btn.querySelector('.sheet-what > span:not(.sheet-note):not(.sheet-score-now)'), n = pick.btn.querySelector('.sheet-note'), sc = pick.btn.querySelector('.sheet-score-now');
               cdLabel.textContent = (w ? w.textContent : word) + (sc ? ' ' + sc.textContent.replace(/\s+/g, '') : '') + (n ? ', ' + n.textContent : '');
@@ -4421,25 +4422,45 @@ GAME_CSS = """
             visibility: visible;
         }
 
-        .rv-cd-bar {
-            height: 3px;
-            background: var(--line);
-            overflow: hidden;
+        .rv-cd-ring {
+            position: relative;
+            flex: none;
+            width: 46px;
+            height: 46px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .rv-cd-bar i {
-            display: block;
+        .rv-cd-ring svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
             height: 100%;
-            width: 0;
-            background: var(--brand);
-            transition: width 0.25s linear;
+        }
+
+        .rv-cd-ring circle {
+            fill: none;
+            stroke-width: 3.5;
+        }
+
+        .rv-cd-track {
+            stroke: var(--line);
+        }
+
+        .rv-cd-arc {
+            stroke: var(--brand);
+            stroke-linecap: round;
+            stroke-dasharray: 131.95;
+            stroke-dashoffset: 131.95;
+            transition: stroke-dashoffset 0.25s linear;
         }
 
         .rv-cd-text {
             display: flex;
             align-items: center;
             gap: 8px;
-            min-height: 28px;
+            min-height: 54px;
             padding-top: 4px;
             font-family: var(--display);
             font-weight: 600;
@@ -4452,6 +4473,12 @@ GAME_CSS = """
         .rv-cd-logo {
             display: inline-flex;
             flex: none;
+        }
+
+        .rv-cd-logo .team-logo {
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
         }
 
         .rv-cd-label {

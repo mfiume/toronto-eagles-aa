@@ -375,7 +375,7 @@ for (const [name, w, h] of [['desktop', 1100, 800], ['phone', 390, 800]]) {
   await p.close();
 }
 // The countdown to the play, from the player's own time.
-const cdState = (p) => p.evaluate(() => { const c = document.querySelector('.rv-cd'); return { on: c.classList.contains('is-on'), here: c.classList.contains('is-here'), text: c.querySelector('.rv-cd-label').textContent, w: c.querySelector('.rv-cd-bar i').style.width, logo: !!c.querySelector('.team-logo'), live: document.querySelector('.rv-sr').textContent, vis: getComputedStyle(c).visibility }; });
+const cdState = (p) => p.evaluate(() => { const c = document.querySelector('.rv-cd'); return { on: c.classList.contains('is-on'), here: c.classList.contains('is-here'), text: c.querySelector('.rv-cd-label').textContent, w: Math.round((1 - parseFloat(c.querySelector('.rv-cd-arc').style.strokeDashoffset) / (2 * Math.PI * 21)) * 100) + '%', logo: !!c.querySelector('.team-logo'), live: document.querySelector('.rv-sr').textContent, vis: getComputedStyle(c).visibility }; });
 for (const [name, w, h] of [['desktop', 1100, 800], ['phone', 390, 800]]) {
   const p = await newPage(w, h, true);
   await p.open(info.moments);
@@ -392,7 +392,7 @@ for (const [name, w, h] of [['desktop', 1100, 800], ['phone', 390, 800]]) {
   ok(name + ': clicking a goal row starts the countdown at 20 s', c.on && !c.here && c.text === 'Goal in 20 s' && c.w === '0%' && c.logo && c.vis === 'visible' && c.live === 'Goal in 20 seconds', JSON.stringify(c));
   await setCt(2008);
   c = await cdState(p);
-  ok(name + ': at 2008 s: Goal in 12 s, bar 40%', c.text === 'Goal in 12 s' && c.w === '40%' && c.live === 'Goal in 20 seconds', JSON.stringify(c));
+  ok(name + ': at 2008 s: Goal in 12 s, ring 40%', c.text === 'Goal in 12 s' && c.w === '40%' && c.live === 'Goal in 20 seconds', JSON.stringify(c));
   await setCt(2011.5);
   c = await cdState(p);
   ok(name + ': at 2011.5 s: 9 s left (rounded up)', c.text === 'Goal in 9 s', c.text);
