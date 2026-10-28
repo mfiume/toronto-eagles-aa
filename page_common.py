@@ -3342,12 +3342,17 @@ TEAM_CSS = """
 # The game pages (generate_game_pages.py), on top of TEAM_CSS.
 GAME_CSS = """
         /* --- Team comparisons: goals, shots and penalties, two numbers over a bar --- */
-        .compare {
-            margin-top: 18px;
+        .compare-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px 28px;
+            margin: 16px 0 18px;
         }
 
-        .compare + :not(.compare) {
-            margin-top: 22px;
+        @media (max-width: 700px) {
+            .compare-row {
+                grid-template-columns: 1fr;
+            }
         }
 
         .compare-head {
@@ -3665,14 +3670,21 @@ GAME_CSS = """
             font-variant-numeric: tabular-nums;
         }
 
-        .sheet-note {
-            grid-column: 2;
-            font-size: 0.78rem;
-            color: var(--ink-3);
+        .sheet-what {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
         }
 
-        .sheet-what + .sheet-note {
-            grid-column: 2;
+        .sheet-what .team-logo {
+            width: 20px;
+            height: 20px;
+        }
+
+        .sheet-note {
+            font-size: 0.78rem;
+            color: var(--ink-3);
         }
 
         /* --- The matchup --- */

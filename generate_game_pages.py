@@ -279,7 +279,7 @@ def comparisons(sheet, shots):
         blocks.append(compare_block("Shots", shots["eagles"], shots["opponent"], *names))
     if sheet["penalties"]:
         blocks.append(compare_block("Penalties", count(sheet["penalties"], us), count(sheet["penalties"], them), *names))
-    return "".join(blocks)
+    return f'<div class="compare-row">{"".join(blocks)}</div>'
 
 
 def load_sheets():
@@ -415,16 +415,21 @@ def game_sheet(sheet, shots=None):
         lis = "".join(f'<li><span class="sheet-when">{period_label(i["period"])} · {i["clock"]}</span>{line(i)}</li>' for i in items)
         return f'<div class="sheet-list"><h4>{title}</h4><ul>{lis}</ul></div>'
 
+    def who(side, text, note=""):
+        """The team's logo with what happened beside it; the team's name is in the tooltip and read out for a screen reader."""
+        team = sheet[side]
+        extra = f' <span class="sheet-note">{escape(note)}</span>' if note else ""
+        return (f'<span class="sheet-what" data-tip="{escape(team)}" aria-label="{escape(team)}: {escape(text)}" tabindex="0">'
+                f'{page_common.team_logo(team)}<span>{escape(text)}</span>{extra}</span>')
+
     def goal(g):
-        extra = f' <span class="sheet-note">{escape(g["kind"])}</span>' if g.get("kind") else ""
-        return f'<span class="sheet-what">{name[g["side"]]} goal{extra}</span>'
+        return who(g["side"], "Goal", g.get("kind") or "")
 
     def penalty(p):
-        what = penalty_name(p["code"]) or "Penalty"
-        return f'<span class="sheet-what">{name[p["side"]]}</span><span class="sheet-note">{escape(what)}, {p["minutes"]} min</span>'
+        return who(p["side"], penalty_name(p["code"]) or "Penalty", f'{p["minutes"]} min')
 
     def timeout(t):
-        return f'<span class="sheet-what">{name[t["side"]]}</span>'
+        return who(t["side"], "Timeout")
 
     lists = (listing("Scoring", sheet["goals"], goal) + listing("Penalties", sheet["penalties"], penalty)
              + listing("Timeouts", sheet["timeouts"], timeout))
