@@ -17,6 +17,7 @@ import unittest
 
 import generate_game_pages as gp
 import page_common
+import sheet_store
 import team_crypto
 
 PASSWORD = "fixture-password"
@@ -49,17 +50,25 @@ def write_fixture(out):
     """Generate the game pages from the real schedule and sheets, with a made-up film for two games, into `out`."""
     here = os.path.dirname(os.path.abspath(__file__))
     work = tempfile.mkdtemp()
-    for name in ("standings.json", "schedule.json", "game_sheets.json", "game_shots.json", "team_scores.json"):
+    for name in ("standings.json", "schedule.json", "game_shots.json", "team_scores.json"):
         if os.path.exists(os.path.join(here, name)):
             shutil.copy(os.path.join(here, name), work)
     # Long names for the layout check: two real penalty names and one far longer than any code the league uses.
-    sheets = json.load(open(os.path.join(work, "game_sheets.json")))
+    # The sheets are kept sealed with the team password; without it there is nothing real to build from.
+    old_cwd = os.getcwd()
+    os.chdir(here)
+    try:
+        sheets = sheet_store.load()
+    finally:
+        os.chdir(old_cwd)
+    if WITH_MOMENTS not in sheets:
+        raise unittest.SkipTest("the real game sheets need TEAM_EVENTS_PASSWORD to open")
     sheets[WITH_MOMENTS]["penalties"] += [
         {"clock": "1:20", "code": "INTGT", "minutes": 2, "period": 3, "side": "home"},
         {"clock": "1:10", "code": "RAW", "minutes": 2, "period": 3, "side": "away"},
         {"clock": "0:40", "code": "Unsportsmanlike conduct and misconduct", "minutes": 10, "period": 3, "side": "home"}]
     sheets[WITH_MOMENTS]["timeouts"] = [{"clock": "4:53", "period": 3, "side": "home"}, {"clock": "2:05", "period": 3, "side": "away"}]
-    json.dump(sheets, open(os.path.join(work, "game_sheets.json"), "w"))
+    json.dump(sheets, open(os.path.join(work, sheet_store.LEGACY_FILE), "w"))
     os.symlink(os.path.join(here, "assets"), os.path.join(work, "assets"))
     old = os.getcwd(), os.environ.get("GAME_VIDEOS"), os.environ.get("TEAM_EVENTS_PASSWORD")
     os.chdir(work)

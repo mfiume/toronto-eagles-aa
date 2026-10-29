@@ -343,13 +343,10 @@ def team_name_html(name):
 
 
 def result_badge(ours, theirs):
-    """W or L beside "Final" on one of our games. A tie needs no badge: the
-    level score says it, and a T would read as a tournament's tag."""
-    if ours == theirs:
-        return ""
-    r = "W" if ours > theirs else "L"
+    """W, L or T beside "Final" on one of our games."""
+    r, word = ("W", "Win") if ours > theirs else ("L", "Loss") if ours < theirs else ("T", "Tie")
     return (f'<span class="game-result result-{r.lower()}" '
-            f'data-tip="{"Win" if r == "W" else "Loss"}">{r}</span>')
+            f'data-tip="{word}">{r}</span>')
 
 
 def game_row(game, day, our_team, team=None, start=None, now=None, first=None, video=None):
