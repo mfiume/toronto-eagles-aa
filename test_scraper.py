@@ -38,6 +38,17 @@ def check_caption_guard():
         if caption_matches(caption) != expected:
             print(f"  FAIL: guard {'rejected' if expected else 'accepted'} {description}")
             ok = False
+
+    from scrape_standings import region_named
+    other = "East" if config.REGION == "West" else "West"
+    for caption, expected, description in [
+        (good, True, "a caption naming our region"),
+        (good.replace(config.REGION, other), False, "a caption naming the other region"),
+        (f"{config.SEASON} SEASON -- {config.DIVISION} {config.CATEGORY}", False, "a caption with no region"),
+    ]:
+        if region_named(caption) != expected:
+            print(f"  FAIL: region check {'rejected' if expected else 'accepted'} {description}")
+            ok = False
     print("  Season/division guard: " + ("ok" if ok else "BROKEN"))
     return ok
 

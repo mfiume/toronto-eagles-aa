@@ -119,6 +119,11 @@ def caption_matches(caption):
     )
 
 
+def region_named(caption):
+    """Does the caption name our region as a whole word?"""
+    return config.REGION in set(re.findall(r"[A-Za-z0-9-]+", caption or ""))
+
+
 def roster_mismatch(standings):
     """
     How the scraped region roster differs from config.WEST_TEAMS.
@@ -233,16 +238,19 @@ def scrape_standings():
         time.sleep(5)
 
         # Division and category first: they survive a season change, and the
-        # region dropdown only appears once both are set.
-        select_option(driver, "ddlDiv", config.DIVISION)
-        select_option(driver, "ddlCat", config.CATEGORY_VALUE)
-        select_season(driver, config.SEASON)
-
-        # Region resets on a season change, so it goes last. It is missing
-        # entirely for a season with no standings posted yet.
-        filters["region_applied"] = select_option(driver, "ddlRegion", config.REGION)
-        if not filters["region_applied"]:
-            print("No region filter available; the division has no standings groups yet.")
+        # region dropdown only appears once both are set. Region resets on a
+        # season change, so it goes last. It is missing entirely for a season
+        # with no standings posted yet, and on 2026-11-02 it was also missing
+        # for one run while the page served the East table, so a missing
+        # dropdown gets a second pass before the run gives up on it.
+        for attempt in (1, 2):
+            select_option(driver, "ddlDiv", config.DIVISION)
+            select_option(driver, "ddlCat", config.CATEGORY_VALUE)
+            select_season(driver, config.SEASON)
+            filters["region_applied"] = select_option(driver, "ddlRegion", config.REGION)
+            if filters["region_applied"]:
+                break
+            print(f"No region filter on attempt {attempt}.")
 
         caption = read_caption(driver)
         filters["source_label"] = caption
@@ -258,6 +266,20 @@ def scrape_standings():
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "filters": filters,
             }
+
+        # The page shows another region's table when the region could not be
+        # chosen. A table with teams in it must say it is ours.
+        if not filters["region_applied"] and not region_named(caption):
+            table_now = find_standings_table(driver)
+            if table_now and parse_rows(table_now, read_headers(table_now)):
+                return {
+                    "error": (
+                        f"GTHL served {caption or 'an unlabelled table'} when asked for "
+                        f"the {config.REGION} region. Refusing to publish another region's standings."
+                    ),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "filters": filters,
+                }
 
         table = find_standings_table(driver)
         if not table:
