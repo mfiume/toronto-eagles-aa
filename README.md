@@ -7,9 +7,9 @@ and schedule from the GTHL (Greater Toronto Hockey League).
 
 ## Features
 
-- Standings for the division, with the Eagles highlighted and club logos
-- Schedule for our region only, grouped by week, with the next Eagles game on top
-  and club logos on every game
+- Standings, West first (our region) with a switch to East, the Eagles highlighted and club logos
+- Schedule grouped by week with the next Eagles game on top and club logos on every game. It opens
+  on the Eagles; the picker beside it chooses West, East or any one team
 - Playoff seeding picture, once the GTHL publishes the format for the season
 - Statistics tab for the team: goals and penalties by period, the penalties we take, power play and penalty kill,
   shots and how games unfold. Team figures only, and only behind the team login (see `docs/STATISTICS.md`)
@@ -69,6 +69,15 @@ schedule is filtered against `config.WEST_TEAMS`. Every team appearing in the
 standings groups, so it is absent for a season that has not started. That is not
 an error. The scrape records `region_applied` and the pages say whether they are
 showing one region or the whole division.
+
+**A missing dropdown can mean the other region's table.** On 2026-11-02 one run found no
+region dropdown while the division had standings, and the page served the East table.
+`scrape_standings.py` now tries the region twice, and a table with teams in it that does not
+name our region is refused, which keeps the last good standings. The other region is read in
+the same session (`other_region` in `standings.json`, and the East games in `schedule.json`)
+for the page's switch; it only has to match its own caption and not overlap our roster, and a
+miss leaves the switch out. `scrape_schedule.py` also refuses an empty read when the last
+schedule still had games to come.
 
 Both scrapers defend against this by reading back the labels the site prints for
 itself. Standings compares the caption (`#rptMain_st_lbDetail_0`, e.g.

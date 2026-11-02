@@ -20,6 +20,7 @@ against config.WEST_TEAMS.
 import json
 import time
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -194,6 +195,24 @@ def in_our_region(game):
     return bool(teams & set(config.WEST_TEAMS))
 
 
+def previous_has_upcoming_games(path="schedule.json"):
+    """Did the schedule on disk list a game dated today or later?"""
+    try:
+        with open(path, encoding="utf-8") as f:
+            previous = json.load(f).get("schedule", [])
+    except (OSError, ValueError):
+        return False
+    today = datetime.now(ZoneInfo("America/Toronto")).date()
+    for g in previous:
+        try:
+            day = datetime.strptime(g.get("Date", "")[:11], "%d-%b-%Y").date()
+        except ValueError:
+            continue
+        if day >= today:
+            return True
+    return False
+
+
 def wrong_division(games):
     """
     Games the site returned that are not the division we asked for.
@@ -281,6 +300,10 @@ def scrape_schedule():
 
         return {
             "schedule": ours,
+            # The other region's games, for the page's West / East choice.
+            # Nothing else reads them: the game pages, the statistics and the
+            # season record stay our own region's.
+            "other_region": [g for g in games if not in_our_region(g)],
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "filters": filters,
         }
@@ -305,6 +328,17 @@ def main():
     print("=" * 60)
 
     data = scrape_schedule()
+
+    # The site has returned an empty table for one run while games were still
+    # to come (2026-11-02). A window that had upcoming games a run ago does
+    # not become empty, so that is a failed read and the last good data stays.
+    if "error" not in data and not data["filters"].get("division_games"):
+        if previous_has_upcoming_games():
+            data = {
+                "error": "The GTHL returned no games, but the last schedule had games still to come.",
+                "timestamp": data["timestamp"],
+                "filters": data["filters"],
+            }
 
     with open("schedule.json", "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)

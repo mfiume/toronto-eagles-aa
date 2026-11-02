@@ -274,7 +274,7 @@ def extra_line(*parts, details=False):
     return f'<div class="{cls}">' + " · ".join(escape(p) for p in parts) + "</div>"
 
 
-def row_attrs(classes, details, row_type="game", day=None, kind="game", href=None, teams=()):
+def row_attrs(classes, details, row_type="game", day=None, kind="game", href=None, teams=(), region="west"):
     """
     The opening tag's attributes for a row. A league game's row (`href`)
     opens the game's own page on tap, and any details it has always show.
@@ -292,7 +292,7 @@ def row_attrs(classes, details, row_type="game", day=None, kind="game", href=Non
     view goes by the date, and the week headings count by kind. `teams` are
     who plays in it, for the pick-a-team filter.
     """
-    data = (f'data-type="{row_type}" data-kind="{kind}"'
+    data = (f'data-type="{row_type}" data-kind="{kind}" data-region="{region}"'
             + (f' data-date="{day.isoformat()}"' if day else '')
             + (f' data-teams="{" ".join(season_schedule.slug(t) for t in teams)}"' if teams else ''))
     if href:
@@ -349,7 +349,7 @@ def result_badge(ours, theirs):
             f'data-tip="{word}">{r}</span>')
 
 
-def game_row(game, day, our_team, team=None, start=None, now=None, first=None, video=None):
+def game_row(game, day, our_team, team=None, start=None, now=None, first=None, video=None, region="west"):
     """
     One league game as a compact row: day and time, then both teams stacked,
     then the LiveBarn play icon, then each team's goals once played. Ours look
@@ -408,7 +408,7 @@ def game_row(game, day, our_team, team=None, start=None, now=None, first=None, v
     where = where_cell(game.get('Arena', ''), game.get('Time', '') if score is not None else '')
     live = score is None and start is not None and stream_state(start, now) == 'live'
     classes = f"game{' is-ours' if ours else ''}{' is-final' if score else ''}{' is-live' if live else ''}"
-    return f"""                    <div {row_attrs(classes, details, day=day, href=game_page(game) if day else None, teams=(away, home))}>
+    return f"""                    <div {row_attrs(classes, details, day=day, href=game_page(game) if day and region == "west" else None, teams=(away, home), region=region)}>
                         <div class="game-when"><span class="game-day">{day_text}</span>
                             {when}</div>
                         <div class="game-teams">{teams}{where}{icons}{details}</div>
@@ -635,7 +635,7 @@ def aware(start):
     return start.replace(tzinfo=page_common.TORONTO) if start else None
 
 
-def build_block(schedule, today, our_team, team_events=None, now=None, videos=None):
+def build_block(schedule, today, our_team, team_events=None, now=None, videos=None, east=()):
     """
     The schedule itself: next-game card, heading with the filter, and the
     weeks. Without team_events this is the public version.
@@ -661,6 +661,19 @@ def build_block(schedule, today, our_team, team_events=None, now=None, videos=No
         film = (videos or {}).get(game_page(g)[len("game-"):-len(".html")])
         items.append((key, day, game_row(g, day, our_team, matches.get(i), aware(start), now, video=film),
                       is_ours(g), "game"))
+
+    # The other region's games: rows in the same weeks, shown only when the
+    # page is set to that region or to one of its teams. They have no game
+    # page, so they do not open one.
+    east_league = []
+    for g in east:
+        day = parse_game_date(g.get('Date', ''))
+        t = parse_game_time(g.get('Time', ''))
+        start = datetime.combine(day, t) if day and t else None
+        east_league.append((g, day, start))
+        key = start or (datetime.combine(day, datetime.min.time()) if day else datetime.max)
+        items.append((key, day, game_row(g, day, our_team, None, aware(start), now, region="east"),
+                      False, "game", True))
 
     # Every team event: the page pages through the whole season.
     for e in team_events or []:
@@ -715,7 +728,7 @@ def build_block(schedule, today, our_team, team_events=None, now=None, videos=No
                      data-season="{escape(page_common.season_label().replace('-', '–'))}">
                     <h2>Schedule</h2>
                     <div class="sched-filter" role="group" aria-label="Which games to show">
-                        {team_picker(league, default_ours)}
+                        {team_picker(league + east_league, default_ours)}
                     </div>
 """
     if logged_in:
@@ -748,7 +761,7 @@ def build_block(schedule, today, our_team, team_events=None, now=None, videos=No
 
     for monday, week in weeks:
         g_ours = sum(1 for it in week if it[3] and it[4] == "game")
-        g_all = sum(1 for it in week if it[4] == "game")
+        g_all = sum(1 for it in week if it[4] == "game" and not (len(it) > 5 and it[5]))
         events = event_counts(week)
 
         def heading_count(games):
@@ -758,8 +771,9 @@ def build_block(schedule, today, our_team, team_events=None, now=None, videos=No
         label = week_label(monday, this_monday) if monday else "Date to be confirmed"
         now = ' now' if monday == this_monday else ''
         has_ours = any(it[3] for it in week)
+        has_west = any(not (len(it) > 5 and it[5]) for it in week)
         week_attr = f' data-week="{monday.isoformat()}"' if monday else ''
-        html += f"""                <section class="week" data-ours="{int(has_ours)}"{week_attr}>
+        html += f"""                <section class="week" data-ours="{int(has_ours)}" data-west="{int(has_west)}"{week_attr}>
                     <div class="week-head"><h3 class="week-label{now}">{label}</h3>
                         <span class="week-count"><span class="count-ours">{heading_count(g_ours)}</span><span
                             class="count-all">{heading_count(g_all)}</span></span></div>
@@ -786,12 +800,14 @@ def team_picker(league, default_ours):
     names = sorted({n for g, _, _ in league for n in (g.get("Away", ""), g.get("Home", "")) if n} - {ours})
     teams = "".join(f'<option value="team:{season_schedule.slug(n)}">{escape(n)}</option>' for n in names)
     region = escape(config.REGION)
+    other = "East" if config.REGION == "West" else "West"
     return (f'<button type="button" class="sched-filter-btn" data-filter="ours" '
             f'aria-pressed="{str(default_ours).lower()}">{escape(ours.split()[-1])}</button>'
             f'<label class="sched-filter-btn team-pick" aria-pressed="{str(not default_ours).lower()}">'
             f'<span class="pick-text" data-who-text>{region}</span>'
             f'<select data-who aria-label="Whose games to show">'
-            f'<option value="all">{region}</option><optgroup label="Teams">{teams}</optgroup></select></label>')
+            f'<option value="all">{region}</option><option value="region:east">{other}</option>'
+            f'<optgroup label="Teams">{teams}</optgroup></select></label>')
 
 
 def period_controls():
@@ -961,6 +977,7 @@ def generate_html(today=None):
 
     schedule = data.get('schedule', [])
     schedule = schedule + season_rows(schedule)
+    east = data.get('other_region', [])
     timestamp = data.get('timestamp', '')
     filters = data.get('filters', {})
     error = data.get('error')
@@ -985,7 +1002,7 @@ def generate_html(today=None):
 {page_common.SCHEDULE_NOSCRIPT}</head>
 <body>
     <div class="container">
-{page_common.masthead("schedule.html", page_common.division_label(), page_common.season_label())}
+{page_common.masthead("schedule.html", f"{config.DIVISION} {config.CATEGORY}" if east else page_common.division_label(), page_common.season_label())}
 
         <div class="content">
 """
@@ -1009,12 +1026,12 @@ def generate_html(today=None):
 {page_common.freshness(timestamp)}"""
     else:
         html += '            <div class="schedule" data-schedule-block>\n'
-        html += build_block(schedule, today, our_team)
+        html += build_block(schedule, today, our_team, east=east)
         html += f"""            </div>
 {page_common.freshness(timestamp)}"""
         if team_events is not None:
             import team_crypto
-            sealed = team_crypto.encrypt(build_block(schedule, today, our_team, team_events, videos=load_videos()), password)
+            sealed = team_crypto.encrypt(build_block(schedule, today, our_team, team_events, videos=load_videos(), east=east), password)
             # A JSON script block is inert data; "</" is escaped so the
             # ciphertext can never close the tag.
             payload = json.dumps(sealed).replace("</", "<\\/")

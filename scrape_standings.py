@@ -212,6 +212,35 @@ def parse_rows(table, headers):
     return standings
 
 
+def scrape_other_region(driver):
+    """
+    The standings of the region we are not in, read from the page we are on.
+    {"region", "source_label", "standings"}, or None when the site did not
+    confirm it: the caption must name the other region, and the teams must
+    not overlap ours, so a failed choice can never pass one region off as
+    the other.
+    """
+    other = "East" if config.REGION == "West" else "West"
+    try:
+        if not select_option(driver, "ddlRegion", other):
+            return None
+        caption = read_caption(driver)
+        words = set(re.findall(r"[A-Za-z0-9-]+", caption))
+        if not caption_matches(caption) or other not in words:
+            print(f"Site reports {caption!r} when asked for {other}; leaving {other} out.")
+            return None
+        table = find_standings_table(driver)
+        rows = parse_rows(table, read_headers(table)) if table else []
+        if not rows or {r["Team"] for r in rows} & set(config.WEST_TEAMS):
+            print(f"The {other} table was empty or overlaps ours; leaving it out.")
+            return None
+        print(f"Extracted {len(rows)} {other} teams")
+        return {"region": other, "source_label": caption, "standings": rows}
+    except Exception as e:
+        print(f"Could not read the {other} standings: {e}")
+        return None
+
+
 def scrape_standings():
     """Scrape the standings for the configured division."""
     driver = setup_driver()
@@ -314,11 +343,18 @@ def scrape_standings():
                     "filters": filters,
                 }
 
-        return {
+        result = {
             "standings": standings,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "filters": filters,
         }
+
+        # The other region, for the page's West / East switch. It never
+        # decides whether the run counts: our own region has already passed
+        # every check above, and a miss here only leaves the switch out.
+        if filters["region_applied"] and standings:
+            result["other_region"] = scrape_other_region(driver)
+        return result
 
     except Exception as e:
         print(f"Error during scraping: {e}")

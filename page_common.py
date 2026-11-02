@@ -2521,6 +2521,8 @@ _SCHEDULE_CSS = """
         /* Filtering is a class on the wrapper, set in the generated HTML so the
            list is right before any script runs. A week with none of our games
            goes with them, and each week shows the count for the active view. */
+        .sched-weeks:not(.show-east) .game[data-region="east"],
+        .sched-weeks:not(.show-east) .week[data-west="0"],
         .filter-ours .game:not(.is-ours),
         .filter-ours .week[data-ours="0"],
         .filter-ours .count-all,
@@ -2860,6 +2862,7 @@ SCHEDULE_JS = """
             var r = range(period, anchor);
             var team = who.indexOf('team:') === 0 ? who.slice(5) : '';
             view.classList.toggle('filter-ours', who === 'ours');
+            view.classList.toggle('show-east', who === 'region:east' || !!team);
             if (oursButton) oursButton.setAttribute('aria-pressed', String(who === 'ours'));
             pick.setAttribute('aria-pressed', String(who !== 'ours'));
             // With the Eagles chosen the dropdown holds no choice, so that
@@ -2875,7 +2878,8 @@ SCHEDULE_JS = """
               var visible = [];
               week.querySelectorAll('.game').forEach(function (row) {
                 var d = row.dataset.date;
-                var show = (who === 'all' ||
+                var east = row.dataset.region === 'east';
+                var show = ((who === 'all' && !east) || (who === 'region:east' && east) ||
                             (who === 'ours' && row.classList.contains('is-ours')) ||
                             (team && (' ' + (row.dataset.teams || '') + ' ').indexOf(' ' + team + ' ') >= 0)) &&
                            (kind === 'all' || row.dataset.type === kind) &&
@@ -2974,7 +2978,7 @@ SCHEDULE_JS = """
           var savedWho = stored(FILTER_KEY);
           // Only honour a stored choice the page can actually show.
           if (savedWho === 'all' || (savedWho === 'ours' && view.dataset.hasOurs === '1') ||
-              (savedWho && savedWho.indexOf('team:') === 0 &&
+              (savedWho && (savedWho.indexOf('team:') === 0 || savedWho.indexOf('region:') === 0) &&
                whoSelect.querySelector('option[value="' + savedWho + '"]'))) {
             who = savedWho;
           }
@@ -3121,6 +3125,9 @@ SCHEDULE_NOSCRIPT = """    <noscript>
             .filter-ours .week[data-ours="0"] {
                 display: grid;
             }
+
+            .sched-weeks .game[data-region="east"],
+            .sched-weeks .week[data-west="0"] { display: none; }
 
             .filter-ours .count-all { display: inline; }
             .filter-ours .count-ours { display: none; }

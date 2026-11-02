@@ -36,6 +36,116 @@ def column_classes(header, *extra):
     return f' class="{" ".join(names)}"' if names else ""
 
 
+def table_html(standings):
+    """One region's standings as the table markup."""
+    html = ""
+    html += """
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+"""
+
+    # Get headers from first row
+    if standings:
+        headers = list(standings[0].keys())
+        for header in headers:
+            if not header or header == 'Logo' or header in page_common.RANK_FIELDS:
+                continue
+            if header == 'Position':
+                # Unlabelled rank column.
+                html += '                            <th class="stat rank"></th>\n'
+            elif header == 'Team':
+                html += f'                            <th class="team-col">{header}</th>\n'
+            else:
+                # Every other standings column is a number.
+                attrs = column_classes(header, 'stat')
+                html += f'                            <th{attrs}>{header}</th>\n'
+
+    html += """                        </tr>
+                </thead>
+                <tbody>
+"""
+
+    # Add rows
+    for row in standings:
+        # Mark our own row. The team comes from config like everywhere else.
+        is_our_team = row.get('Team', '').lower() == config.TEAM_NAME.lower()
+        row_class = ' class="highlight"' if is_our_team else ''
+        html += f"                        <tr{row_class}>\n"
+        for i, (key, value) in enumerate(before_first_game(row).items()):
+            # Skip empty column names
+            if key == '' or key in page_common.RANK_FIELDS:
+                continue
+
+            # Handle Position column specially
+            if key == 'Position':
+                # The place, shared ("T5") when the tie-breakers cannot separate teams.
+                html += f'                            <td class="stat rank">{page_common.rank_label(row)}</td>\n'
+            elif key == 'Logo':
+                continue  # Skip Logo column, it will be included with Team
+            elif key == 'Team':  # Team name
+                logo = page_common.team_logo(value, row.get('Logo'))
+                # The team's name leads to its own page.
+                html += (f'                            <td class="team-name">'
+                         f'<a class="team-link" href="team-{slug(value)}.html">'
+                         f'<span class="team-cell">{logo}<span>{value}</span></span></a></td>\n')
+            elif key in ['DIFF', 'GD', '+/-']:  # Goal differential
+                try:
+                    diff_val = int(value) if value else 0
+                    sign = "positive" if diff_val > 0 else ("negative" if diff_val < 0 else "")
+                    display_val = f"+{diff_val}" if diff_val > 0 else str(diff_val)
+                    attrs = column_classes(key, 'stat', sign)
+                    html += f'                            <td{attrs}>{display_val}</td>\n'
+                except ValueError:
+                    html += f'                            <td{column_classes(key, "stat")}>{value}</td>\n'
+            else:  # Other stats
+                attrs = column_classes(key, 'stat')
+                html += f'                            <td{attrs}>{value}</td>\n'
+        html += "                        </tr>\n"
+
+    html += """                    </tbody>
+            </table>
+        </div>
+"""
+    return html
+
+
+def regions_html(west, other):
+    """
+    Our own region's table, and when the other region was read too, a West /
+    East switch above both. Our own is what shows first, and what shows with
+    no scripting.
+    """
+    ours = config.REGION
+    if not other or not other.get("standings"):
+        return table_html(west)
+    other_name = other["region"]
+    east = page_common.rank_standings(other["standings"])
+    def button(name, pressed):
+        return (f'<button type="button" class="sched-filter-btn" data-region="{name}" '
+                f'aria-pressed="{str(pressed).lower()}">{name}</button>')
+    return (f'''
+            <div class="sched-filter standings-region" role="group" aria-label="Region">
+                {button(ours, True)}{button(other_name, False)}
+            </div>
+            <div data-region-table="{ours}">{table_html(west)}</div>
+            <div data-region-table="{other_name}" hidden>{table_html(east)}</div>
+            <script>
+            (function () {{
+              var buttons = document.querySelectorAll('[data-region]');
+              var tables = document.querySelectorAll('[data-region-table]');
+              buttons.forEach(function (b) {{
+                b.addEventListener('click', function () {{
+                  buttons.forEach(function (x) {{ x.setAttribute('aria-pressed', String(x === b)); }});
+                  tables.forEach(function (t) {{ t.hidden = t.dataset.regionTable !== b.dataset.region; }});
+                }});
+              }});
+            }})();
+            </script>
+''')
+
+
 def generate_html():
     """Generate HTML page from standings.json"""
 
@@ -52,6 +162,9 @@ def generate_html():
     timestamp = data.get("timestamp", "")
     filters = data.get("filters", {})
     error = data.get("error")
+    # With both regions on the page the heading names the division only.
+    division = (f"{config.DIVISION} {config.CATEGORY}" if data.get("other_region")
+                else page_common.division_label(filters))
 
     # Start building HTML
     html = f"""<!DOCTYPE html>
@@ -67,7 +180,7 @@ def generate_html():
 </head>
 <body>
     <div class="container">
-{page_common.masthead("index.html", page_common.division_label(filters), page_common.season_label())}
+{page_common.masthead("index.html", division, page_common.season_label())}
 
         <div class="content">
 """
@@ -83,76 +196,7 @@ def generate_html():
     elif not standings:
         html += page_common.season_not_started_notice("standings")
     else:
-        # Build table
-        html += """
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-"""
-
-        # Get headers from first row
-        if standings:
-            headers = list(standings[0].keys())
-            for header in headers:
-                if not header or header == 'Logo' or header in page_common.RANK_FIELDS:
-                    continue
-                if header == 'Position':
-                    # Unlabelled rank column.
-                    html += '                            <th class="stat rank"></th>\n'
-                elif header == 'Team':
-                    html += f'                            <th class="team-col">{header}</th>\n'
-                else:
-                    # Every other standings column is a number.
-                    attrs = column_classes(header, 'stat')
-                    html += f'                            <th{attrs}>{header}</th>\n'
-
-        html += """                        </tr>
-                    </thead>
-                    <tbody>
-"""
-
-        # Add rows
-        for row in standings:
-            # Mark our own row. The team comes from config like everywhere else.
-            is_our_team = row.get('Team', '').lower() == config.TEAM_NAME.lower()
-            row_class = ' class="highlight"' if is_our_team else ''
-            html += f"                        <tr{row_class}>\n"
-            for i, (key, value) in enumerate(before_first_game(row).items()):
-                # Skip empty column names
-                if key == '' or key in page_common.RANK_FIELDS:
-                    continue
-
-                # Handle Position column specially
-                if key == 'Position':
-                    # The place, shared ("T5") when the tie-breakers cannot separate teams.
-                    html += f'                            <td class="stat rank">{page_common.rank_label(row)}</td>\n'
-                elif key == 'Logo':
-                    continue  # Skip Logo column, it will be included with Team
-                elif key == 'Team':  # Team name
-                    logo = page_common.team_logo(value, row.get('Logo'))
-                    # The team's name leads to its own page.
-                    html += (f'                            <td class="team-name">'
-                             f'<a class="team-link" href="team-{slug(value)}.html">'
-                             f'<span class="team-cell">{logo}<span>{value}</span></span></a></td>\n')
-                elif key in ['DIFF', 'GD', '+/-']:  # Goal differential
-                    try:
-                        diff_val = int(value) if value else 0
-                        sign = "positive" if diff_val > 0 else ("negative" if diff_val < 0 else "")
-                        display_val = f"+{diff_val}" if diff_val > 0 else str(diff_val)
-                        attrs = column_classes(key, 'stat', sign)
-                        html += f'                            <td{attrs}>{display_val}</td>\n'
-                    except ValueError:
-                        html += f'                            <td{column_classes(key, "stat")}>{value}</td>\n'
-                else:  # Other stats
-                    attrs = column_classes(key, 'stat')
-                    html += f'                            <td{attrs}>{value}</td>\n'
-            html += "                        </tr>\n"
-
-        html += """                    </tbody>
-                </table>
-            </div>
-"""
+        html += regions_html(standings, data.get("other_region"))
 
     html += f"""{page_common.freshness(timestamp)}        </div>
 
