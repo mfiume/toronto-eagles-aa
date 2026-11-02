@@ -1595,6 +1595,8 @@
         /* Filtering is a class on the wrapper, set in the generated HTML so the
            list is right before any script runs. A week with none of our games
            goes with them, and each week shows the count for the active view. */
+        .sched-weeks:not(.show-east) .game[data-region="east"],
+        .sched-weeks:not(.show-east) .week[data-west="0"],
         .filter-ours .game:not(.is-ours),
         .filter-ours .week[data-ours="0"],
         .filter-ours .count-all,
@@ -4014,12 +4016,12 @@
                     <div class="block-head"><h3>Season series</h3><span>Rangers 1 · Terriers 0</span></div>
                     <div class="team-games">
                     <div class="week-games">
-                    <div class="game is-final is-link" data-type="game" data-kind="game" data-date="2026-10-16" data-teams="mississauga-terriers vaughan-rangers" data-href="game-2026-10-16_mississauga-terriers_at_vaughan-rangers.html" tabindex="0" role="link">
+                    <div class="game is-final is-link" data-type="game" data-kind="game" data-region="west" data-date="2026-10-16" data-teams="mississauga-terriers vaughan-rangers" data-href="game-2026-10-16_mississauga-terriers_at_vaughan-rangers.html" tabindex="0" role="link">
                         <div class="game-when"><span class="game-day">Fri 16</span>
                             <span class="game-time"><span class="game-final">Final</span></span></div>
                         <div class="game-teams"><div class="game-team r1 lost"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span class="game-name"><a class="team-link" href="team-mississauga-terriers.html">Mississauga Terriers</a></span></div><span class="game-goals r1 lost">0</span><div class="game-team r2 won"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span class="game-name"><a class="team-link" href="team-vaughan-rangers.html">Vaughan Rangers</a></span></div><span class="game-goals r2 won">6</span><div class="game-where"><span class="where-place" data-tip="Al Palladini West">Al Palladini West</span><span class="where-time">7:10 PM</span></div></div>
                     </div>
-                    <div class="game is-current is-link" data-type="game" data-kind="game" data-date="2026-11-16" data-teams="vaughan-rangers mississauga-terriers" data-href="game-2026-11-16_vaughan-rangers_at_mississauga-terriers.html" tabindex="0" role="link">
+                    <div class="game is-current is-link" data-type="game" data-kind="game" data-region="west" data-date="2026-11-16" data-teams="vaughan-rangers mississauga-terriers" data-href="game-2026-11-16_vaughan-rangers_at_mississauga-terriers.html" tabindex="0" role="link">
                         <div class="game-when"><span class="game-day">Mon 16</span>
                             <span class="game-time">7:10 PM</span><span class="game-live" data-live-start="2026-11-16T19:10:00-05:00" hidden>Live</span></div>
                         <div class="game-teams"><div class="game-team r1"><img class="team-logo" src="assets/logos/vaughan-rangers.png" alt="" loading="lazy"><span class="game-name"><a class="team-link" href="team-vaughan-rangers.html">Vaughan Rangers</a></span></div><div class="game-team r2"><img class="team-logo" src="assets/logos/mississauga-terriers.png" alt="" loading="lazy"><span class="game-name"><a class="team-link" href="team-mississauga-terriers.html">Mississauga Terriers</a></span></div><div class="game-where"><span class="where-place" data-tip="Erin Mills 1">Erin Mills 1</span><span class="where-time"></span></div><div class="game-icons"><a class="icon-btn game-watch is-upcoming" data-tip="Watch live on LiveBarn" href="https://watch.livebarn.com/en/video/3834/live" data-live="https://watch.livebarn.com/en/video/3834/live" data-replay="https://watch.livebarn.com/en/video/3834/2026-11-16/19:10" target="_blank" rel="noopener noreferrer" data-start="2026-11-16T19:10:00-05:00" data-label="Vaughan Rangers at Mississauga Terriers on LiveBarn" aria-label="Watch: Vaughan Rangers at Mississauga Terriers on LiveBarn" hidden><img src="assets/livebarn.png" alt="" width="15" height="17"></a></div></div>
@@ -4028,7 +4030,7 @@
                     </div>
                 </section>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-11-02T16:44:07.575400+00:00" title="Nov 02, 11:44 AM ET · Refreshes hourly">just now</time></p>
+            <p class="content-meta">Updated <time datetime="2026-11-02T16:51:15.005857+00:00" title="Nov 02, 11:51 AM ET · Refreshes hourly">just now</time></p>
         </div>
 
     </div>
@@ -4356,6 +4358,7 @@
             var r = range(period, anchor);
             var team = who.indexOf('team:') === 0 ? who.slice(5) : '';
             view.classList.toggle('filter-ours', who === 'ours');
+            view.classList.toggle('show-east', who === 'region:east' || !!team);
             if (oursButton) oursButton.setAttribute('aria-pressed', String(who === 'ours'));
             pick.setAttribute('aria-pressed', String(who !== 'ours'));
             // With the Eagles chosen the dropdown holds no choice, so that
@@ -4371,7 +4374,8 @@
               var visible = [];
               week.querySelectorAll('.game').forEach(function (row) {
                 var d = row.dataset.date;
-                var show = (who === 'all' ||
+                var east = row.dataset.region === 'east';
+                var show = ((who === 'all' && !east) || (who === 'region:east' && east) ||
                             (who === 'ours' && row.classList.contains('is-ours')) ||
                             (team && (' ' + (row.dataset.teams || '') + ' ').indexOf(' ' + team + ' ') >= 0)) &&
                            (kind === 'all' || row.dataset.type === kind) &&
@@ -4470,7 +4474,7 @@
           var savedWho = stored(FILTER_KEY);
           // Only honour a stored choice the page can actually show.
           if (savedWho === 'all' || (savedWho === 'ours' && view.dataset.hasOurs === '1') ||
-              (savedWho && savedWho.indexOf('team:') === 0 &&
+              (savedWho && (savedWho.indexOf('team:') === 0 || savedWho.indexOf('region:') === 0) &&
                whoSelect.querySelector('option[value="' + savedWho + '"]'))) {
             who = savedWho;
           }
