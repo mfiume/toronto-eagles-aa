@@ -25,6 +25,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   scrape:
@@ -140,3 +141,26 @@ jobs:
               git push
             fi
           fi
+
+      # A failed build leaves the old site up and says nothing, so say it: one issue is opened (GitHub emails
+      # it, and the GitHub app pushes it to a phone) and it is closed again by the next build that works.
+      - name: Open an issue when the build fails
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="The site is not updating: the hourly build is failing"
+          open=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')
+          if [ -z "$open" ]; then
+            gh issue create --title "$title" --body "The build failed, so the schedule, scores and stats on the site are going stale. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          fi
+
+      - name: Close the failing-build issue once the build works
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="The site is not updating: the hourly build is failing"
+          for n in $(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[].number'); do
+            gh issue close "$n" --comment "The build works again: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          done
