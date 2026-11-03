@@ -43,9 +43,16 @@ class TwoTeams(unittest.TestCase):
 
 class UnequalGames(unittest.TestCase):
     def test_better_win_percentage_placed_higher(self):
-        # Both on 4 points: A has 2 wins in 2 games, B has 2 wins in 4 games.
+        # Both on 4 points: A in 2 games (1.000), B in 4 games (.500).
         out = places([row("B", "2-2-0", pos=1), row("A", "2-0-0", pos=2)], [])
         self.assertEqual([t for _, _, t in out], ["A", "B"])
+
+    def test_screenshot_cases(self):
+        # North Stars 6-1-0 (7 GP) over Rangers 6-2-0 (8 GP) on 12 points;
+        # Eagles 1-2-3 (6 GP) over Terriers 2-4-1 (7 GP) on 5 points.
+        out = places([row("Rangers", "6-2-0", pos=1), row("North Stars", "6-1-0", pos=2),
+                      row("Terriers", "2-4-1", pos=3), row("Eagles", "1-2-3", pos=4)], [])
+        self.assertEqual([t for _, _, t in out], ["North Stars", "Rangers", "Eagles", "Terriers"])
 
     def test_win_percentage_beats_wins_against_each_other(self):
         out = places([row("B", "2-2-0", pos=1), row("A", "2-0-0", pos=2)],

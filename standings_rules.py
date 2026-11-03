@@ -21,7 +21,7 @@ GTHL league schedules are balanced, so the balanced-schedule procedures apply:
 
 The tie-breaking procedure is for teams that have played the same number of
 games. Teams level on points with different games played are separated first
-by win percentage (wins / games played), the better percentage placing higher;
+by the WIN% column (points / (2 x games played)), the better percentage placing higher;
 the procedure applies only to teams still level on it.
 
 Where the published data cannot settle it (who scored first is not
@@ -94,8 +94,9 @@ class Ranker:
         return sum(record(self.rows[team]))
 
     def win_pct(self, team):
+        """The WIN% column: points earned / points available."""
         gp = self.games(team)
-        return self.wins(team) / gp if gp else 0.0
+        return points(self.rows[team]) / (2 * gp) if gp else 0.0
 
     def wins_against(self, team, others):
         return sum(1 for a, h, ga, gh in self.results
