@@ -19,6 +19,11 @@ GTHL league schedules are balanced, so the balanced-schedule procedures apply:
   the team that comes out on top takes the highest place, and the process
   starts again with the rest (12.2(c) once two remain).
 
+The tie-breaking procedure is for teams that have played the same number of
+games. Teams level on points with different games played are separated first
+by win percentage (wins / games played), the better percentage placing higher;
+the procedure applies only to teams still level on it.
+
 Where the published data cannot settle it (who scored first is not
 published; a playoff game or a coin toss is not played until the end of the
 season, per 12.2(b) for first place and the last playoff spot), the teams
@@ -85,6 +90,13 @@ class Ranker:
     def wins(self, team):
         return record(self.rows[team])[0]
 
+    def games(self, team):
+        return sum(record(self.rows[team]))
+
+    def win_pct(self, team):
+        gp = self.games(team)
+        return self.wins(team) / gp if gp else 0.0
+
     def wins_against(self, team, others):
         return sum(1 for a, h, ga, gh in self.results
                    if (a == team and h in others and ga > gh) or (h == team and a in others and gh > ga))
@@ -122,6 +134,12 @@ class Ranker:
         """The team placed highest among `teams`, or the teams that share that place."""
         if len(teams) == 1:
             return list(teams)
+        if len({self.games(t) for t in teams}) > 1:
+            # Unequal games played: the better win percentage is placed higher,
+            # and the tie-breakers only apply to teams level on it.
+            best = self.leaders(teams, self.win_pct)
+            if len(best) < len(teams):
+                return self.top_group(best)
         if len(teams) == 2:
             return self.two(*teams)[0]
         most = self.leaders(teams, self.wins)

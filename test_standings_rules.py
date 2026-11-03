@@ -41,6 +41,18 @@ class TwoTeams(unittest.TestCase):
         self.assertEqual(out, [(1, True, "A"), (1, True, "B")])
 
 
+class UnequalGames(unittest.TestCase):
+    def test_better_win_percentage_placed_higher(self):
+        # Both on 4 points: A has 2 wins in 2 games, B has 2 wins in 4 games.
+        out = places([row("B", "2-2-0", pos=1), row("A", "2-0-0", pos=2)], [])
+        self.assertEqual([t for _, _, t in out], ["A", "B"])
+
+    def test_win_percentage_beats_wins_against_each_other(self):
+        out = places([row("B", "2-2-0", pos=1), row("A", "2-0-0", pos=2)],
+                     [("A", "B", 0, 5)])
+        self.assertEqual([t for _, _, t in out], ["A", "B"])
+
+
 class ThreeOrMore(unittest.TestCase):
     def test_most_wins_takes_the_top_then_two_team_rules(self):
         standings = [row("A", "1-0-2", pos=1), row("B", "2-1-0", pos=2), row("C", "1-0-2", pos=3)]
