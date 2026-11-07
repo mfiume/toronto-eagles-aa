@@ -578,6 +578,7 @@ def film_package(entry, g=None):
     return json.dumps({"html": film_button(entry["url"]), "url": entry["url"], "moments": entry["moments"], "api": PLAYER_API,
                        "lead": entry.get("lead", DEFAULT_LEAD),
                        **({"score": entry["score"]} if entry.get("score") else {}),
+                       **({"pano": entry["pano"]} if entry.get("pano") else {}),
                        **({"info": film_info(g)} if g else {})},
                       separators=(",", ":"))
 

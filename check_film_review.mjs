@@ -31,6 +31,7 @@ window.YT = { Player: function (mount, opts) {
   this.playVideo = function () { window.__yt.plays++; fire(1); };
   this.pauseVideo = function () { window.__yt.pauses = (window.__yt.pauses || 0) + 1; fire(2); };
   this.getCurrentTime = function () { return window.__yt.ct; };
+  this.loadVideoById = function (o) { (window.__yt.loads = window.__yt.loads || []).push(o); window.__yt.ct = o.startSeconds; };
   this.destroy = function () { window.__yt.destroyed++; };
   setTimeout(function () { opts.events.onReady({}); }, 0);
 } };
@@ -617,6 +618,46 @@ for (const [name, w, h] of [['desktop', 1100, 800], ['phone', 390, 800]]) {
   await p.screenshot({ path: path.join(shots, `review_plain_${name}.png`) });
   await p.keyboard.press('Escape');
   await p.close();
+}
+
+// The whole-ice view: a switch under the player; times follow the play from one video to the other (the pano is 2 s ahead from 1500 s of the main video).
+{
+  const p = await newPage(1100, 800, true);
+  await p.open(info.moments);
+  await p.waitForSelector('a.is-film', { timeout: 8000 });
+  await p.click('.tl-dot[data-m="goal|2|4:33"]');
+  await p.waitForSelector('.rv #stub-player', { timeout: 5000 });
+  const labels = await p.$$eval('.rv-views .rv-chip', (e) => e.map((x) => x.textContent + ':' + x.getAttribute('aria-checked')));
+  ok('whole ice: switch offers both views, the main one chosen', JSON.stringify(labels) === JSON.stringify(['Follows play:true', 'Whole ice:false']), JSON.stringify(labels));
+  await p.evaluate(() => { window.__yt.ct = 1600; });
+  await p.click('.rv-views .rv-chip[data-v="whole"]');
+  await wait(200);
+  const load = await p.evaluate(() => window.__yt.loads);
+  ok('whole ice: loads the other video at the matching time', load && load.length === 1 && load[0].videoId === 'PANOFAKE001' && load[0].startSeconds === 1602, JSON.stringify(load));
+  ok('whole ice: address says so', (await p.evaluate(() => location.hash)).includes('view=whole'));
+  ok('whole ice: link opens that video at its own time', (await p.$eval('.rv-open', (a) => a.href)).includes('PANOFAKE001') && (await p.$eval('.rv-open', (a) => a.href)).includes('t=1602'));
+  // a click on a row seeks the whole-ice video to the row's time on its clock
+  await p.evaluate(() => { window.__yt.seeks = []; });
+  await p.click('.rv-list li:nth-child(7) .rv-row');
+  await wait(200);
+  const seeks = await p.evaluate(() => window.__yt.seeks);
+  ok('whole ice: a row seeks on the whole-ice clock', seeks.length === 1 && seeks[0][0] === 2002, JSON.stringify(seeks));
+  // the page reads the whole-ice clock back as the main one, so the current row follows
+  await p.evaluate(() => { window.__yt.ct = 2002; window.__yt.opts.events.onStateChange({ data: 1 }); });
+  await wait(700);
+  ok('whole ice: the current row follows the player', (await nowIndex(p)) === 6, String(await nowIndex(p)));
+  await p.click('.rv-views .rv-chip[data-v="auto"]');
+  await wait(200);
+  const back = await p.evaluate(() => window.__yt.loads);
+  ok('whole ice: switching back returns to the main video at the matching time', back.length === 2 && back[1].videoId === 'FAKEID00001' && back[1].startSeconds === 2000, JSON.stringify(back));
+  await p.close();
+  // opened from a shared address
+  const q = await newPage(1100, 800, true);
+  await q.open(info.moments + '#review=goal-2-4:33&view=whole');
+  await q.waitForSelector('.rv #stub-player', { timeout: 8000 });
+  const o = await q.evaluate(() => window.__yt.opts);
+  ok('whole ice: a shared address opens the whole-ice video', o.videoId === 'PANOFAKE001' && o.playerVars.start === 1400, JSON.stringify(o));
+  await q.close();
 }
 
 await b.close();

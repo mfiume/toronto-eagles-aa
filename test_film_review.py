@@ -43,7 +43,8 @@ SCORE = {"steps": [{"t": 120, "us": 0, "them": 1},
                    {"t": 2020, "us": 3, "them": 1},
                    {"t": 2520, "us": 4, "them": 1}],
          "periods": [{"p": 2, "t": 1000}, {"p": 3, "t": 1900}], "end": 3000}
-SECRET = {WITH_MOMENTS: {"url": f"https://youtu.be/{VIDEO_ID}", "moments": MOMENTS, "lead": 20, "score": SCORE}, PLAIN: f"https://youtu.be/{VIDEO_ID}"}
+SECRET = {WITH_MOMENTS: {"url": f"https://youtu.be/{VIDEO_ID}", "moments": MOMENTS, "lead": 20, "score": SCORE,
+                            "pano": {"url": "https://youtu.be/PANOFAKE001", "shifts": [{"at": 0, "delta": 0}, {"at": 1500, "delta": 2}]}}, PLAIN: f"https://youtu.be/{VIDEO_ID}"}
 
 
 def write_fixture(out):

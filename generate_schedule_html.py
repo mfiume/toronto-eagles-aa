@@ -913,8 +913,34 @@ def load_film():
             score = clean_score(v.get("score"))
             if score:
                 film["score"] = score
+            pano = clean_pano(v.get("pano"))
+            if pano:
+                film["pano"] = pano
         films[gid] = film
     return films
+
+
+def clean_pano(raw):
+    """
+    The whole-ice view of a game's film, as Film Room sends it: {"url", "shifts": [{"at", "delta"}]}, or None when it is not usable. `shifts` says how the
+    whole-ice video's clock differs from the main video's: from `at` seconds of the main video on, `delta` seconds are added to reach the same moment.
+    A shift that is not a number, or that is a minute or more, is dropped; with none left the two clocks are taken to agree.
+    """
+    if not isinstance(raw, dict):
+        return None
+    url = raw.get("url")
+    if not isinstance(url, str) or not url.startswith("https://"):
+        return None
+    shifts = []
+    for x in raw.get("shifts") or []:
+        try:
+            at, delta = float(x["at"]), float(x["delta"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if at >= 0 and abs(delta) < 60 and at == at and delta == delta:
+            shifts.append({"at": at, "delta": delta})
+    shifts.sort(key=lambda x: x["at"])
+    return {"url": url, "shifts": shifts or [{"at": 0, "delta": 0}]}
 
 
 def clean_score(raw):

@@ -57,6 +57,20 @@ class Secret(unittest.TestCase):
         self.assertEqual(list(films), ["c"])
         self.assertEqual(films["c"]["moments"], [{"kind": "goal", "period": 2, "clock": "0:59", "t": 9}])
 
+    def test_whole_ice_view_is_kept_when_well_formed(self):
+        raw = {"g1": {"url": URL, "moments": [], "pano": {"url": "https://youtu.be/PANOID0001", "shifts": [{"at": 1663.8, "delta": 0.15}, {"at": 0, "delta": 0}, {"at": 5, "delta": "x"}]}},
+               "g2": {"url": URL, "pano": {"url": "http://youtu.be/PANOID0001"}}, "g3": {"url": URL, "pano": {"url": "https://youtu.be/PANOID0001"}}}
+        films = load(json.dumps(raw))
+        self.assertEqual(films["g1"]["pano"], {"url": "https://youtu.be/PANOID0001", "shifts": [{"at": 0.0, "delta": 0.0}, {"at": 1663.8, "delta": 0.15}]})
+        self.assertNotIn("pano", films["g2"])
+        self.assertEqual(films["g3"]["pano"]["shifts"], [{"at": 0, "delta": 0}])
+
+    def test_whole_ice_view_is_sealed_with_the_film(self):
+        pano = {"url": "https://youtu.be/PANOID0001", "shifts": [{"at": 0, "delta": 0}]}
+        sealed = json.loads(gp.film_package({"url": URL, "moments": [], "pano": pano}))
+        self.assertEqual(sealed["pano"], pano)
+        self.assertNotIn("pano", json.loads(gp.film_package({"url": URL, "moments": []})))
+
     def test_bad_secret_is_nothing(self):
         self.assertEqual(load("not json"), {})
         self.assertEqual(load("[1]"), {})

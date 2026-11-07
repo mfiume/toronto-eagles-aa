@@ -105,6 +105,20 @@ arithmetic gives the earliest the goal can be and stoppages only push it later),
 early, a spoiler. The strip changes at the middle of the limits instead: it is never wrong by more than `hw`, and never before the lower limit,
 and it keeps the previous score until then. The page uses `t` as given and does not look at `approx`.
 
+## Two views of the ice
+
+LiveBarn records every game twice: the camera that follows the play, and the whole ice from a fixed camera. When Film Room has uploaded both,
+the entry for the game carries `pano: {url, shifts}` next to `url`, and under the player two pills, "Follows play" and "Whole ice", switch
+between them. `shifts` is a list of `{at, delta}`: from `at` seconds of the main video on, add `delta` seconds to reach the same moment in the
+whole-ice video (usually one entry with no difference; the two recordings are cut into pieces that start a fraction of a second apart).
+
+Everything on the page (moments, the list, the score strip, the countdown, highlights) stays on the main video's seconds. `vt` turns a time
+into the playing video's own, `mc` turns the player's reading back, so a click on a row, a seek and the current row behave the same in both
+views. Switching loads the other video at the matching time (`loadVideoById`) and plays on. The view rides in the address as `&view=whole`
+(`#review=goal-2-4:33&view=whole`); the main view is not written. "Open on YouTube" opens the video being watched at its own time. The pills
+are left out of a game with no whole-ice video, and are hidden while highlights play. `generate_schedule_html.clean_pano` drops a malformed
+entry (not an https address; a shift that is not a number or is a minute or more), and like the rest of the package it is only ever sealed.
+
 ## Behaviour of the layer
 
 Closes with Esc or the close button. Focus moves in on open and returns to the mark, row or button that opened it. The page behind is

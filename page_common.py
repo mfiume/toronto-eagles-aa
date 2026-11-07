@@ -130,6 +130,22 @@ REVIEW_JS = r"""
         var at = {}, state = null, info = null;
         // Seconds between the moment's time on the film and the play itself; the sealed package carries it, 20 when it does not.
         var lead = typeof film.lead === 'number' && film.lead >= 0 && film.lead <= 120 ? film.lead : 20;
+        // The same game's whole-ice view: its own video, and how its clock differs from the main video's (`delta` seconds, added from `at` on).
+        var pano = null, fp = film.pano, view = 'auto';
+        if (fp && typeof fp.url === 'string' && fp.url.indexOf('https://') === 0) {
+          var pid = null;
+          try { var pu = new URL(fp.url); pid = pu.searchParams.get('v') || pu.pathname.split('/').pop(); } catch (e) {}
+          if (pid && /^[\w-]{6,}$/.test(pid)) {
+            var psh = (Array.isArray(fp.shifts) ? fp.shifts : []).filter(function (x) { return x && typeof x.at === 'number' && typeof x.delta === 'number' && isFinite(x.at) && isFinite(x.delta) && x.at >= 0 && Math.abs(x.delta) < 60; })
+              .sort(function (a, b) { return a.at - b.at; });
+            pano = { url: fp.url, id: pid, shifts: psh.length ? psh : [{ at: 0, delta: 0 }] };
+          }
+        }
+        function toPano(t) { var d = 0; pano.shifts.forEach(function (s) { if (t >= s.at) d = s.delta; }); return Math.max(0, t + d); }
+        function toMain(t) { var d = 0; pano.shifts.forEach(function (s) { if (t >= s.at + s.delta) d = s.delta; }); return Math.max(0, t - d); }
+        // Everything on the page keeps the main video's seconds; these carry a time to and from the video that is playing.
+        function vt(s) { return view === 'whole' && pano ? toPano(s) : s; }
+        function mc(s) { return view === 'whole' && pano ? toMain(s) : s; }
         var fi = film.info;
         if (fi && typeof fi.away === 'string' && typeof fi.home === 'string' && fi.away && fi.home) {
           info = { away: fi.away, home: fi.home, score: typeof fi.score === 'string' ? fi.score : '', when: typeof fi.when === 'string' ? fi.when : '' };
@@ -180,7 +196,7 @@ REVIEW_JS = r"""
         // The address follows the review: #review at the start of the film, #review=goal-2-10:11 at a moment. No new history entries.
         // The filter rides along as #review=goal-2-10:11&filter=goals-for; #review=highlights plays the visible list as highlights.
         function setHash(key, f) {
-          var h = '#review' + (key === 'highlights' ? '=highlights' : key ? '=' + key.replace(/\|/g, '-') : '') + (f && f !== 'all' ? '&filter=' + f : '');
+          var h = '#review' + (key === 'highlights' ? '=highlights' : key ? '=' + key.replace(/\|/g, '-') : '') + (f && f !== 'all' ? '&filter=' + f : '') + (view === 'whole' ? '&view=whole' : '');
           if (location.hash !== h) { try { history.replaceState(null, '', location.pathname + location.search + h); } catch (e) {} }
         }
         function clearHash() {
@@ -188,11 +204,11 @@ REVIEW_JS = r"""
         }
         // '#review=goal-2-10:11' names a moment placed on the film: kind, period, clock. Anything else opens at the start.
         function fromHash() {
-          var m = /^#review(?:=(highlights|([a-z]+)-(\d+)-(\d+:\d\d)))?(?:&filter=([a-z-]+))?$/.exec(location.hash);
+          var m = /^#review(?:=(highlights|([a-z]+)-(\d+)-(\d+:\d\d)))?(?:&filter=([a-z-]+))?(?:&view=(whole))?$/.exec(location.hash);
           if (!m) return null;
           var t = m[2] ? at[m[2] + '|' + m[3] + '|' + m[4]] : undefined;
           var f = FILTERS.some(function (x) { return x[0] === m[5]; }) ? m[5] : 'all';
-          return { t: typeof t === 'number' ? t : 0, filter: f, hl: m[1] === 'highlights' };
+          return { t: typeof t === 'number' ? t : 0, filter: f, hl: m[1] === 'highlights', view: m[6] === 'whole' ? 'whole' : 'auto' };
         }
         var LINK_ICON = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.8 9.2a3 3 0 0 0 4.2 0l2.2-2.2a3 3 0 0 0-4.2-4.2L8 3.8"/><path d="M9.2 6.8a3 3 0 0 0-4.2 0L2.8 9a3 3 0 0 0 4.2 4.2L8 12.2"/></g></svg>';
         function copyText(text) {
@@ -208,7 +224,7 @@ REVIEW_JS = r"""
           if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).catch(old);
           return old();
         }
-        function watchUrl(t) { return film.url + (t > 0 ? (film.url.indexOf('?') < 0 ? '?' : '&') + 't=' + Math.floor(t) : ''); }
+        function watchUrl(t) { var u = view === 'whole' && pano ? pano.url : film.url, s = vt(t); return u + (s > 0 ? (u.indexOf('?') < 0 ? '?' : '&') + 't=' + Math.floor(s) : ''); }
         var ICONS = {
           play: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4.5 2.5v11l9-5.5z" fill="currentColor"/></svg>',
           pause: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 2.5h3v11H4zM9 2.5h3v11H9z" fill="currentColor"/></svg>',
@@ -224,6 +240,7 @@ REVIEW_JS = r"""
         function show(t, trigger, opening) {
           if (state) return;
           opening = opening || {};
+          view = opening.view === 'whole' && pano ? 'whole' : 'auto';
           var shared = null, list = events(), rows = [], timer = null, player = null, ready = false, pending = null, now = -1, cur = t;
           var filter = opening.filter || 'all', hl = null, playing = false, doneTimer = null;
           var root = el('div', 'rv'), box = el('div', 'rv-box' + (list.length ? '' : ' rv-solo'));
@@ -281,7 +298,32 @@ REVIEW_JS = r"""
           cdRing.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true"><circle class="rv-cd-track" cx="24" cy="24" r="21"/><circle class="rv-cd-arc" cx="24" cy="24" r="21" transform="rotate(-90 24 24)"/></svg>';
           var cdArc = cdRing.querySelector('.rv-cd-arc'); cdRing.appendChild(cdLogo); cdText.appendChild(cdRing); cdText.appendChild(cdLabel); cd.appendChild(cdText);
           cd.setAttribute('aria-hidden', 'true'); cdLive.setAttribute('role', 'status'); cdLive.setAttribute('aria-live', 'polite');
-          foot.appendChild(hlbar); foot.appendChild(ext);
+          // Under the player, when the game has a whole-ice video too: which of the two to watch. The page keeps its place when it changes.
+          var views = el('div', 'rv-views'), viewBtns = [];
+          if (pano) {
+            views.setAttribute('role', 'radiogroup'); views.setAttribute('aria-label', 'Camera');
+            [['auto', 'Follows play'], ['whole', 'Whole ice']].forEach(function (v) {
+              var b = el('button', 'rv-chip', v[1]);
+              b.type = 'button'; b.setAttribute('role', 'radio'); b.setAttribute('data-v', v[0]);
+              b.addEventListener('click', function () { setView(v[0]); });
+              b.addEventListener('keydown', function (e) {
+                var d = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+                if (!d) return;
+                e.preventDefault();
+                var o = viewBtns[(viewBtns.indexOf(b) + d + viewBtns.length) % viewBtns.length];
+                o.focus(); setView(o.getAttribute('data-v'));
+              });
+              views.appendChild(b); viewBtns.push(b);
+            });
+          } else views.hidden = true;
+          function paintViews() {
+            viewBtns.forEach(function (b) {
+              var on = b.getAttribute('data-v') === view;
+              b.setAttribute('aria-checked', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1; b.classList.toggle('is-on', on);
+            });
+          }
+          paintViews();
+          foot.appendChild(hlbar); foot.appendChild(views); foot.appendChild(ext);
           if (list.length) { stage.appendChild(cd); stage.appendChild(cdLive); }
           stage.appendChild(foot);
           var side = el('div', 'rv-side'), bar = el('div', 'rv-bar'), seg = el('div', 'rv-seg'), hlBtn = el('button', 'rv-hlbtn'), ul = el('ul', 'rv-list');
@@ -379,7 +421,7 @@ REVIEW_JS = r"""
             rows.forEach(function (r, i) { if (!r.li.hidden && r.ev.t <= ct) best = i; });
             setNow(best);
           }
-          function time() { try { return player && ready ? player.getCurrentTime() : cur; } catch (e) { return cur; } }
+          function time() { try { return player && ready ? mc(player.getCurrentTime()) : cur; } catch (e) { return cur; } }
           function poll() {
             clearInterval(timer); timer = null;
             if (playing) timer = setInterval(tick, hl ? 250 : 500);
@@ -437,12 +479,23 @@ REVIEW_JS = r"""
               sbTimer = setTimeout(function () { scored.classList.remove('is-new'); sb.classList.remove('is-goal-us', 'is-goal-them'); }, BOARD_NEW);
             }
           }
-          function tick() { try { var ct = player.getCurrentTime(); cur = ct; countdown(ct); scoreboard(ct); if (hl) light(ct); else mark(ct); } catch (e) {} }
+          function tick() { try { var ct = mc(player.getCurrentTime()); cur = ct; countdown(ct); scoreboard(ct); if (hl) light(ct); else mark(ct); } catch (e) {} }
           function seek(s) {
             cur = s; ext.href = watchUrl(s); countdown(s); sbAt = null; scoreboard(s);
-            if (player && ready) { player.seekTo(s, true); player.playVideo(); } else { pending = s; }
+            if (player && ready) { player.seekTo(vt(s), true); player.playVideo(); } else { pending = s; }
           }
           function go(s) { seek(s); mark(s); }
+          function setView(v) {
+            if (!pano || v === view) return;
+            var c = time();
+            view = v; t = cur = c; paintViews(); ext.href = watchUrl(c);
+            // a clip of the highlights is judged by the player's time, which is wrong for a moment while the other video loads
+            if (hl) { hl.settled = false; hl.since = Date.now(); }
+            if (player && ready) {
+              try { player.loadVideoById({ videoId: v === 'whole' ? pano.id : id, startSeconds: vt(c) }); } catch (e) {}
+            }
+            hash();
+          }
 
           // Highlights: the visible events' clips one after another. Each clip starts at the event's moment and plays for its length
           // (CLIP_SECONDS), or until the next clip starts when that comes first.
@@ -534,12 +587,12 @@ REVIEW_JS = r"""
           function build() {
             if (!state) return;
             player = new YT.Player(mount, {
-              videoId: id, width: '100%', height: '100%',
-              playerVars: Object.assign({ rel: 0, modestbranding: 1, playsinline: 1, autoplay: 1 }, t > 0 ? { start: Math.floor(t) } : {}),
+              videoId: view === 'whole' && pano ? pano.id : id, width: '100%', height: '100%',
+              playerVars: Object.assign({ rel: 0, modestbranding: 1, playsinline: 1, autoplay: 1 }, vt(t) > 0 ? { start: Math.floor(vt(t)) } : {}),
               events: {
                 onReady: function () {
                   ready = true;
-                  if (pending !== null) { player.seekTo(pending, true); player.playVideo(); pending = null; }
+                  if (pending !== null) { player.seekTo(vt(pending), true); player.playVideo(); pending = null; }
                 },
                 onStateChange: function (e) {
                   playing = e.data === 1;
@@ -613,7 +666,7 @@ REVIEW_JS = r"""
         var want = fromHash();
         if (want) {
           var opener = document.querySelector('.match-actions a.film');
-          if (opener) show(want.t, opener, { filter: want.filter, hl: want.hl });
+          if (opener) show(want.t, opener, { filter: want.filter, hl: want.hl, view: want.view });
         }
         // A plain click on a mark, a row or the film button opens the review; a modified click or a middle click still goes to the video.
         document.addEventListener('click', function (e) {
@@ -4681,6 +4734,20 @@ GAME_CSS = """
             align-items: center;
             gap: 12px;
             min-height: 36px;
+        }
+
+        .rv-views {
+            display: flex;
+            gap: 6px;
+            flex: none;
+        }
+
+        .rv-views[hidden] {
+            display: none;
+        }
+
+        .rv-foot.is-hl .rv-views {
+            display: none;
         }
 
         .rv-hl {
