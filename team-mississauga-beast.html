@@ -1078,6 +1078,56 @@
             gap: 2px;
         }
 
+        /* The film icon of a game that has a whole-ice video too: a button that opens a two-choice menu under it. */
+        .film-pick {
+            position: relative;
+            display: inline-flex;
+        }
+
+        button.icon-btn.film-pick-btn {
+            border: 0;
+            background: none;
+            padding: 0;
+            cursor: pointer;
+            font: inherit;
+        }
+
+        .film-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            z-index: 30;
+            display: none;
+            min-width: 150px;
+            margin-top: 2px;
+            padding: 4px;
+            border: 1px solid var(--line, #e3e5ea);
+            border-radius: 10px;
+            background: var(--card, #fff);
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+        }
+
+        .film-pick.is-open .film-menu {
+            display: block;
+        }
+
+        .film-menu a {
+            display: block;
+            padding: 9px 12px;
+            border-radius: 7px;
+            color: var(--ink);
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+
+        .film-menu a:hover,
+        .film-menu a:focus-visible {
+            background: var(--soft, rgba(0, 0, 0, 0.06));
+            outline: none;
+        }
+
         .icon-btn.game-watch::before {
             content: none !important;
         }
@@ -2617,7 +2667,7 @@
                     </div>
                 </section>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-11-09T02:01:36.200529+00:00" title="Nov 08, 09:01 PM ET · Refreshes hourly">1 minute ago</time></p>
+            <p class="content-meta">Updated <time datetime="2026-11-09T02:04:11.362898+00:00" title="Nov 08, 09:04 PM ET · Refreshes hourly">just now</time></p>
         </div>
 
     </div>
@@ -2876,6 +2926,29 @@
             event.preventDefault();
             openLogin();
           });
+        });
+
+        // The film icon of a game with a whole-ice video: opens its two-choice menu. The rows are placed after the team login opens them,
+        // so this listens on the page. A tap anywhere else, or Escape, closes it.
+        function closeFilmMenus(except) {
+          document.querySelectorAll('.film-pick.is-open').forEach(function (m) {
+            if (m === except) return;
+            m.classList.remove('is-open');
+            var b = m.querySelector('.film-pick-btn');
+            if (b) b.setAttribute('aria-expanded', 'false');
+          });
+        }
+        document.addEventListener('click', function (event) {
+          var btn = event.target.closest && event.target.closest('.film-pick-btn');
+          var pick = btn ? btn.closest('.film-pick') : null;
+          closeFilmMenus(pick);
+          if (!pick) return;
+          var open = pick.classList.toggle('is-open');
+          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+          if (open) { var first = pick.querySelector('.film-menu a'); if (first && event.detail === 0) first.focus(); }
+        });
+        document.addEventListener('keydown', function (event) {
+          if (event.key === 'Escape') closeFilmMenus(null);
         });
 
         // A league game's row, or the next-game card, opens the game's own
