@@ -102,6 +102,8 @@ class WholeIce(unittest.TestCase):
         import page_common
         self.assertIn("film-pick-btn", page_common.SCHEDULE_JS)
         self.assertIn(".film-pick.is-open .film-menu", page_common.PAGE_CSS)
+        # enhance() runs again after the team login; two listeners would open and close the menu in one tap (node check_film_menu.mjs)
+        self.assertIn("data-film-menus", page_common.SCHEDULE_JS)
 
 
 if __name__ == "__main__":
