@@ -54,7 +54,7 @@ class Rows(unittest.TestCase):
         html = gs.team_game_row(e, gs.datetime.fromisoformat(e["start"]), film="https://youtu.be/AAA")
         self.assertIn('class="icon-btn game-video"', html)
         self.assertIn('href="https://youtu.be/AAA"', html)
-        self.assertIn('data-tip="Video review"', html)
+        self.assertIn('data-tip="Watch on YouTube"', html)
 
     def test_no_film_no_icon(self):
         e = game("a", 7, "14:00", "Glancaster")
@@ -62,7 +62,7 @@ class Rows(unittest.TestCase):
 
     def test_the_game_page_has_the_film_button(self):
         e = game("a", 7, "14:00", "Glancaster")
-        self.assertIn("Video review", ep.watch(e, gs.datetime.fromisoformat(e["start"]), "https://youtu.be/AAA"))
+        self.assertIn("Watch on YouTube", ep.watch(e, gs.datetime.fromisoformat(e["start"]), "https://youtu.be/AAA"))
 
     def test_the_build_puts_the_icon_in_the_team_schedule_only_when_it_has_the_film(self):
         e = game("a", 7, "14:00", "Glancaster")

@@ -542,9 +542,9 @@ def team_video_link(url, event, pano=None):
     label = f"{event['opponent']} on {event['start'][:10]}"
     if not pano:
         return (f'<a class="icon-btn game-video" href="{escape(url)}" target="_blank" rel="noopener noreferrer" '
-                f'aria-label="Video review: {escape(label)}" data-tip="Video review">{page_common.FILM_ICON}</a>')
+                f'aria-label="Watch on YouTube: {escape(label)}" data-tip="Watch on YouTube">{page_common.FILM_ICON}</a>')
     return (f'<span class="film-pick"><button type="button" class="icon-btn game-video film-pick-btn" aria-haspopup="true" '
-            f'aria-expanded="false" aria-label="Video review: {escape(label)}" data-tip="Video review">{page_common.FILM_ICON}</button>'
+            f'aria-expanded="false" aria-label="Watch on YouTube: {escape(label)}" data-tip="Watch on YouTube">{page_common.FILM_ICON}</button>'
             f'<span class="film-menu" role="menu">'
             f'<a role="menuitem" href="{escape(url)}" target="_blank" rel="noopener noreferrer">Follows play</a>'
             f'<a role="menuitem" href="{escape(pano)}" target="_blank" rel="noopener noreferrer">Whole ice</a></span></span>')
