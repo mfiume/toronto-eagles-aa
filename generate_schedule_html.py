@@ -481,7 +481,57 @@ def event_page(event):
     return f"event-{hashlib.sha256(event['uid'].encode('utf-8')).hexdigest()[:12]}.html"
 
 
-def team_game_row(event, start, now=None):
+def film_ids(event):
+    """The words of the other team's name in a team-calendar game, for matching a film to it."""
+    return set(re.findall(r"[a-z0-9]+", event.get("opponent", "").lower()))
+
+
+def team_films(events, videos):
+    """
+    Where the film of each team-calendar game (tournament, exhibition) is, as {event uid: address}. A film is kept under
+    its date and teams (`2026-11-07_toronto-eagles_at_glancaster-bombers`), the calendar only knows a date and an opponent,
+    so a game takes the film of its day whose other team shares the most words with the opponent's name. A day with one
+    game and one film left pairs them even when the names differ (the calendar's "Rattlers or North Stars" for a game
+    the film names). Only games of ours are looked at, one film for one game.
+    """
+    us = re.sub(r"[^a-z0-9]+", "-", config.TEAM_NAME.lower()).strip("-")
+    by_day = {}
+    for gid, url in (videos or {}).items():
+        day, _, teams = gid.partition("_")
+        away, _, home = teams.partition("_at_")
+        if us in (away, home):
+            other = home if away == us else away
+            by_day.setdefault(day, []).append((set(other.split("-")), url))
+    found = {}
+    games = {}
+    for e in events or []:
+        if e.get("kind") == "game":
+            games.setdefault(e["start"][:10], []).append(e)
+    for day, todays in games.items():
+        films = list(by_day.get(day, []))
+        pairs = sorted(((len(film_ids(e) & words), i, j) for i, e in enumerate(todays) for j, (words, _) in enumerate(films)
+                        if film_ids(e) & words), reverse=True)
+        taken_e, taken_f = set(), set()
+        for n, i, j in pairs:
+            if i not in taken_e and j not in taken_f:
+                found[todays[i]["uid"]] = films[j][1]
+                taken_e.add(i)
+                taken_f.add(j)
+        left_e = [e for i, e in enumerate(todays) if i not in taken_e]
+        left_f = [f for j, f in enumerate(films) if j not in taken_f]
+        if len(left_e) == 1 and len(left_f) == 1:
+            found[left_e[0]["uid"]] = left_f[0][1]
+    return found
+
+
+def team_video_link(url, event):
+    """The film icon of a team-calendar game: it opens the video itself. Only ever in the sealed team version of the page."""
+    label = f"{event['opponent']} on {event['start'][:10]}"
+    return (f'<a class="icon-btn game-video" href="{escape(url)}" target="_blank" rel="noopener noreferrer" '
+            f'aria-label="Video review: {escape(label)}" data-tip="Video review">{page_common.FILM_ICON}</a>')
+
+
+def team_game_row(event, start, now=None, film=None):
     """
     A game only TeamSnap lists (exhibition, preseason or tournament), laid out
     like a league game: both teams stacked, LiveBarn and a short tag for the
@@ -515,8 +565,9 @@ def team_game_row(event, start, now=None):
            if label in GAME_TAGS else "")
     # The tag sits left of LiveBarn, and LiveBarn keeps its slot (empty before
     # puck drop) so the logo lines up with every other row's.
-    icons = (f'<div class="game-icons">{tag}<span class="watch-slot">{watch}</span></div>'
-             if tag else (f'<div class="game-icons">{watch}</div>' if watch else ""))
+    movie = team_video_link(film, event) if film else ""
+    icons = (f'<div class="game-icons">{tag}{movie}<span class="watch-slot">{watch}</span></div>'
+             if tag else (f'<div class="game-icons">{movie}{watch}</div>' if movie or watch else ""))
     if score:
         when = (f'<span class="game-time"><span class="game-final">Final</span>'
                 f'{result_badge(*score)}</span>')
@@ -676,12 +727,13 @@ def build_block(schedule, today, our_team, team_events=None, now=None, videos=No
                       False, "game", True))
 
     # Every team event: the page pages through the whole season.
+    films = team_films([e for e in team_events or [] if e["uid"] not in used], videos)
     for e in team_events or []:
         if e["uid"] in used:
             continue
         start = datetime.fromisoformat(e["start"])
         if e["kind"] == "game":
-            items.append((start, start.date(), team_game_row(e, start, now), True, "game"))
+            items.append((start, start.date(), team_game_row(e, start, now, film=films.get(e["uid"])), True, "game"))
         else:
             items.append((start, start.date(), team_event_row(e, start), True, e["kind"]))
     items.sort(key=lambda it: it[0])

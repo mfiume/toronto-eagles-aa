@@ -32,8 +32,8 @@ import page_common
 import team_crypto
 from generate_schedule_html import (countdown_attr, team_score, EVENT_TITLES, LOGIN_DIALOG, aware, clock, countdown,
                                     event_page, event_stream, load_team_events, maps_link,
-                                    match_team_games, parse_game_date, parse_game_time,
-                                    season_rows, short_venue, team_game_row, team_name_html,
+                                    load_videos, match_team_games, parse_game_date, parse_game_time,
+                                    season_rows, short_venue, team_films, team_game_row, team_name_html,
                                     watch_button)
 
 # The label above an event's name; it says what kind of thing the name is.
@@ -191,9 +191,15 @@ def facts(event):
 """
 
 
-def watch(event, now):
-    """LiveBarn for a game at a pad we know (see livebarn.py)."""
-    button = watch_button(event_stream(event), aware(start_of(event)), now)
+def film_button(url):
+    """The game's film, for a game of ours: opens the video. The page is sealed, so the address is only ever in the team version."""
+    return (f'<a class="match-btn film" href="{escape(url)}" target="_blank" rel="noopener noreferrer">'
+            f'{page_common.FILM_ICON}<span>Video review</span></a>')
+
+
+def watch(event, now, film=None):
+    """The film of a game, and LiveBarn for a game at a pad we know (see livebarn.py)."""
+    button = (film_button(film) if film else "") + watch_button(event_stream(event), aware(start_of(event)), now)
     return f'\n                <div class="match-actions">{button}</div>\n' if button else ""
 
 
@@ -224,7 +230,7 @@ def where(event):
 """
 
 
-def tournament_games(event, events, now):
+def tournament_games(event, events, now, films=None):
     """Our games inside a tournament's dates, from the team calendar."""
     first, last = start_of(event).date(), last_day(event)
     games = [e for e in events if e["kind"] == "game" and first <= start_of(e).date() <= last]
@@ -235,7 +241,7 @@ def tournament_games(event, events, now):
                     <p class="team-empty">Game times are not on the team calendar yet.</p>
                 </section>
 """
-    rows = "".join(team_game_row(e, start_of(e), now) for e in games)
+    rows = "".join(team_game_row(e, start_of(e), now, film=(films or {}).get(e["uid"])) for e in games)
     return f"""
                 <section class="team-block">
                     <div class="block-head"><h3>Our games</h3><span>{len(games)} on the team calendar</span></div>
@@ -245,10 +251,10 @@ def tournament_games(event, events, now):
 """
 
 
-def detail(event, events, now, today):
-    html = hero(event, now, today) + watch(event, now) + facts(event) + where(event)
+def detail(event, events, now, today, films=None):
+    html = hero(event, now, today) + watch(event, now, (films or {}).get(event["uid"])) + facts(event) + where(event)
     if event["kind"] == "tournament":
-        html += tournament_games(event, events, now)
+        html += tournament_games(event, events, now, films)
     return html
 
 
@@ -314,20 +320,23 @@ def generate(today=None):
     now = datetime.now(page_common.TORONTO)
     today = today or now.date()
     sealer = team_crypto.Sealer(password)
+    # Every game of ours that has a film shows it, on its row and on its own page (the league's games have theirs on the game page).
+    films = team_films([e for e in events if e["uid"] not in used], load_videos())
     written = []
     for e in events:
         if e["uid"] in used:
             continue   # A league game: it has its own public game page.
         name = event_page(e)
         with open(name, "w", encoding="utf-8") as f:
-            f.write(page(sealer.seal(detail(e, events, now, today)), data.get("timestamp", "")))
+            f.write(page(sealer.seal(detail(e, events, now, today, films)), data.get("timestamp", "")))
         written.append(name)
     for stale in set(glob.glob("event-*.html")) - set(written):
         os.remove(stale)
     games = [e for e in events if e["kind"] == "game" and e["uid"] not in used]
     # Counts only: the log of a public repository is public.
     print(f"Generated {len(written)} event pages; LiveBarn for "
-          f"{sum(1 for e in games if event_stream(e))} of {len(games)} team-calendar games")
+          f"{sum(1 for e in games if event_stream(e))} of {len(games)} team-calendar games; "
+          f"film for {sum(1 for e in games if e['uid'] in films)}")
     return written
 
 
