@@ -1092,6 +1092,27 @@ def logo_src(team):
     return f"assets/logos/{filename}" if os.path.exists(os.path.join(LOGO_DIR, filename)) else None
 
 
+def logo_file(team, folder=None):
+    """
+    The cached logo file for a team, or None. A file named for the team wins. Failing that, the one file whose name holds every word of the
+    team's: the team calendar says "Glancaster" and "Stoney Creek" for the clubs a logo is kept under as "glancaster-bombers" and
+    "stoney-creek-warriors". Two files that fit, or none, give None, so a name is never given another club's crest.
+    """
+    folder = folder or LOGO_DIR
+    exact = f"{slug(team)}.png"
+    if os.path.exists(os.path.join(folder, exact)):
+        return exact
+    words = set(slug(team.removeprefix("The ")).split("-")) - {""}
+    if not words:
+        return None
+    try:
+        names = sorted(n for n in os.listdir(folder) if n.endswith(".png"))
+    except OSError:
+        return None
+    fits = [n for n in names if words <= set(n[:-4].split("-"))]
+    return fits[0] if len(fits) == 1 else None
+
+
 def team_logo(team, fallback_url=None):
     """
     A team's logo, served from our own cache.
@@ -1100,8 +1121,8 @@ def team_logo(team, fallback_url=None):
     the standings scrape records) if there is one, or the team's initials in
     the same footprint, so rows never jump around a missing image.
     """
-    filename = f"{slug(team)}.png"
-    if os.path.exists(os.path.join(LOGO_DIR, filename)):
+    filename = logo_file(team)
+    if filename:
         return f'<img class="team-logo" src="assets/logos/{filename}" alt="" loading="lazy">'
     if fallback_url:
         return (f'<img class="team-logo" src="{html.escape(fallback_url)}" alt="" loading="lazy" '
