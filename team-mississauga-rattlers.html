@@ -2676,7 +2676,7 @@
                     </div>
                 </section>
             </div>
-            <p class="content-meta">Updated <time datetime="2026-11-09T03:18:57.331392+00:00" title="Nov 08, 10:18 PM ET · Refreshes hourly">just now</time></p>
+            <p class="content-meta">Updated <time datetime="2026-11-09T03:54:29.013712+00:00" title="Nov 08, 10:54 PM ET · Refreshes hourly">1 minute ago</time></p>
         </div>
 
     </div>
@@ -2938,27 +2938,31 @@
         });
 
         // The film icon of a game with a whole-ice video: opens its two-choice menu. The rows are placed after the team login opens them,
-        // so this listens on the page. A tap anywhere else, or Escape, closes it.
-        function closeFilmMenus(except) {
-          document.querySelectorAll('.film-pick.is-open').forEach(function (m) {
-            if (m === except) return;
-            m.classList.remove('is-open');
-            var b = m.querySelector('.film-pick-btn');
-            if (b) b.setAttribute('aria-expanded', 'false');
+        // so this listens on the page. A tap anywhere else, or Escape, closes it. enhance() runs again whenever the rows are replaced,
+        // so the listeners are put on once: two of them would open the menu and close it again in the same tap.
+        if (!document.documentElement.hasAttribute('data-film-menus')) {
+          document.documentElement.setAttribute('data-film-menus', '');
+          function closeFilmMenus(except) {
+            document.querySelectorAll('.film-pick.is-open').forEach(function (m) {
+              if (m === except) return;
+              m.classList.remove('is-open');
+              var b = m.querySelector('.film-pick-btn');
+              if (b) b.setAttribute('aria-expanded', 'false');
+            });
+          }
+          document.addEventListener('click', function (event) {
+            var btn = event.target.closest && event.target.closest('.film-pick-btn');
+            var pick = btn ? btn.closest('.film-pick') : null;
+            closeFilmMenus(pick);
+            if (!pick) return;
+            var open = pick.classList.toggle('is-open');
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (open) { var first = pick.querySelector('.film-menu a'); if (first && event.detail === 0) first.focus(); }
+          });
+          document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') closeFilmMenus(null);
           });
         }
-        document.addEventListener('click', function (event) {
-          var btn = event.target.closest && event.target.closest('.film-pick-btn');
-          var pick = btn ? btn.closest('.film-pick') : null;
-          closeFilmMenus(pick);
-          if (!pick) return;
-          var open = pick.classList.toggle('is-open');
-          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-          if (open) { var first = pick.querySelector('.film-menu a'); if (first && event.detail === 0) first.focus(); }
-        });
-        document.addEventListener('keydown', function (event) {
-          if (event.key === 'Escape') closeFilmMenus(null);
-        });
 
         // A league game's row, or the next-game card, opens the game's own
         // page on tap (or Enter), except when the tap is on a link or button
