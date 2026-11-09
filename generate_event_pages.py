@@ -193,11 +193,15 @@ def facts(event):
 
 def film_button(url, pano=None):
     """The game's film, for a game of ours: opens the video, and the whole-ice video beside it when there is one. The page is sealed, so the addresses are only ever in the team version."""
-    one = (f'<a class="match-btn film" href="{escape(url)}" target="_blank" rel="noopener noreferrer">'
-           f'{page_common.FILM_ICON}<span>{"Follows play" if pano else "Video review"}</span></a>')
-    two = (f'<a class="match-btn film" href="{escape(pano)}" target="_blank" rel="noopener noreferrer">'
-           f'{page_common.FILM_ICON}<span>Whole ice</span></a>') if pano else ""
-    return one + two
+    if not pano:
+        return (f'<a class="match-btn film" href="{escape(url)}" target="_blank" rel="noopener noreferrer">'
+                f'{page_common.FILM_ICON}<span>Video review</span></a>')
+    chevron = '<span class="film-caret" aria-hidden="true"></span>'
+    return (f'<span class="film-pick film-pick-match"><button type="button" class="match-btn film film-pick-btn" aria-haspopup="true" aria-expanded="false">'
+            f'{page_common.FILM_ICON}<span>Video review</span>{chevron}</button>'
+            f'<span class="film-menu" role="menu">'
+            f'<a role="menuitem" href="{escape(url)}" target="_blank" rel="noopener noreferrer">Follows play</a>'
+            f'<a role="menuitem" href="{escape(pano)}" target="_blank" rel="noopener noreferrer">Whole ice</a></span></span>')
 
 
 def watch(event, now, film=None, pano=None):

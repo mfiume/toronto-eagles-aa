@@ -93,8 +93,10 @@ class WholeIce(unittest.TestCase):
     def test_the_game_page_offers_both(self):
         e = game("a", 7, "14:00", "Glancaster")
         html = ep.watch(e, gs.datetime.fromisoformat(e["start"]), "https://youtu.be/AAA", "https://youtu.be/PANO")
-        self.assertIn("Follows play", html)
-        self.assertIn("Whole ice", html)
+        self.assertEqual(html.count("film-pick-btn"), 1, "one button, with the choices in its menu")
+        self.assertIn("film-pick-btn", html)
+        self.assertRegex(html, r'href="https://youtu.be/AAA"[^>]*>Follows play</a>')
+        self.assertRegex(html, r'href="https://youtu.be/PANO"[^>]*>Whole ice</a>')
 
     def test_the_menu_script_and_style_are_on_the_page(self):
         import page_common
