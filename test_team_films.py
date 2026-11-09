@@ -106,5 +106,33 @@ class WholeIce(unittest.TestCase):
         self.assertIn("data-film-menus", page_common.SCHEDULE_JS)
 
 
+class GameFixes(unittest.TestCase):
+    def test_a_fix_gives_the_game_its_real_opponent_and_score(self):
+        e = game("f", 8, "12:45", "Rattlers or North Stars", True)
+        e["start"] = "2026-11-08T12:45:00-05:00"
+        fixed = gs.apply_game_fixes([e, game("s", 8, "08:00", "Stoney Creek")],
+                                    {"2026-11-08T12:45": {"opponent": "Mississauga North Stars", "score": "0-4"}})
+        self.assertEqual(fixed[0]["opponent"], "Mississauga North Stars")
+        self.assertEqual(gs.team_score(fixed[0]), (0, 4))
+        self.assertEqual(fixed[1]["opponent"], "Stoney Creek")
+        self.assertEqual(e["opponent"], "Rattlers or North Stars", "the calendar's own record is not changed")
+
+    def test_the_fix_in_the_repo_names_the_final(self):
+        fixes = gs.load_game_fixes()
+        self.assertEqual(fixes["2026-11-08T12:45"]["opponent"], "Mississauga North Stars")
+
+    def test_spacing_in_the_calendar_text_does_not_change_the_score_key(self):
+        a = game("a", 8, "12:45", "Rattlers or North Stars")
+        b = game("a", 8, "12:45", "Rattlers  or\u00a0North Stars ")
+        self.assertEqual(gs.score_key(a), gs.score_key(b))
+        self.assertIn(gs.score_key(a), __import__("json").load(open("team_scores.json"))["scores"])
+
+    def test_the_fixed_opponent_finds_its_film_and_logo(self):
+        e = game("f", 8, "12:45", "Mississauga North Stars", True)
+        self.assertEqual(gs.team_films([e], VIDEOS), {"f": "https://youtu.be/DDD"})
+        import page_common
+        self.assertIn("assets/logos/mississauga-north-stars.png", page_common.team_logo(e["opponent"]))
+
+
 if __name__ == "__main__":
     unittest.main()

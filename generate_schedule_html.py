@@ -15,6 +15,7 @@ import hashlib
 import json
 import os
 import re
+import unicodedata
 from datetime import datetime, timedelta
 from html import escape
 
@@ -428,7 +429,9 @@ _TEAM_SCORES = None
 
 def score_key(event):
     """The key a team-calendar game's score is kept under: date and opponent, hashed."""
-    text = f"{event['start'][:10]}|{event.get('opponent', '').strip().lower()}"
+    # Spacing and look-alike characters in the calendar's text must not change the key: "Rattlers or  North Stars" is the same game.
+    name = " ".join(unicodedata.normalize("NFKC", event.get("opponent", "")).split()).lower()
+    text = f"{event['start'][:10]}|{name}"
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:12]
 
 
@@ -441,7 +444,8 @@ def team_score(event):
                 _TEAM_SCORES = json.load(f).get("scores", {})
         except (OSError, ValueError):
             _TEAM_SCORES = {}
-    raw = _TEAM_SCORES.get(score_key(event)) if event.get("kind") == "game" else None
+    raw = event.get("score") if event.get("kind") == "game" else None
+    raw = raw or (_TEAM_SCORES.get(score_key(event)) if event.get("kind") == "game" else None)
     m = re.match(r"^\s*(\d+)\s*-\s*(\d+)\s*$", raw or "")
     return (int(m.group(1)), int(m.group(2))) if m else None
 
@@ -1063,13 +1067,44 @@ def load_videos():
     return {gid: f["url"] for gid, f in load_film().items()}
 
 
+GAME_FIXES_FILE = "team_game_fixes.json"
+
+
+def apply_game_fixes(events, fixes):
+    """
+    Corrections to team-calendar games, kept by the game's start (`2026-11-08T12:45`), which does not depend on how the calendar
+    spells a team: {"opponent": the club's real name, "score": "ours-theirs"}. TeamSnap lists a tournament's later rounds before
+    they are known ("Rattlers or North Stars"); once the game is played this gives it its real opponent, so its row, logo, film
+    and score all follow. Games the fixes do not name are left as they are.
+    """
+    out = []
+    for e in events:
+        fix = (fixes or {}).get(e.get("start", "")[:16]) if e.get("kind") == "game" else None
+        if fix:
+            e = dict(e)
+            if fix.get("opponent"):
+                e["opponent"] = fix["opponent"]
+            if fix.get("score"):
+                e["score"] = fix["score"]
+        out.append(e)
+    return out
+
+
+def load_game_fixes():
+    try:
+        with open(GAME_FIXES_FILE, encoding="utf-8") as f:
+            return json.load(f).get("games", {})
+    except (OSError, ValueError):
+        return {}
+
+
 def load_team_events():
     """The team calendar and password, or (None, None) if either is missing."""
     password = os.environ.get(PASSWORD_ENV, "")
     if not password or not os.path.exists(TEAM_EVENTS_FILE):
         return None, None
     with open(TEAM_EVENTS_FILE, encoding="utf-8") as f:
-        return json.load(f).get("events", []), password
+        return apply_game_fixes(json.load(f).get("events", []), load_game_fixes()), password
 
 
 def generate_html(today=None):
