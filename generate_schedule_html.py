@@ -486,22 +486,22 @@ def film_ids(event):
     return set(re.findall(r"[a-z0-9]+", event.get("opponent", "").lower()))
 
 
-def team_films(events, videos):
+def team_film_ids(events, videos):
     """
-    Where the film of each team-calendar game (tournament, exhibition) is, as {event uid: address}. A film is kept under
-    its date and teams (`2026-11-07_toronto-eagles_at_glancaster-bombers`), the calendar only knows a date and an opponent,
-    so a game takes the film of its day whose other team shares the most words with the opponent's name. A day with one
-    game and one film left pairs them even when the names differ (the calendar's "Rattlers or North Stars" for a game
-    the film names). Only games of ours are looked at, one film for one game.
+    Which film is each team-calendar game's, as {event uid: film id}. A film is kept under its date and teams
+    (`2026-11-07_toronto-eagles_at_glancaster-bombers`), the calendar only knows a date and an opponent, so a game takes the film of
+    its day whose other team shares the most words with the opponent's name. A day with one game and one film left pairs them even
+    when the names differ (the calendar's "Rattlers or North Stars" for a game the film names). Only games of ours are looked at,
+    one film for one game.
     """
     us = re.sub(r"[^a-z0-9]+", "-", config.TEAM_NAME.lower()).strip("-")
     by_day = {}
-    for gid, url in (videos or {}).items():
+    for gid in videos or {}:
         day, _, teams = gid.partition("_")
         away, _, home = teams.partition("_at_")
         if us in (away, home):
             other = home if away == us else away
-            by_day.setdefault(day, []).append((set(other.split("-")), url))
+            by_day.setdefault(day, []).append((set(other.split("-")), gid))
     found = {}
     games = {}
     for e in events or []:
@@ -524,14 +524,33 @@ def team_films(events, videos):
     return found
 
 
-def team_video_link(url, event):
-    """The film icon of a team-calendar game: it opens the video itself. Only ever in the sealed team version of the page."""
+def team_films(events, videos):
+    """Where the film of each team-calendar game is, as {event uid: address}."""
+    return {uid: videos[gid] for uid, gid in team_film_ids(events, videos).items()}
+
+
+def team_panos(events, videos, panos):
+    """The whole-ice video of each team-calendar game that has one, as {event uid: address}."""
+    return {uid: panos[gid] for uid, gid in team_film_ids(events, videos).items() if (panos or {}).get(gid)}
+
+
+def team_video_link(url, event, pano=None):
+    """
+    The film icon of a team-calendar game: it opens the video itself. A game with a whole-ice video too gets a button
+    with the two choices under it, "Follows play" and "Whole ice". Only ever in the sealed team version of the page.
+    """
     label = f"{event['opponent']} on {event['start'][:10]}"
-    return (f'<a class="icon-btn game-video" href="{escape(url)}" target="_blank" rel="noopener noreferrer" '
-            f'aria-label="Video review: {escape(label)}" data-tip="Video review">{page_common.FILM_ICON}</a>')
+    if not pano:
+        return (f'<a class="icon-btn game-video" href="{escape(url)}" target="_blank" rel="noopener noreferrer" '
+                f'aria-label="Video review: {escape(label)}" data-tip="Video review">{page_common.FILM_ICON}</a>')
+    return (f'<span class="film-pick"><button type="button" class="icon-btn game-video film-pick-btn" aria-haspopup="true" '
+            f'aria-expanded="false" aria-label="Video review: {escape(label)}" data-tip="Video review">{page_common.FILM_ICON}</button>'
+            f'<span class="film-menu" role="menu">'
+            f'<a role="menuitem" href="{escape(url)}" target="_blank" rel="noopener noreferrer">Follows play</a>'
+            f'<a role="menuitem" href="{escape(pano)}" target="_blank" rel="noopener noreferrer">Whole ice</a></span></span>')
 
 
-def team_game_row(event, start, now=None, film=None):
+def team_game_row(event, start, now=None, film=None, pano=None):
     """
     A game only TeamSnap lists (exhibition, preseason or tournament), laid out
     like a league game: both teams stacked, LiveBarn and a short tag for the
@@ -565,7 +584,7 @@ def team_game_row(event, start, now=None, film=None):
            if label in GAME_TAGS else "")
     # The tag sits left of LiveBarn, and LiveBarn keeps its slot (empty before
     # puck drop) so the logo lines up with every other row's.
-    movie = team_video_link(film, event) if film else ""
+    movie = team_video_link(film, event, pano) if film else ""
     icons = (f'<div class="game-icons">{tag}{movie}<span class="watch-slot">{watch}</span></div>'
              if tag else (f'<div class="game-icons">{movie}{watch}</div>' if movie or watch else ""))
     if score:
@@ -686,7 +705,7 @@ def aware(start):
     return start.replace(tzinfo=page_common.TORONTO) if start else None
 
 
-def build_block(schedule, today, our_team, team_events=None, now=None, videos=None, east=()):
+def build_block(schedule, today, our_team, team_events=None, now=None, videos=None, east=(), panos=None):
     """
     The schedule itself: next-game card, heading with the filter, and the
     weeks. Without team_events this is the public version.
@@ -727,13 +746,15 @@ def build_block(schedule, today, our_team, team_events=None, now=None, videos=No
                       False, "game", True))
 
     # Every team event: the page pages through the whole season.
-    films = team_films([e for e in team_events or [] if e["uid"] not in used], videos)
+    unmatched = [e for e in team_events or [] if e["uid"] not in used]
+    films = team_films(unmatched, videos)
+    team_pano = team_panos(unmatched, videos, panos)
     for e in team_events or []:
         if e["uid"] in used:
             continue
         start = datetime.fromisoformat(e["start"])
         if e["kind"] == "game":
-            items.append((start, start.date(), team_game_row(e, start, now, film=films.get(e["uid"])), True, "game"))
+            items.append((start, start.date(), team_game_row(e, start, now, film=films.get(e["uid"]), pano=team_pano.get(e["uid"])), True, "game"))
         else:
             items.append((start, start.date(), team_event_row(e, start), True, e["kind"]))
     items.sort(key=lambda it: it[0])
@@ -1032,6 +1053,11 @@ def clean_score(raw):
     return score
 
 
+def load_panos():
+    """Where each game's whole-ice video is, as {game id: address}, for the games that have one."""
+    return {gid: f["pano"]["url"] for gid, f in load_film().items() if f.get("pano")}
+
+
 def load_videos():
     """Where each game's film is, as {game id: address}."""
     return {gid: f["url"] for gid, f in load_film().items()}
@@ -1110,7 +1136,7 @@ def generate_html(today=None):
 {page_common.freshness(timestamp)}"""
         if team_events is not None:
             import team_crypto
-            sealed = team_crypto.encrypt(build_block(schedule, today, our_team, team_events, videos=load_videos(), east=east), password)
+            sealed = team_crypto.encrypt(build_block(schedule, today, our_team, team_events, videos=load_videos(), east=east, panos=load_panos()), password)
             # A JSON script block is inert data; "</" is escaped so the
             # ciphertext can never close the tag.
             payload = json.dumps(sealed).replace("</", "<\\/")

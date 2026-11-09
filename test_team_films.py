@@ -72,5 +72,35 @@ class Rows(unittest.TestCase):
         self.assertNotIn("https://youtu.be/AAA", gs.build_block([], gs.datetime(2026, 11, 8).date(), "toronto eagles", [e]))
 
 
+class WholeIce(unittest.TestCase):
+    PANOS = {"2026-11-07_toronto-eagles_at_glancaster-bombers": "https://youtu.be/PANO"}
+
+    def test_a_game_with_a_whole_ice_video_gets_a_menu_with_both_choices(self):
+        e = game("a", 7, "14:00", "Glancaster")
+        html = gs.team_video_link("https://youtu.be/AAA", e, "https://youtu.be/PANO")
+        self.assertIn("film-pick-btn", html)
+        self.assertRegex(html, r'href="https://youtu.be/AAA"[^>]*>Follows play</a>')
+        self.assertRegex(html, r'href="https://youtu.be/PANO"[^>]*>Whole ice</a>')
+
+    def test_a_game_without_one_keeps_the_plain_icon(self):
+        e = game("a", 7, "14:00", "Glancaster")
+        self.assertNotIn("film-pick", gs.team_video_link("https://youtu.be/AAA", e))
+
+    def test_the_panos_follow_the_same_pairing_as_the_films(self):
+        events = [game("a", 7, "14:00", "Glancaster"), game("b", 7, "09:00", "Rattlers", True)]
+        self.assertEqual(gs.team_panos(events, VIDEOS, self.PANOS), {"a": "https://youtu.be/PANO"})
+
+    def test_the_game_page_offers_both(self):
+        e = game("a", 7, "14:00", "Glancaster")
+        html = ep.watch(e, gs.datetime.fromisoformat(e["start"]), "https://youtu.be/AAA", "https://youtu.be/PANO")
+        self.assertIn("Follows play", html)
+        self.assertIn("Whole ice", html)
+
+    def test_the_menu_script_and_style_are_on_the_page(self):
+        import page_common
+        self.assertIn("film-pick-btn", page_common.SCHEDULE_JS)
+        self.assertIn(".film-pick.is-open .film-menu", page_common.PAGE_CSS)
+
+
 if __name__ == "__main__":
     unittest.main()
