@@ -106,6 +106,33 @@ FAVICON_LINKS = """    <link rel="icon" href="assets/favicon.svg" type="image/sv
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="apple-mobile-web-app-title" content="Eagles">"""
 
+# The picture and words a link shows when a page is shared. The pictures are assets/share/<card>.png, drawn by make_share_cards.mjs.
+SHARE_CARDS = ("site", "schedule", "standings", "playoffs", "statistics", "game", "team")
+
+
+def share_tags(card, title, description, page=""):
+    """The tags that make a shared link a large card: title, one line under it, the picture, and the page's own address."""
+    from html import escape as esc
+    assert card in SHARE_CARDS, card
+    base = config.SITE_URL
+    t, d = esc(title, quote=True), esc(description, quote=True)
+    alt = esc(f"{config.SITE_TITLE}: {card if card != 'site' else 'schedule, scores and standings'}", quote=True)
+    return (f'    <meta name="description" content="{d}">\n'
+            f'    <meta property="og:type" content="website">\n'
+            f'    <meta property="og:site_name" content="{esc(config.SITE_TITLE, quote=True)}">\n'
+            f'    <meta property="og:title" content="{t}">\n'
+            f'    <meta property="og:description" content="{d}">\n'
+            f'    <meta property="og:url" content="{base}{page}">\n'
+            f'    <meta property="og:image" content="{base}assets/share/{card}.png">\n'
+            f'    <meta property="og:image:width" content="1200">\n'
+            f'    <meta property="og:image:height" content="630">\n'
+            f'    <meta property="og:image:alt" content="{alt}">\n'
+            f'    <meta name="twitter:card" content="summary_large_image">\n'
+            f'    <meta name="twitter:title" content="{t}">\n'
+            f'    <meta name="twitter:description" content="{d}">\n'
+            f'    <meta name="twitter:image" content="{base}assets/share/{card}.png">')
+
+
 # The red play button that marks a link to a game's film on YouTube, wherever the site shows one.
 FILM_ICON = ('<svg class="film-icon" viewBox="0 0 20 14" width="20" height="14" aria-hidden="true">'
              '<rect width="20" height="14" rx="4" fill="#ff0000"/><path d="M8 4l5 3-5 3z" fill="#ffffff"/></svg>')

@@ -27,6 +27,9 @@ REGION = "West"              # ddlRegion value
 # Headline used across the three pages.
 SITE_TITLE = f"{TEAM_NAME} {DIVISION} {CATEGORY}"
 
+# Where the site lives, for the addresses a shared link needs to be absolute (the picture a link shows).
+SITE_URL = "https://mfiume.github.io/toronto-eagles-aa/"
+
 # --- Region roster ----------------------------------------------------------
 # The schedule is filtered to our own region using this list rather than the
 # site's region filter, because the GTHL does not tag schedule rows with a

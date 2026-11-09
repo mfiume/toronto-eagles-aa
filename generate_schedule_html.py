@@ -1073,6 +1073,7 @@ def generate_html(today=None):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{config.SITE_TITLE} - Schedule</title>
+{page_common.share_tags("schedule", f"{config.SITE_TITLE} Schedule", "Games, rinks and results for the season.", "schedule.html")}
 {page_common.FONT_LINK}
 {page_common.FAVICON_LINKS}
     <style>

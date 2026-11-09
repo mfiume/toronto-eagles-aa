@@ -486,6 +486,17 @@ SHEET_LOCKED = """
 """
 
 
+def share_line(g):
+    """The line under a shared game's title: the result when it is final, otherwise when and where."""
+    row = g["row"]
+    arena = arenas.find(row.get("Arena", ""))
+    place = arena["name"] if arena else row.get("Arena", "")
+    day = f'{g["day"].strftime("%A, %B")} {g["day"].day}'
+    if g.get("score"):
+        return f'Final: {row.get("Away", "")} {g["score"]["away"]}, {row.get("Home", "")} {g["score"]["home"]}. {day}' + (f' at {place}.' if place else '.')
+    return " · ".join(x for x in (day, row.get("Time", ""), place) if x)
+
+
 def page(g, standings, games, timestamp, today, now, sheets=None, shot_counts=None, film=None, has_film=None,
          locked_sheet=False):
     """
@@ -513,6 +524,7 @@ def page(g, standings, games, timestamp, today, now, sheets=None, shot_counts=No
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{escape(title)} - {g['day'].strftime('%b')} {g['day'].day} - {config.SITE_TITLE}</title>
+{page_common.share_tags('game', title, share_line(g), game_page(row))}
 {page_common.FONT_LINK}
 {page_common.FAVICON_LINKS}
     <style>

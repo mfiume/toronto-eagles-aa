@@ -116,6 +116,7 @@ def generate_html():
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{config.SITE_TITLE} - Privacy</title>
+{page_common.share_tags("site", f"{config.SITE_TITLE} Privacy", "How the site treats your information.", "privacy.html")}
 {page_common.FONT_LINK}
 {page_common.FAVICON_LINKS}
     <style>

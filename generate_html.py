@@ -173,6 +173,7 @@ def generate_html():
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{config.SITE_TITLE} - Standings</title>
+{page_common.share_tags("standings", f"{config.SITE_TITLE} Standings", "Where every team in the division sits.", "")}
 {page_common.FONT_LINK}
 {page_common.FAVICON_LINKS}
     <style>

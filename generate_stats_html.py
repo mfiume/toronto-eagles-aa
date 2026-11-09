@@ -354,6 +354,7 @@ def page(sealed, timestamp):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Statistics - {config.SITE_TITLE}</title>
+{page_common.share_tags("statistics", f"{config.SITE_TITLE} Statistics", "Goals, shots and special teams.", "statistics.html")}
     <meta name="robots" content="noindex">
 {page_common.FONT_LINK}
 {page_common.FAVICON_LINKS}

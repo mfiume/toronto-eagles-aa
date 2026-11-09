@@ -371,6 +371,7 @@ def team_page(row, standings, games, timestamp, today, now):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{escape(team)} - {config.SITE_TITLE}</title>
+{page_common.share_tags("team", f"{team}, {config.DIVISION} {config.CATEGORY}", f"{team}: record, results and what is next.", page_name(team))}
 {page_common.FONT_LINK}
 {page_common.FAVICON_LINKS}
     <style>
