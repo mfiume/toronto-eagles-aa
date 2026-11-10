@@ -993,8 +993,45 @@ def load_film():
             pano = clean_pano(v.get("pano"))
             if pano:
                 film["pano"] = pano
+            final = clean_final(v.get("final"))
+            if final:
+                film["final"] = final
+            opp = v.get("opponent")
+            if isinstance(opp, str) and 0 < len(opp.strip()) <= 80:
+                film["opponent"] = opp.strip()
         films[gid] = film
     return films
+
+
+def clean_final(raw):
+    """A game's final score as Film Room sends it ({"us", "them"}, the Eagles' number first), as the schedule writes a score ("0-4"), or None when it is not usable."""
+    if not isinstance(raw, dict):
+        return None
+    us, them = raw.get("us"), raw.get("them")
+    ok = lambda x: isinstance(x, int) and not isinstance(x, bool) and 0 <= x < 100
+    return f"{us}-{them}" if ok(us) and ok(them) else None
+
+
+def apply_film_results(events, films):
+    """
+    A calendar game that has a film gets what Film Room knows about the game and the calendar does not: the final score a person typed (a tournament game has no league
+    sheet) and the other team's real name when the calendar still lists a later round as "Rattlers or North Stars". Nothing the calendar already says is replaced, and a
+    correction in team_game_fixes.json (applied after this) wins over both. The film is paired to the game the same way the film itself is (team_film_ids).
+    """
+    if not films:
+        return events
+    ids = team_film_ids(events, {gid: f.get("url") for gid, f in films.items()})
+    out = []
+    for e in events:
+        f = films.get(ids.get(e.get("uid"), ""), None) if e.get("kind") == "game" else None
+        if f and (f.get("final") or f.get("opponent")):
+            e = dict(e)
+            if f.get("final") and not e.get("score"):
+                e["score"] = f["final"]
+            if f.get("opponent") and re.search(r"\s(or|vs\.?)\s|\btbd\b", e.get("opponent", ""), re.I):
+                e["opponent"] = f["opponent"]
+        out.append(e)
+    return out
 
 
 def clean_pano(raw):
@@ -1104,7 +1141,8 @@ def load_team_events():
     if not password or not os.path.exists(TEAM_EVENTS_FILE):
         return None, None
     with open(TEAM_EVENTS_FILE, encoding="utf-8") as f:
-        return apply_game_fixes(json.load(f).get("events", []), load_game_fixes()), password
+        events = json.load(f).get("events", [])
+    return apply_game_fixes(apply_film_results(events, load_film()), load_game_fixes()), password
 
 
 def generate_html(today=None):

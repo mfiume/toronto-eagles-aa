@@ -134,5 +134,41 @@ class GameFixes(unittest.TestCase):
         self.assertIn("assets/logos/mississauga-north-stars.png", page_common.team_logo(e["opponent"]))
 
 
+class FilmResults(unittest.TestCase):
+    """What Film Room knows about a game that the calendar does not: its typed final score and its real opponent."""
+
+    FILMS = {
+        "2026-11-08_mississauga-north-stars_at_toronto-eagles": {"url": "https://youtu.be/DDD", "moments": [], "final": "0-4", "opponent": "Mississauga North Stars"},
+        "2026-11-08_stoney-creek-warriors_at_toronto-eagles": {"url": "https://youtu.be/CCC", "moments": []},
+    }
+
+    def test_a_typed_score_and_the_real_opponent_reach_the_calendar_game(self):
+        events = [game("s", 8, "08:00", "Stoney Creek"), game("f", 8, "12:45", "Rattlers or North Stars", True)]
+        out = {e["uid"]: e for e in gs.apply_film_results(events, self.FILMS)}
+        self.assertEqual(out["f"]["score"], "0-4")
+        self.assertEqual(out["f"]["opponent"], "Mississauga North Stars")
+        self.assertNotIn("score", out["s"])
+        self.assertEqual(out["s"]["opponent"], "Stoney Creek")
+
+    def test_what_the_calendar_already_says_is_kept(self):
+        e = game("f", 8, "12:45", "Mississauga North Stars", True)
+        e["score"] = "1-4"
+        self.assertEqual(gs.apply_film_results([e], self.FILMS)[0]["score"], "1-4")
+
+    def test_a_correction_in_the_fixes_file_still_wins(self):
+        e = game("f", 8, "12:45", "Rattlers or North Stars", True)
+        out = gs.apply_game_fixes(gs.apply_film_results([e], self.FILMS), {"2026-11-08T12:45": {"score": "2-4"}})
+        self.assertEqual(out[0]["score"], "2-4")
+
+    def test_a_score_that_is_not_two_whole_numbers_is_dropped(self):
+        for bad in (None, "0-4", {"us": 0}, {"us": "0", "them": 4}, {"us": True, "them": 1}, {"us": 100, "them": 0}, {"us": -1, "them": 0}):
+            self.assertIsNone(gs.clean_final(bad))
+        self.assertEqual(gs.clean_final({"us": 3, "them": 3}), "3-3")
+
+    def test_no_films_leave_the_events_as_they_were(self):
+        events = [game("f", 8, "12:45", "Rattlers or North Stars", True)]
+        self.assertEqual(gs.apply_film_results(events, {}), events)
+
+
 if __name__ == "__main__":
     unittest.main()
